@@ -25,6 +25,14 @@ struct SettingsView: View {
     }
 
     var body: some View {
+        NotchUtilitySettingsView(updaterController: updaterController)
+            .id(accentColorUpdateTrigger)
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AccentColorChanged"))) { _ in
+                accentColorUpdateTrigger = UUID()
+            }
+    }
+
+    private var legacyBody: some View {
         NavigationSplitView {
             List(selection: $selectedTab) {
                 NavigationLink(value: "General") {
@@ -1796,4 +1804,760 @@ func warningBadge(_ text: String, _ description: String) -> some View {
 
 #Preview {
     HUD()
+}
+
+// MARK: - NotchMac utility settings view (mockup parity)
+
+struct NotchUtilitySettingsView: View {
+    enum SidebarItem: String, Hashable {
+        case general, layout, appearance, accentColor, iconStyle, spacing, reducedMode, shortcuts, advanced
+    }
+    enum TopTab: String, CaseIterable {
+        case settings = "Settings"
+        case modules = "Modules"
+        case about = "About"
+        var systemImage: String {
+            switch self {
+            case .settings: return "gearshape.fill"
+            case .modules: return "square.grid.2x2.fill"
+            case .about: return "info.circle"
+            }
+        }
+    }
+
+    let updaterController: SPUStandardUpdaterController?
+
+    @State private var selectedItem: SidebarItem = .general
+    @State private var selectedTab: TopTab = .settings
+
+    var body: some View {
+        HStack(spacing: 0) {
+            sidebar
+                .frame(width: 220)
+                .background(Color.black.opacity(0.45))
+
+            VStack(spacing: 0) {
+                header
+                    .padding(.horizontal, 28)
+                    .padding(.top, 22)
+                    .padding(.bottom, 14)
+
+                Divider().opacity(0.12)
+
+                ScrollView {
+                    VStack(spacing: 18) {
+                        Group {
+                            switch selectedTab {
+                            case .settings:
+                                settingsContent
+                            case .modules:
+                                NMModulesCard()
+                            case .about:
+                                NMAboutPanel(updaterController: updaterController)
+                            }
+                        }
+                        .padding(.horizontal, 28)
+                        .padding(.top, 18)
+                        .padding(.bottom, 28)
+                    }
+                }
+            }
+            .frame(minWidth: 820, maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.black.opacity(0.85))
+        }
+        .frame(minWidth: 1100, minHeight: 760)
+        .preferredColorScheme(.dark)
+    }
+
+    // MARK: Sidebar
+
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            NMSidebarItem(
+                title: "General",
+                systemImage: "gearshape.fill",
+                isSelected: selectedItem == .general,
+                action: { selectedItem = .general }
+            )
+            .padding(.horizontal, 14)
+            .padding(.top, 22)
+            .padding(.bottom, 18)
+
+            NMSidebarSection(title: "MODULES")
+                .padding(.horizontal, 18)
+                .padding(.bottom, 8)
+
+            VStack(spacing: 2) {
+                NMSidebarToggle(title: "Music", systemImage: "music.note", key: .showMusicModule)
+                NMSidebarToggle(title: "Shelf", systemImage: "tray.full.fill", key: .boringShelf)
+                NMSidebarToggle(title: "Calendar", systemImage: "calendar", key: .showCalendar)
+                NMSidebarToggle(title: "Battery", systemImage: "battery.100", key: .showBatteryIndicator)
+                NMSidebarToggle(title: "Timer / Pomodoro", systemImage: "timer", key: .showTimerModule)
+                NMSidebarToggle(title: "Clipboard", systemImage: "doc.on.clipboard", key: .showClipboardModule)
+                NMSidebarToggle(title: "Quick Actions", systemImage: "bolt.fill", key: .showQuickActionsModule)
+            }
+            .padding(.horizontal, 14)
+            .padding(.bottom, 18)
+
+            NMSidebarSection(title: "CUSTOMIZATION")
+                .padding(.horizontal, 18)
+                .padding(.bottom, 8)
+
+            VStack(spacing: 2) {
+                NMSidebarItem(title: "Layout", systemImage: "square.grid.3x3", isSelected: selectedItem == .layout) { selectedItem = .layout }
+                NMSidebarItem(title: "Appearance", systemImage: "paintbrush", isSelected: selectedItem == .appearance) { selectedItem = .appearance }
+                NMSidebarItem(title: "Accent Color", systemImage: "paintpalette", isSelected: selectedItem == .accentColor) { selectedItem = .accentColor }
+                NMSidebarItem(title: "Icon Style", systemImage: "app.fill", isSelected: selectedItem == .iconStyle) { selectedItem = .iconStyle }
+                NMSidebarItem(title: "Spacing", systemImage: "arrow.left.and.right", isSelected: selectedItem == .spacing) { selectedItem = .spacing }
+                NMSidebarItem(title: "Reduced Mode", systemImage: "moon.zzz.fill", isSelected: selectedItem == .reducedMode) { selectedItem = .reducedMode }
+            }
+            .padding(.horizontal, 14)
+            .padding(.bottom, 18)
+
+            NMSidebarSection(title: "SYSTEM")
+                .padding(.horizontal, 18)
+                .padding(.bottom, 8)
+
+            VStack(spacing: 2) {
+                NMSidebarItem(title: "Shortcuts", systemImage: "command", isSelected: selectedItem == .shortcuts) { selectedItem = .shortcuts }
+                NMSidebarItem(title: "Advanced", systemImage: "wrench.and.screwdriver", isSelected: selectedItem == .advanced) { selectedItem = .advanced }
+            }
+            .padding(.horizontal, 14)
+
+            Spacer(minLength: 0)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("NotchMac v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.6))
+                HStack(spacing: 3) {
+                    Text("Made with")
+                    Image(systemName: "heart.fill").foregroundStyle(.red.opacity(0.7))
+                    Text("for macOS")
+                }
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.white.opacity(0.4))
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+        }
+    }
+
+    // MARK: Header
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Notch Utility")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(.white)
+
+            HStack(spacing: 6) {
+                ForEach(TopTab.allCases, id: \.self) { tab in
+                    Button {
+                        selectedTab = tab
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: tab.systemImage)
+                                .font(.system(size: 11, weight: .semibold))
+                            Text(tab.rawValue)
+                                .font(.system(size: 12, weight: .semibold))
+                        }
+                        .foregroundStyle(selectedTab == tab ? .white : .white.opacity(0.55))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .fill(.white.opacity(selectedTab == tab ? 0.12 : 0))
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+                Spacer()
+            }
+        }
+    }
+
+    // MARK: Main settings content (3x2 cards)
+
+    private var settingsContent: some View {
+        VStack(spacing: 18) {
+            NMLivePreviewCard()
+
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 16),
+                GridItem(.flexible(), spacing: 16),
+                GridItem(.flexible(), spacing: 16)
+            ], spacing: 16) {
+                NMModulesCard()
+                NMLayoutCard()
+                NMAppearanceCard()
+                NMBehaviorCard()
+                NMShortcutsCard()
+                NMReducedModeCard()
+            }
+        }
+    }
+}
+
+// MARK: - Sidebar components
+
+private struct NMSidebarSection: View {
+    let title: String
+    var body: some View {
+        Text(title)
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(.white.opacity(0.4))
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct NMSidebarItem: View {
+    let title: String
+    let systemImage: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(isSelected ? 1 : 0.65))
+                    .frame(width: 18)
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(isSelected ? 1 : 0.78))
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(.white.opacity(isSelected ? 0.10 : 0))
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct NMSidebarToggle: View {
+    let title: String
+    let systemImage: String
+    let key: Defaults.Key<Bool>
+
+    @Default(.showMusicModule) private var _placeholder // ignored, just for re-render
+    @State private var value: Bool = true
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.7))
+                .frame(width: 18)
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.white.opacity(0.85))
+            Spacer()
+            Toggle("", isOn: Binding(
+                get: { Defaults[key] },
+                set: { Defaults[key] = $0 }
+            ))
+            .labelsHidden()
+            .toggleStyle(.switch)
+            .controlSize(.mini)
+            .tint(.green)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+    }
+}
+
+// MARK: - Live preview
+
+private struct NMLivePreviewCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Live Preview")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.6))
+
+            HStack {
+                Spacer()
+                NMNotchMockup()
+                Spacer()
+            }
+
+            Text("This is how your notch will look with the current settings.")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.45))
+                .frame(maxWidth: .infinity)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMNotchMockup: View {
+    var body: some View {
+        HStack(spacing: 16) {
+            // Artwork
+            ZStack {
+                LinearGradient(colors: [.orange, .red], startPoint: .topLeading, endPoint: .bottomTrailing)
+                Text("🌅")
+                    .font(.system(size: 26))
+            }
+            .frame(width: 54, height: 54)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("AIRBNB")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.white)
+                Text("Mora")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.6))
+            }
+
+            Spacer(minLength: 30)
+
+            HStack(spacing: 18) {
+                Image(systemName: "backward.fill")
+                Image(systemName: "pause.fill").font(.system(size: 14))
+                Image(systemName: "forward.fill")
+            }
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.white)
+
+            Spacer(minLength: 12)
+
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("may")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.6))
+                    Text("2026")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                HStack(spacing: 8) {
+                    ForEach(["sáb","dom","lun","mar","mié","jue"], id: \.self) { d in
+                        let isLun = d == "lun"
+                        VStack(spacing: 3) {
+                            Text(d)
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.55))
+                            Text(d == "sáb" ? "09" : d == "dom" ? "10" : d == "lun" ? "11" : d == "mar" ? "12" : d == "mié" ? "13" : "14")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(isLun ? .white : .white.opacity(0.7))
+                                .padding(5)
+                                .background(
+                                    Circle().fill(isLun ? Color.blue : Color.clear)
+                                )
+                        }
+                    }
+                }
+                Image(systemName: "calendar")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .frame(maxWidth: 880)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(Color.black)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(.white.opacity(0.08), lineWidth: 0.8)
+                )
+        )
+    }
+}
+
+// MARK: - Cards
+
+private struct NMCardBG: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(.white.opacity(0.04))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(.white.opacity(0.06), lineWidth: 0.6)
+            )
+    }
+}
+
+private struct NMCardHeader: View {
+    let title: String
+    let subtitle: String
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(.white)
+            Text(subtitle)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.5))
+        }
+    }
+}
+
+private struct NMModulesCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            NMCardHeader(title: "Modules", subtitle: "Enable or disable modules to show in your notch.")
+
+            VStack(spacing: 10) {
+                NMModuleRow(title: "Music", subtitle: "Show playback controls and track info", systemImage: "music.note", tint: .pink, key: .showMusicModule)
+                NMModuleRow(title: "Shelf", subtitle: "Quick access to your files and docs", systemImage: "tray.full.fill", tint: .blue, key: .boringShelf)
+                NMModuleRow(title: "Calendar", subtitle: "Upcoming events and agenda", systemImage: "calendar", tint: .red, key: .showCalendar)
+                NMModuleRow(title: "Battery", subtitle: "Show battery status and charging", systemImage: "battery.100", tint: .green, key: .showBatteryIndicator)
+                NMModuleRow(title: "Timer / Pomodoro", subtitle: "Countdown timer and focus sessions", systemImage: "timer", tint: .orange, key: .showTimerModule)
+                NMModuleRow(title: "Clipboard", subtitle: "Quick clipboard history access", systemImage: "doc.on.clipboard", tint: .indigo, key: .showClipboardModule)
+                NMModuleRow(title: "Quick Actions", subtitle: "Custom actions and shortcuts", systemImage: "bolt.fill", tint: .purple, key: .showQuickActionsModule)
+            }
+
+            Button("Manage Modules…") {}
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 4)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMModuleRow: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    let tint: SwiftUI.Color
+    let key: Defaults.Key<Bool>
+
+    var body: some View {
+        HStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(tint.opacity(0.9))
+                .frame(width: 32, height: 32)
+                .overlay(
+                    Image(systemName: systemImage)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                )
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            Spacer()
+            Toggle("", isOn: Binding(
+                get: { Defaults[key] },
+                set: { Defaults[key] = $0 }
+            ))
+            .labelsHidden()
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .tint(.green)
+        }
+    }
+}
+
+private struct NMLayoutCard: View {
+    @Default(.nmModuleOrder) var order
+    @Default(.nmModuleSpacing) var spacing
+    @Default(.nmVerticalAlignment) var vAlign
+    @Default(.nmCompactMode) var compact
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Layout", subtitle: "Arrange and size your notch modules.")
+
+            HStack {
+                Text("Order")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.8))
+                Spacer()
+                Picker("", selection: $order) {
+                    ForEach(NMModuleOrder.allCases, id: \.self) { o in
+                        Text(o.displayName).tag(o)
+                    }
+                }
+                .labelsHidden()
+                .frame(width: 130)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Module Spacing")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+                Picker("", selection: $spacing) {
+                    ForEach(NMSpacing.allCases, id: \.self) { s in
+                        Text(s.displayName).tag(s)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+
+            HStack {
+                Text("Vertical Alignment")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+                Spacer()
+                Picker("", selection: $vAlign) {
+                    Image(systemName: "arrow.up.to.line").tag(NMVerticalAlignment.top)
+                    Image(systemName: "arrow.up.and.down").tag(NMVerticalAlignment.center)
+                    Image(systemName: "arrow.down.to.line").tag(NMVerticalAlignment.bottom)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 120)
+            }
+
+            HStack {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Compact Mode")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text("Reduce padding for more content")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                Spacer()
+                Toggle("", isOn: $compact)
+                    .labelsHidden().toggleStyle(.switch).controlSize(.small).tint(.green)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMAppearanceCard: View {
+    @Default(.useCustomAccentColor) var useCustom
+    @Default(.customAccentColorData) var accentData
+    @Default(.nmBackgroundStyle) var bg
+    @Default(.nmIconStyle) var iconStyle
+
+    private let palette: [NSColor] = [
+        .systemRed, .systemOrange, .systemYellow, .systemGreen,
+        .systemBlue, .systemIndigo, .systemPurple, .systemGray
+    ]
+
+    private var currentColor: NSColor? {
+        guard useCustom, let data = accentData,
+              let c = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSColor.self, from: data) else {
+            return nil
+        }
+        return c
+    }
+
+    private func setAccent(_ color: NSColor) {
+        if let data = try? NSKeyedArchiver.archivedData(withRootObject: color, requiringSecureCoding: true) {
+            accentData = data
+            useCustom = true
+            NotificationCenter.default.post(name: NSNotification.Name("AccentColorChanged"), object: nil)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Appearance", subtitle: "Customize the look and feel.")
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Accent Color")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+                HStack(spacing: 8) {
+                    ForEach(palette, id: \.self) { c in
+                        let color = SwiftUI.Color(c)
+                        let isCurrent = currentColor.map { $0.isEqual(c) } ?? false
+                        Button { setAccent(c) } label: {
+                            Circle()
+                                .fill(color)
+                                .frame(width: 24, height: 24)
+                                .overlay(
+                                    Circle().stroke(.white, lineWidth: isCurrent ? 2 : 0)
+                                        .padding(-2)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Background")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+                Picker("", selection: $bg) {
+                    ForEach(NMBackgroundStyle.allCases, id: \.self) { s in
+                        Text(s.displayName).tag(s)
+                    }
+                }
+                .pickerStyle(.segmented).labelsHidden()
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Icon Style")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+                Picker("", selection: $iconStyle) {
+                    Text("Filled").tag(NMIconStyle.filled)
+                    Text("Outline").tag(NMIconStyle.outline)
+                }
+                .pickerStyle(.segmented).labelsHidden()
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMBehaviorCard: View {
+    @Default(.nmShowOnNotch) var showOnNotch
+    @Default(.nmPlaySounds) var playSounds
+    @Default(.nmShowBanners) var showBanners
+    @Default(.nmReducedMode) var reducedMode
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Behavior", subtitle: "Configure how Notch Utility behaves.")
+
+            NMSwitchRow(title: "Show on Notch", subtitle: "Display modules in the notch area", isOn: $showOnNotch)
+            NMSwitchRow(title: "Play Sounds", subtitle: "Play notification sounds", isOn: $playSounds)
+            NMSwitchRow(title: "Show Banners", subtitle: "Show notifications as banners", isOn: $showBanners)
+            NMSwitchRow(title: "Reduced Mode", subtitle: "Simplify UI in Low Power Mode", isOn: $reducedMode)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMSwitchRow: View {
+    let title: String
+    let subtitle: String
+    @Binding var isOn: Bool
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            Spacer()
+            Toggle("", isOn: $isOn)
+                .labelsHidden().toggleStyle(.switch).controlSize(.small).tint(.green)
+        }
+    }
+}
+
+private struct NMShortcutsCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NMCardHeader(title: "Shortcuts", subtitle: "Customize keyboard shortcuts.")
+
+            NMShortcutRow(label: "Show / Hide Notch", keys: ["⌥","⌘","N"])
+            NMShortcutRow(label: "Next Module", keys: ["⌥","⌘","→"])
+            NMShortcutRow(label: "Previous Module", keys: ["⌥","⌘","←"])
+            NMShortcutRow(label: "Open Settings", keys: ["⌘",","])
+
+            Button("Restore Defaults") {}
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 6)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMShortcutRow: View {
+    let label: String
+    let keys: [String]
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.white.opacity(0.85))
+            Spacer()
+            HStack(spacing: 4) {
+                ForEach(keys, id: \.self) { k in
+                    Text(k)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(minWidth: 22, minHeight: 22)
+                        .padding(.horizontal, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .fill(.white.opacity(0.1))
+                        )
+                }
+            }
+        }
+    }
+}
+
+private struct NMReducedModeCard: View {
+    @Default(.nmReducedMode) var reducedMode
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NMCardHeader(title: "Reduced Mode", subtitle: "Lighter UI for Low Power Mode.")
+            HStack {
+                Image(systemName: "moon.zzz.fill").foregroundStyle(.indigo)
+                Text("Activate reduced UI automatically when battery is low.")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+            Toggle("Enabled", isOn: $reducedMode)
+                .toggleStyle(.switch).controlSize(.small).tint(.green)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+// MARK: - About panel
+
+private struct NMAboutPanel: View {
+    let updaterController: SPUStandardUpdaterController?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            NMCardHeader(title: "About NotchMac", subtitle: "Personal fork of boring.notch (GPL-3.0).")
+            Text("Original by TheBoredTeam. Rebrand y personalizaciones por @fabiannavarrofonte.")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.white.opacity(0.75))
+            Text("Version \(appVersion)")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.55))
+
+            HStack {
+                Link("Original repo", destination: URL(string: "https://github.com/TheBoredTeam/boring.notch")!)
+                Spacer()
+                Link("This fork", destination: URL(string: "https://github.com/fabiannavarroo/Notch-Mac-v2")!)
+            }
+            .font(.system(size: 12, weight: .semibold))
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
 }
