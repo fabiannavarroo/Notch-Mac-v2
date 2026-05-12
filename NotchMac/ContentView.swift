@@ -348,7 +348,11 @@ struct ContentView: View {
                     case .home:
                         NotchHomeView(albumArtNamespace: albumArtNamespace)
                     case .shelf:
-                        ShelfView()
+                        if Defaults[.nmDashboardRefDesign] {
+                            AirDropDashboardView()
+                        } else {
+                            ShelfView()
+                        }
                     }
                 }
                 .transition(
