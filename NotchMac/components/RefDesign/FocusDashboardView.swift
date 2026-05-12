@@ -64,13 +64,14 @@ struct FocusDashboardView: View {
     private let tick = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 6) {
             topRow
+            Spacer(minLength: 0)
             quickActionsRow
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .frame(maxHeight: 120, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onReceive(tick) { now = $0 }
     }
 

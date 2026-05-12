@@ -26,7 +26,7 @@ struct EventsDashboardPanelView: View {
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
-        .frame(maxHeight: 120, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onReceive(timer) { date in now = date }
         .onAppear {
             Task { await calendarManager.updateCurrentDate(Date.now) }

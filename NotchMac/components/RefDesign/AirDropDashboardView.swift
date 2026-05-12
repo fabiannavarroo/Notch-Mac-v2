@@ -22,7 +22,7 @@ struct AirDropDashboardView: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .frame(maxHeight: 120, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     // MARK: - Left column (AirDrop card + drop zone stacked)
@@ -38,9 +38,10 @@ struct AirDropDashboardView: View {
     private var rightColumn: some View {
         VStack(alignment: .leading, spacing: 4) {
             recentFilesSection
+            Spacer(minLength: 0)
             toolbar
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var airDropCard: some View {
