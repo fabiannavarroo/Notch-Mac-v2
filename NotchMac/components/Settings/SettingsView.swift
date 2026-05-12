@@ -1888,7 +1888,7 @@ func warningBadge(_ text: String, _ description: String) -> some View {
 
 struct NotchUtilitySettingsView: View {
     enum SidebarItem: String, Hashable {
-        case general, layout, appearance, accentColor, iconStyle, spacing, reducedMode, shortcuts, advanced
+        case general, layout, appearance, shortcuts, advanced
     }
     enum TopTab: String, CaseIterable {
         case settings = "Settings"
@@ -1984,10 +1984,6 @@ struct NotchUtilitySettingsView: View {
             VStack(spacing: 2) {
                 NMSidebarItem(title: "Layout", systemImage: "square.grid.3x3", isSelected: selectedItem == .layout) { selectedItem = .layout }
                 NMSidebarItem(title: "Appearance", systemImage: "paintbrush", isSelected: selectedItem == .appearance) { selectedItem = .appearance }
-                NMSidebarItem(title: "Accent Color", systemImage: "paintpalette", isSelected: selectedItem == .accentColor) { selectedItem = .accentColor }
-                NMSidebarItem(title: "Icon Style", systemImage: "app.fill", isSelected: selectedItem == .iconStyle) { selectedItem = .iconStyle }
-                NMSidebarItem(title: "Spacing", systemImage: "arrow.left.and.right", isSelected: selectedItem == .spacing) { selectedItem = .spacing }
-                NMSidebarItem(title: "Reduced Mode", systemImage: "moon.zzz.fill", isSelected: selectedItem == .reducedMode) { selectedItem = .reducedMode }
             }
             .padding(.horizontal, 14)
             .padding(.bottom, 18)
@@ -2055,26 +2051,34 @@ struct NotchUtilitySettingsView: View {
         }
     }
 
-    // MARK: Main settings content (3x2 cards)
+    // MARK: Main settings content
 
     private var settingsContent: some View {
         VStack(spacing: 18) {
-            NMLivePreviewCard()
-
-            LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: 16),
-                GridItem(.flexible(), spacing: 16),
-                GridItem(.flexible(), spacing: 16)
-            ], spacing: 16) {
-                NMModulesCard()
+            switch selectedItem {
+            case .general:
+                NMLivePreviewCard()
+                LazyVGrid(columns: twoColumnGrid, spacing: 16) {
+                    NMBehaviorCard()
+                    NMAutoHideAppsCard()
+                }
+            case .layout:
                 NMLayoutCard()
+            case .appearance:
                 NMAppearanceCard()
-                NMBehaviorCard()
-                NMAutoHideAppsCard()
+            case .shortcuts:
                 NMShortcutsCard()
-                NMReducedModeCard()
+            case .advanced:
+                Advanced()
             }
         }
+    }
+
+    private var twoColumnGrid: [GridItem] {
+        [
+            GridItem(.flexible(), spacing: 16),
+            GridItem(.flexible(), spacing: 16)
+        ]
     }
 }
 
@@ -2504,19 +2508,25 @@ private struct NMAppearanceCard: View {
 }
 
 private struct NMBehaviorCard: View {
-    @Default(.nmShowOnNotch) var showOnNotch
-    @Default(.nmPlaySounds) var playSounds
-    @Default(.nmShowBanners) var showBanners
-    @Default(.nmReducedMode) var reducedMode
+    @Default(.openNotchOnHover) var openOnHover
+    @Default(.enableGestures) var enableGestures
+    @Default(.closeGestureEnabled) var closeGesture
+    @Default(.enableHaptics) var enableHaptics
+    @Default(.showOnLockScreen) var showOnLockScreen
+    @Default(.hideFromScreenRecording) var hideFromScreenRecording
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            NMCardHeader(title: "Behavior", subtitle: "Configure how Notch Utility behaves.")
+            NMCardHeader(title: "Behavior", subtitle: "Control how the notch opens, hides, and reacts.")
 
-            NMSwitchRow(title: "Show on Notch", subtitle: "Display modules in the notch area", isOn: $showOnNotch)
-            NMSwitchRow(title: "Play Sounds", subtitle: "Play notification sounds", isOn: $playSounds)
-            NMSwitchRow(title: "Show Banners", subtitle: "Show notifications as banners", isOn: $showBanners)
-            NMSwitchRow(title: "Reduced Mode", subtitle: "Simplify UI in Low Power Mode", isOn: $reducedMode)
+            NMSwitchRow(title: "Open on Hover", subtitle: "Expand the notch when the pointer rests on it", isOn: $openOnHover)
+            NMSwitchRow(title: "Gestures", subtitle: "Use drag gestures to open and close the notch", isOn: $enableGestures)
+            NMSwitchRow(title: "Close Gesture", subtitle: "Allow the upward drag gesture to collapse the notch", isOn: $closeGesture)
+                .opacity(enableGestures ? 1 : 0.45)
+                .disabled(!enableGestures)
+            NMSwitchRow(title: "Haptics", subtitle: "Play subtle feedback on notch interactions", isOn: $enableHaptics)
+            NMSwitchRow(title: "Lock Screen", subtitle: "Keep the notch visible while the screen is locked", isOn: $showOnLockScreen)
+            NMSwitchRow(title: "Screen Recording", subtitle: "Hide the notch from screen capture when possible", isOn: $hideFromScreenRecording)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
