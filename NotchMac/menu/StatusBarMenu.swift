@@ -15,14 +15,19 @@ final class BoringStatusMenu: NSObject {
         super.init()
 
         if let button = statusItem.button {
-            if let logo = NSImage(named: "logo") {
-                let h: CGFloat = 18
+            // logo2 = color rainbow icon (ico.png). No template, no tinting.
+            if let logo = NSImage(named: "logo2") {
+                let h: CGFloat = 20
                 let ratio = logo.size.width / max(logo.size.height, 1)
                 let resized = NSImage(size: NSSize(width: h * ratio, height: h))
                 resized.lockFocus()
-                logo.draw(in: NSRect(origin: .zero, size: resized.size))
+                NSGraphicsContext.current?.imageInterpolation = .high
+                logo.draw(
+                    in: NSRect(origin: .zero, size: resized.size),
+                    from: .zero, operation: .copy, fraction: 1.0
+                )
                 resized.unlockFocus()
-                resized.isTemplate = true
+                resized.isTemplate = false
                 button.image = resized
             } else {
                 button.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "NotchMac")
