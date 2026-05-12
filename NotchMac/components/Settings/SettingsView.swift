@@ -1120,7 +1120,7 @@ func warningBadge(_ text: String, _ description: String) -> some View {
 
 struct NotchUtilitySettingsView: View {
     enum SidebarItem: String, Hashable {
-        case general, layout, shortcuts, advanced
+        case general, shortcuts
     }
     enum TopTab: String, CaseIterable {
         case settings = "Settings"
@@ -1209,23 +1209,12 @@ struct NotchUtilitySettingsView: View {
             .padding(.horizontal, 14)
             .padding(.bottom, 18)
 
-            NMSidebarSection(title: "CUSTOMIZATION")
-                .padding(.horizontal, 18)
-                .padding(.bottom, 8)
-
-            VStack(spacing: 2) {
-                NMSidebarItem(title: "Layout", systemImage: "square.grid.3x3", isSelected: selectedItem == .layout) { selectedItem = .layout }
-            }
-            .padding(.horizontal, 14)
-            .padding(.bottom, 18)
-
             NMSidebarSection(title: "SYSTEM")
                 .padding(.horizontal, 18)
                 .padding(.bottom, 8)
 
             VStack(spacing: 2) {
                 NMSidebarItem(title: "Shortcuts", systemImage: "command", isSelected: selectedItem == .shortcuts) { selectedItem = .shortcuts }
-                NMSidebarItem(title: "Advanced", systemImage: "wrench.and.screwdriver", isSelected: selectedItem == .advanced) { selectedItem = .advanced }
             }
             .padding(.horizontal, 14)
 
@@ -1293,12 +1282,8 @@ struct NotchUtilitySettingsView: View {
                     NMBehaviorCard()
                     NMAutoHideAppsCard()
                 }
-            case .layout:
-                NMLayoutCard()
             case .shortcuts:
                 NMShortcutsCard()
-            case .advanced:
-                NMAdvancedCard()
             }
         }
     }
@@ -1582,78 +1567,6 @@ private struct NMModuleRow: View {
     }
 }
 
-private struct NMLayoutCard: View {
-    @Default(.nmModuleOrder) var order
-    @Default(.nmModuleSpacing) var spacing
-    @Default(.nmVerticalAlignment) var vAlign
-    @Default(.nmCompactMode) var compact
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            NMCardHeader(title: "Layout", subtitle: "Arrange and size your notch modules.")
-
-            HStack {
-                Text("Order")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.8))
-                Spacer()
-                Picker("", selection: $order) {
-                    ForEach(NMModuleOrder.allCases, id: \.self) { o in
-                        Text(o.displayName).tag(o)
-                    }
-                }
-                .labelsHidden()
-                .frame(width: 130)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Module Spacing")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-                Picker("", selection: $spacing) {
-                    ForEach(NMSpacing.allCases, id: \.self) { s in
-                        Text(s.displayName).tag(s)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-            }
-
-            HStack {
-                Text("Vertical Alignment")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-                Spacer()
-                Picker("", selection: $vAlign) {
-                    Image(systemName: "arrow.up.to.line").tag(NMVerticalAlignment.top)
-                    Image(systemName: "arrow.up.and.down").tag(NMVerticalAlignment.center)
-                    Image(systemName: "arrow.down.to.line").tag(NMVerticalAlignment.bottom)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(width: 120)
-            }
-
-            HStack {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Compact Mode")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white)
-                    Text("Reduce padding for more content")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.5))
-                }
-                Spacer()
-                Toggle("", isOn: $compact)
-                    .labelsHidden().toggleStyle(.switch).controlSize(.small).tint(.green)
-            }
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(NMCardBG())
-    }
-}
-
 private struct NMBehaviorCard: View {
     @Default(.openNotchOnHover) var openOnHover
     @Default(.enableGestures) var enableGestures
@@ -1661,6 +1574,7 @@ private struct NMBehaviorCard: View {
     @Default(.enableHaptics) var enableHaptics
     @Default(.showOnLockScreen) var showOnLockScreen
     @Default(.hideFromScreenRecording) var hideFromScreenRecording
+    @Default(.hideTitleBar) var hideTitleBar
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -1674,22 +1588,6 @@ private struct NMBehaviorCard: View {
             NMSwitchRow(title: "Haptics", subtitle: "Play subtle feedback on notch interactions", isOn: $enableHaptics)
             NMSwitchRow(title: "Lock Screen", subtitle: "Keep the notch visible while the screen is locked", isOn: $showOnLockScreen)
             NMSwitchRow(title: "Screen Recording", subtitle: "Hide the notch from screen capture when possible", isOn: $hideFromScreenRecording)
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(NMCardBG())
-    }
-}
-
-private struct NMAdvancedCard: View {
-    @Default(.extendHoverArea) var extendHoverArea
-    @Default(.hideTitleBar) var hideTitleBar
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            NMCardHeader(title: "Advanced", subtitle: "Extra window behavior for the notch.")
-
-            NMSwitchRow(title: "Extend Hover Area", subtitle: "Make the hover target easier to hit", isOn: $extendHoverArea)
             NMSwitchRow(title: "Hide Title Bar", subtitle: "Keep the notch window visually clean", isOn: $hideTitleBar)
         }
         .padding(20)

@@ -36,6 +36,22 @@ struct AppIcons {
     
 }
 
+enum NotchAppIcon {
+    static func applyToApplication() {
+        if let iconURL = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
+           let icon = NSImage(contentsOf: iconURL) {
+            NSApp.applicationIconImage = icon
+            NSApp.dockTile.display()
+            return
+        }
+
+        if let icon = NSImage(named: "logo2") ?? NSImage(named: "logo") {
+            NSApp.applicationIconImage = icon
+            NSApp.dockTile.display()
+        }
+    }
+}
+
 func AppIcon(for bundleID: String) -> Image {
     let workspace = NSWorkspace.shared
     
@@ -58,4 +74,3 @@ func AppIconAsNSImage(for bundleID: String) -> NSImage? {
     }
     return nil
 }
-

@@ -67,6 +67,8 @@ class SettingsWindowController: NSWindowController {
     }
     
     func showWindow() {
+        NotchAppIcon.applyToApplication()
+
         // Set app to regular mode first
         NSApp.setActivationPolicy(.regular)
         

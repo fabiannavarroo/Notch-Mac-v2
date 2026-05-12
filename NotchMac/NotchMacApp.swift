@@ -314,6 +314,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NotchAppIcon.applyToApplication()
 
         if Defaults[.menubarIcon] {
             statusMenu = BoringStatusMenu()
