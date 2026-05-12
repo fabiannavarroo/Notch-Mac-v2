@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# notchmac — launcher CLI para NotchMac
+# Uso:
+#   notchmac           → abre la app (build Debug si existe, si no /Applications)
+#   notchmac start     → idem
+#   notchmac stop      → mata el proceso
+#   notchmac restart   → stop + start
+#   notchmac build     → rebuild Debug + relaunch
+#   notchmac status    → muestra PID si está vivo
+
+set -euo pipefail
+
+SRC="${BASH_SOURCE[0]}"
+while [[ -L "$SRC" ]]; do
+    DIR="$(cd "$(dirname "$SRC")" && pwd)"
+    SRC="$(readlink "$SRC")"
+    [[ "$SRC" != /* ]] && SRC="$DIR/$SRC"
+done
+REPO_DIR="$(cd "$(dirname "$SRC")/.." && pwd)"
+DEBUG_APP="$REPO_DIR/build/Build/Products/Debug/NotchMac.app"
+INSTALLED_APP="/Applications/NotchMac.app"
+
+resolve_app() {
+    if [[ -d "$DEBUG_APP" ]]; then echo "$DEBUG_APP"
+    elif [[ -d "$INSTALLED_APP" ]]; then echo "$INSTALLED_APP"
+    else echo ""; fi
+}
+
+cmd_start() {
+    local app
+    app="$(resolve_app)"
+    if [[ -z "$app" ]]; then
+        echo "notchmac: no .app encontrada. Ejecuta 'notchmac build' o copia a /Applications" >&2
+        exit 1
+    fi
+    if pgrep -xf "$app/Contents/MacOS/NotchMac" >/dev/null 2>&1; then
+        echo "notchmac: ya está en ejecución"
+        cmd_status
+        return 0
+    fi
+    open "$app"
+    echo "notchmac: lanzado ($app)"
+}
+
+cmd_stop() {
+    if pkill -9 -x NotchMac 2>/dev/null; then
+        echo "notchmac: detenido"
+    else
+        echo "notchmac: no estaba en ejecución"
+    fi
+}
+
+cmd_status() {
+    local pid
+    pid="$(pgrep -lf 'NotchMac.app/Contents/MacOS/NotchMac' | awk '{print $1}' | head -1)"
+    if [[ -n "$pid" ]]; then
+        echo "running pid=$pid"
+    else
+        echo "stopped"
+    fi
+}
+
+cmd_build() {
+    cd "$REPO_DIR"
+    xcodebuild -project NotchMac.xcodeproj -scheme NotchMac -configuration Debug \
+        -derivedDataPath build build | tail -10
+    cmd_stop || true
+    sleep 0.5
+    cmd_start
+}
+
+case "${1:-start}" in
+    start)   cmd_start ;;
+    stop)    cmd_stop ;;
+    restart) cmd_stop; sleep 0.5; cmd_start ;;
+    build)   cmd_build ;;
+    status)  cmd_status ;;
+    *)
+        echo "uso: notchmac [start|stop|restart|build|status]" >&2
+        exit 1
+        ;;
+esac
