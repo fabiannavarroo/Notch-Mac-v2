@@ -88,6 +88,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         XPCHelperClient.shared.stopMonitoringAccessibilityAuthorization()
     }
 
+    func switchTab(_ view: NotchViews) {
+        Task { @MainActor in
+            self.coordinator.currentView = view
+            if self.vm.notchState == .closed {
+                self.vm.open()
+            }
+        }
+    }
+
     @MainActor
     func onScreenLocked(_ notification: Notification) {
         isScreenLocked = true
@@ -408,6 +417,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
             }
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .switchTabHome) { [weak self] in
+            self?.switchTab(.home)
+        }
+        KeyboardShortcuts.onKeyDown(for: .switchTabShelf) { [weak self] in
+            self?.switchTab(.shelf)
+        }
+        KeyboardShortcuts.onKeyDown(for: .switchTabFocus) { [weak self] in
+            self?.switchTab(.focus)
         }
 
         if !Defaults[.showOnAllDisplays] {
