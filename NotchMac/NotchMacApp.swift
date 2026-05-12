@@ -29,23 +29,10 @@ struct DynamicNotchApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("NotchMac", systemImage: "sparkle", isInserted: $showMenuBarIcon) {
-            Button("Settings") {
-                DispatchQueue.main.async {
-                    SettingsWindowController.shared.showWindow()
-                }
-            }
-            .keyboardShortcut(KeyEquivalent(","), modifiers: .command)
-            CheckForUpdatesView(updater: updaterController.updater)
-            Divider()
-            Button("Restart NotchMac") {
-                ApplicationRelauncher.restart()
-            }
-            Button("Quit", role: .destructive) {
-                NSApplication.shared.terminate(self)
-            }
-            .keyboardShortcut(KeyEquivalent("Q"), modifiers: .command)
-        }
+        // Settings scene placeholder so SwiftUI App protocol satisfied. Menubar status
+        // se gestiona desde AppDelegate (BoringStatusMenu) para tener control total
+        // sobre el icono (logo blanco template).
+        Settings { EmptyView() }
     }
 }
 
@@ -291,15 +278,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
 
-        if Defaults[.nmShowMenuBarIcon] {
+        if Defaults[.menubarIcon] {
             statusMenu = BoringStatusMenu()
-            NotificationCenter.default.addObserver(
-                forName: .nmToggleNotchFromMenu, object: nil, queue: .main
-            ) { [weak self] _ in
-                Task { @MainActor in
-                    guard let self else { return }
-                    if self.vm.notchState == .open { self.vm.close() } else { self.vm.open() }
-                }
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: .nmToggleNotchFromMenu, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                if self.vm.notchState == .open { self.vm.close() } else { self.vm.open() }
             }
         }
 

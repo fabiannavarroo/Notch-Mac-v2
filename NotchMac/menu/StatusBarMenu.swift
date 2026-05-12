@@ -35,14 +35,29 @@ final class BoringStatusMenu: NSObject {
         }
 
         let menu = NSMenu()
-        menu.addItem(withTitle: "Abrir notch", action: #selector(toggleNotch), keyEquivalent: "").target = self
+        let toggle = menu.addItem(withTitle: "Abrir / cerrar notch", action: #selector(toggleNotch), keyEquivalent: "")
+        toggle.target = self
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Salir", action: #selector(quit), keyEquivalent: "q").target = self
+        let settings = menu.addItem(withTitle: "Preferencias…", action: #selector(openSettings), keyEquivalent: ",")
+        settings.target = self
+        let restart = menu.addItem(withTitle: "Reiniciar NotchMac", action: #selector(restart), keyEquivalent: "")
+        restart.target = self
+        menu.addItem(.separator())
+        let quit = menu.addItem(withTitle: "Salir", action: #selector(self.quit), keyEquivalent: "q")
+        quit.target = self
         statusItem.menu = menu
     }
 
     @objc private func toggleNotch() {
         NotificationCenter.default.post(name: .nmToggleNotchFromMenu, object: nil)
+    }
+
+    @objc private func openSettings() {
+        SettingsWindowController.shared.showWindow()
+    }
+
+    @objc private func restart() {
+        ApplicationRelauncher.restart()
     }
 
     @objc private func quit() {
