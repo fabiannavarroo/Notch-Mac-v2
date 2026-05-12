@@ -293,6 +293,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if Defaults[.nmShowMenuBarIcon] {
             statusMenu = BoringStatusMenu()
+            NotificationCenter.default.addObserver(
+                forName: .nmToggleNotchFromMenu, object: nil, queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    guard let self else { return }
+                    if self.vm.notchState == .open { self.vm.close() } else { self.vm.open() }
+                }
+            }
         }
 
         NotificationCenter.default.addObserver(
