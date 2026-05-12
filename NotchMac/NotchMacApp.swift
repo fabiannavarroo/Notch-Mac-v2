@@ -51,6 +51,7 @@ struct DynamicNotchApp: App {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
+    var statusMenu: BoringStatusMenu?
     var windows: [String: NSWindow] = [:] // UUID -> NSWindow
     var viewModels: [String: BoringViewModel] = [:] // UUID -> BoringViewModel
     var window: NSWindow?
@@ -289,6 +290,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+
+        if Defaults[.nmShowMenuBarIcon] {
+            statusMenu = BoringStatusMenu()
+        }
 
         NotificationCenter.default.addObserver(
             self,

@@ -1,24 +1,50 @@
+//
+//  StatusBarMenu.swift
+//  NotchMac
+//
+//  Status bar (menubar) controller with NotchMac logo.
+//
+
 import Cocoa
 
-class BoringStatusMenu: NSMenu {
-    
-    var statusItem: NSStatusItem!
-    
+final class BoringStatusMenu: NSObject {
+    let statusItem: NSStatusItem
+
     override init() {
-        super.init()
-        
-        // Initialize the status item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        
+        super.init()
+
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "BoringNotch")
-            button.action = #selector(showMenu)
+            if let logo = NSImage(named: "logo") {
+                let h: CGFloat = 18
+                let ratio = logo.size.width / max(logo.size.height, 1)
+                let resized = NSImage(size: NSSize(width: h * ratio, height: h))
+                resized.lockFocus()
+                logo.draw(in: NSRect(origin: .zero, size: resized.size))
+                resized.unlockFocus()
+                resized.isTemplate = true
+                button.image = resized
+            } else {
+                button.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "NotchMac")
+            }
         }
-        
-        // Set up the menu
+
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quitAction), keyEquivalent: "q"))
+        menu.addItem(withTitle: "Abrir notch", action: #selector(toggleNotch), keyEquivalent: "").target = self
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Salir", action: #selector(quit), keyEquivalent: "q").target = self
         statusItem.menu = menu
     }
 
+    @objc private func toggleNotch() {
+        NotificationCenter.default.post(name: .nmToggleNotchFromMenu, object: nil)
+    }
+
+    @objc private func quit() {
+        NSApp.terminate(nil)
+    }
+}
+
+extension Notification.Name {
+    static let nmToggleNotchFromMenu = Notification.Name("nm.toggleNotchFromMenu")
 }

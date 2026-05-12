@@ -156,6 +156,7 @@ extension Defaults.Keys {
 
     // MARK: Ref-design dashboard (mockup-style expanded view)
     static let nmDashboardRefDesign = Key<Bool>("nm.dashboard.refDesign", default: true)
+    static let nmShowMenuBarIcon = Key<Bool>("nm.menuBar.showIcon", default: true)
 
     // MARK: Battery
     static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: true)
