@@ -353,6 +353,83 @@ struct GeneralSettings: View {
         } header: {
             Text("Notch behavior")
         }
+
+        AutoHideAppsSection()
+    }
+}
+
+struct AutoHideAppsSection: View {
+    @Default(.nmAutoHideAppBundleIDs) private var bundleIDs
+
+    var body: some View {
+        Section {
+            ForEach(bundleIDs, id: \.self) { bid in
+                HStack {
+                    if let icon = appIcon(bid) {
+                        Image(nsImage: icon)
+                            .resizable().frame(width: 18, height: 18)
+                    } else {
+                        Image(systemName: "app.dashed").frame(width: 18, height: 18)
+                    }
+                    Text(appDisplayName(bid))
+                    Spacer()
+                    Text(bid).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    Button(action: { remove(bid) }) {
+                        Image(systemName: "minus.circle")
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+            if bundleIDs.isEmpty {
+                Text("Ninguna app configurada. La isla se oculta automáticamente cuando una de las apps de esta lista está activa.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            HStack {
+                Button("Añadir aplicación…") { addApp() }
+                Spacer()
+            }
+        } header: {
+            HStack {
+                Text("Ocultar isla automáticamente")
+                Spacer()
+                Text("⌥X para alternar manualmente")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func addApp() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [.application]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.prompt = "Añadir"
+        if panel.runModal() == .OK, let url = panel.url,
+           let bundle = Bundle(url: url),
+           let bid = bundle.bundleIdentifier,
+           !bundleIDs.contains(bid) {
+            bundleIDs.append(bid)
+        }
+    }
+
+    private func remove(_ bid: String) {
+        bundleIDs.removeAll { $0 == bid }
+    }
+
+    private func appURL(_ bid: String) -> URL? {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid)
+    }
+
+    private func appDisplayName(_ bid: String) -> String {
+        guard let url = appURL(bid) else { return bid }
+        return (FileManager.default.displayName(atPath: url.path) as NSString).deletingPathExtension
+    }
+
+    private func appIcon(_ bid: String) -> NSImage? {
+        guard let url = appURL(bid) else { return nil }
+        return NSWorkspace.shared.icon(forFile: url.path)
     }
 }
 

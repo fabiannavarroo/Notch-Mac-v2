@@ -18,4 +18,5 @@ extension KeyboardShortcuts.Name {
     static let switchTabHome = Self("nm.switchTab.home", default: .init(.one, modifiers: [.control, .option]))
     static let switchTabShelf = Self("nm.switchTab.shelf", default: .init(.two, modifiers: [.control, .option]))
     static let switchTabFocus = Self("nm.switchTab.focus", default: .init(.three, modifiers: [.control, .option]))
+    static let hideIsland = Self("nm.hideIsland", default: .init(.x, modifiers: [.option]))
 }

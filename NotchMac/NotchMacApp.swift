@@ -76,6 +76,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         XPCHelperClient.shared.stopMonitoringAccessibilityAuthorization()
     }
 
+    // MARK: - Island visibility (Opt+X manual hide + auto-hide per app)
+
+    func toggleIslandHidden() {
+        Defaults[.nmIslandHidden].toggle()
+        applyIslandVisibility()
+    }
+
+    @objc func activeAppChanged(_ note: Notification) {
+        guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+              let bundleID = app.bundleIdentifier else { return }
+        let autoHide = Defaults[.nmAutoHideAppBundleIDs]
+        let shouldHide = autoHide.contains(bundleID)
+        if Defaults[.nmIslandHidden] != shouldHide {
+            Defaults[.nmIslandHidden] = shouldHide
+            applyIslandVisibility()
+        }
+    }
+
+    func applyIslandVisibility() {
+        let hidden = Defaults[.nmIslandHidden]
+        let alpha: CGFloat = hidden ? 0 : 1
+        Task { @MainActor in
+            if hidden, self.vm.notchState == .open { self.vm.close() }
+            self.window?.animator().alphaValue = alpha
+            for w in self.windows.values { w.animator().alphaValue = alpha }
+        }
+    }
+
     func switchTab(_ view: NotchViews) {
         Task { @MainActor in
             self.coordinator.currentView = view
@@ -429,7 +457,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         KeyboardShortcuts.onKeyDown(for: .switchTabFocus) { [weak self] in
             self?.switchTab(.focus)
         }
-
+        KeyboardShortcuts.onKeyDown(for: .hideIsland) { [weak self] in
+            Task { @MainActor in self?.toggleIslandHidden() }
+        }
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(activeAppChanged(_:)),
+            name: NSWorkspace.didActivateApplicationNotification,
+            object: nil
+        )
         if !Defaults[.showOnAllDisplays] {
             let viewModel = self.vm
             let window = createBoringNotchWindow(
@@ -441,6 +477,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         setupDragDetectors()
+        applyIslandVisibility()
 
         if coordinator.firstLaunch {
             DispatchQueue.main.async {

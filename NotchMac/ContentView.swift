@@ -321,16 +321,31 @@ struct ContentView: View {
                               .padding(.leading, 4)
                               .padding(.trailing, 8)
                           }
-                          // Old sneak peek music
+                          // Old sneak peek music — centered banner with album art + title/artist
                           else if coordinator.sneakPeek.type == .music {
                               if vm.notchState == .closed && !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard {
-                                  HStack(alignment: .center) {
-                                      Image(systemName: "music.note")
-                                      GeometryReader { geo in
-                                          MarqueeText(.constant(musicManager.songTitle + " - " + musicManager.artistName),  textColor: Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray, minDuration: 1, frameWidth: geo.size.width)
+                                  HStack(spacing: 8) {
+                                      Image(nsImage: musicManager.albumArt)
+                                          .resizable()
+                                          .aspectRatio(contentMode: .fill)
+                                          .frame(width: 24, height: 24)
+                                          .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                                      VStack(alignment: .leading, spacing: 0) {
+                                          Text(musicManager.songTitle)
+                                              .font(.system(size: 11, weight: .semibold))
+                                              .foregroundStyle(.white)
+                                              .lineLimit(1)
+                                          Text(musicManager.artistName)
+                                              .font(.system(size: 9))
+                                              .foregroundStyle(
+                                                  Defaults[.playerColorTinting]
+                                                  ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6)
+                                                  : .gray
+                                              )
+                                              .lineLimit(1)
                                       }
                                   }
-                                  .foregroundStyle(.gray)
+                                  .frame(maxWidth: .infinity, alignment: .center)
                                   .padding(.bottom, 10)
                               }
                           }
