@@ -353,6 +353,8 @@ struct ContentView: View {
                         } else {
                             ShelfView()
                         }
+                    case .focus:
+                        FocusDashboardView()
                     }
                 }
                 .transition(
