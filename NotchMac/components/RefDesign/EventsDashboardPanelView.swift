@@ -17,17 +17,16 @@ struct EventsDashboardPanelView: View {
     private let timer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             header
             nextEventRow
             weekStrip
             upcomingGrid
+            Spacer(minLength: 0)
         }
-        .padding(8)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.04))
-        )
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+        .frame(maxHeight: 120, alignment: .top)
         .onReceive(timer) { date in now = date }
         .onAppear {
             Task { await calendarManager.updateCurrentDate(Date.now) }
@@ -59,7 +58,7 @@ struct EventsDashboardPanelView: View {
                 Spacer(minLength: 0)
             }
         }
-        .frame(height: 38)
+        .frame(height: 30)
     }
 
     private func eventPill(_ event: EventModel) -> some View {

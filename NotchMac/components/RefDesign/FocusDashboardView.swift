@@ -64,22 +64,24 @@ struct FocusDashboardView: View {
     private let tick = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 4) {
             topRow
             quickActionsRow
         }
-        .padding(8)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .frame(maxHeight: 120, alignment: .top)
         .onReceive(tick) { now = $0 }
     }
 
     // MARK: - Top row
     private var topRow: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             mediaCard
             focusCard
             nextClassCard
         }
-        .frame(height: 92)
+        .frame(height: 72)
     }
 
     private var mediaCard: some View {
@@ -87,7 +89,7 @@ struct FocusDashboardView: View {
             Image(nsImage: musicManager.albumArt)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(width: 56, height: 56)
+                .frame(width: 40, height: 40)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             VStack(alignment: .leading, spacing: 1) {
                 Text(musicManager.songTitle.isEmpty ? "—" : musicManager.songTitle)
@@ -245,7 +247,7 @@ struct FocusDashboardView: View {
                 NSWorkspace.shared.open(URL(string: "ical://")!)
             }
         }
-        .frame(height: 44)
+        .frame(height: 32)
     }
 
     private func quickAction(

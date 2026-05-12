@@ -16,23 +16,31 @@ struct AirDropDashboardView: View {
     @StateObject private var selection = ShelfSelectionModel.shared
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            topRow
+        HStack(alignment: .top, spacing: 6) {
+            leftColumn
+            rightColumn
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .frame(maxHeight: 120, alignment: .top)
+    }
+
+    // MARK: - Left column (AirDrop card + drop zone stacked)
+    private var leftColumn: some View {
+        VStack(spacing: 4) {
+            airDropCard
+            dropZone
+        }
+        .frame(width: 200)
+    }
+
+    // MARK: - Right column (Recent + toolbar)
+    private var rightColumn: some View {
+        VStack(alignment: .leading, spacing: 4) {
             recentFilesSection
             toolbar
         }
-        .padding(8)
-    }
-
-    // MARK: - Top row
-    private var topRow: some View {
-        HStack(spacing: 8) {
-            airDropCard
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            dropZone
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(height: 64)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var airDropCard: some View {
@@ -64,7 +72,8 @@ struct AirDropDashboardView: View {
             .disabled(selectedURLs().isEmpty)
             .opacity(selectedURLs().isEmpty ? 0.4 : 1)
         }
-        .padding(8)
+        .padding(6)
+        .frame(height: 40)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Color.white.opacity(0.05))
@@ -75,19 +84,17 @@ struct AirDropDashboardView: View {
         RoundedRectangle(cornerRadius: 10, style: .continuous)
             .strokeBorder(
                 vm.dragDetectorTargeting ? Color.accentColor.opacity(0.9) : Color.white.opacity(0.18),
-                style: StrokeStyle(lineWidth: 1.5, dash: [6])
+                style: StrokeStyle(lineWidth: 1.2, dash: [5])
             )
+            .frame(height: 60)
             .overlay {
-                VStack(spacing: 2) {
+                HStack(spacing: 4) {
                     Image(systemName: "arrow.down.circle")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white)
                     Text("Drop files here")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.white)
-                    Text("para copiar o mover")
-                        .font(.system(size: 8))
-                        .foregroundStyle(.secondary)
                 }
             }
             .onDrop(
@@ -131,7 +138,7 @@ struct AirDropDashboardView: View {
                     }
                 }
             }
-            .frame(height: 48)
+            .frame(height: 44)
         }
     }
 
@@ -192,7 +199,7 @@ struct AirDropDashboardView: View {
                 selection.clear()
             }
         }
-        .frame(height: 28)
+        .frame(height: 22)
     }
 
     private func toolbarButton(
@@ -208,7 +215,7 @@ struct AirDropDashboardView: View {
             }
             .foregroundStyle(tint)
             .frame(maxWidth: .infinity)
-            .frame(height: 24)
+            .frame(height: 20)
             .background(
                 RoundedRectangle(cornerRadius: 6)
                     .fill(Color.white.opacity(0.05))
