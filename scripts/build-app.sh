@@ -22,6 +22,8 @@ xcodebuild \
   CODE_SIGNING_ALLOWED=NO \
   build -quiet
 
+codesign --force --deep --sign - "$APP_PATH" >/dev/null
+
 echo "$APP_PATH"
 
 # Launch if --open passed (or no arg)
