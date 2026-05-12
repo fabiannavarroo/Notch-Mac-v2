@@ -5,7 +5,7 @@
 //  Created by Richard Kunkli on 07/08/2024.
 //
 
-import AVFoundation
+import Combine
 import Defaults
 import EventKit
 import KeyboardShortcuts
@@ -16,7 +16,6 @@ import SwiftUIIntrospect
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
-    @State private var selectedTab = "General"
     @State private var accentColorUpdateTrigger = UUID()
 
     let updaterController: SPUStandardUpdaterController?
@@ -33,107 +32,6 @@ struct SettingsView: View {
             }
     }
 
-    private var legacyBody: some View {
-        NavigationSplitView {
-            List(selection: $selectedTab) {
-                NavigationLink(value: "General") {
-                    Label("General", systemImage: "gear")
-                }
-                NavigationLink(value: "Appearance") {
-                    Label("Appearance", systemImage: "eye")
-                }
-                NavigationLink(value: "Media") {
-                    Label("Media", systemImage: "play.laptopcomputer")
-                }
-                NavigationLink(value: "Calendar") {
-                    Label("Calendar", systemImage: "calendar")
-                }
-                NavigationLink(value: "HUD") {
-                    Label("HUDs", systemImage: "dial.medium.fill")
-                }
-                NavigationLink(value: "Battery") {
-                    Label("Battery", systemImage: "battery.100.bolt")
-                }
-//                NavigationLink(value: "Downloads") {
-//                    Label("Downloads", systemImage: "square.and.arrow.down")
-//                }
-                NavigationLink(value: "Shelf") {
-                    Label("Shelf", systemImage: "books.vertical")
-                }
-                NavigationLink(value: "Shortcuts") {
-                    Label("Shortcuts", systemImage: "keyboard")
-                }
-                // NavigationLink(value: "Extensions") {
-                //     Label("Extensions", systemImage: "puzzlepiece.extension")
-                // }
-                NavigationLink(value: "Advanced") {
-                    Label("Advanced", systemImage: "gearshape.2")
-                }
-                NavigationLink(value: "About") {
-                    Label("About", systemImage: "info.circle")
-                }
-            }
-            .listStyle(SidebarListStyle())
-            .tint(.effectiveAccent)
-            .toolbar(removing: .sidebarToggle)
-            .navigationSplitViewColumnWidth(200)
-        } detail: {
-            Group {
-                switch selectedTab {
-                case "General":
-                    GeneralSettings()
-                case "Appearance":
-                    Appearance()
-                case "Media":
-                    Media()
-                case "Calendar":
-                    CalendarSettings()
-                case "HUD":
-                    HUD()
-                case "Battery":
-                    Charge()
-                case "Shelf":
-                    Shelf()
-                case "Shortcuts":
-                    Shortcuts()
-                case "Extensions":
-                    GeneralSettings()
-                case "Advanced":
-                    Advanced()
-                case "About":
-                    if let controller = updaterController {
-                        About(updaterController: controller)
-                    } else {
-                        // Fallback with a default controller
-                        About(
-                            updaterController: SPUStandardUpdaterController(
-                                startingUpdater: false, updaterDelegate: nil,
-                                userDriverDelegate: nil))
-                    }
-                default:
-                    GeneralSettings()
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .navigationSplitViewStyle(.balanced)
-        .toolbar(removing: .sidebarToggle)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text("")
-                    .frame(width: 0, height: 0)
-                    .accessibilityHidden(true)
-            }
-        }
-        .formStyle(.grouped)
-        .frame(width: 700)
-        .background(Color(NSColor.windowBackgroundColor))
-        .tint(.effectiveAccent)
-        .id(accentColorUpdateTrigger)
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AccentColorChanged"))) { _ in
-            accentColorUpdateTrigger = UUID()
-        }
-    }
 }
 
 struct GeneralSettings: View {
@@ -467,86 +365,6 @@ struct Charge: View {
         .navigationTitle("Battery")
     }
 }
-
-//struct Downloads: View {
-//    @Default(.selectedDownloadIndicatorStyle) var selectedDownloadIndicatorStyle
-//    @Default(.selectedDownloadIconStyle) var selectedDownloadIconStyle
-//    var body: some View {
-//        Form {
-//            warningBadge("We don't support downloads yet", "It will be supported later on.")
-//            Section {
-//                Defaults.Toggle(key: .enableDownloadListener) {
-//                    Text("Show download progress")
-//                }
-//                    .disabled(true)
-//                Defaults.Toggle(key: .enableSafariDownloads) {
-//                    Text("Enable Safari Downloads")
-//                }
-//                    .disabled(!Defaults[.enableDownloadListener])
-//                Picker("Download indicator style", selection: $selectedDownloadIndicatorStyle) {
-//                    Text("Progress bar")
-//                        .tag(DownloadIndicatorStyle.progress)
-//                    Text("Percentage")
-//                        .tag(DownloadIndicatorStyle.percentage)
-//                }
-//                Picker("Download icon style", selection: $selectedDownloadIconStyle) {
-//                    Text("Only app icon")
-//                        .tag(DownloadIconStyle.onlyAppIcon)
-//                    Text("Only download icon")
-//                        .tag(DownloadIconStyle.onlyIcon)
-//                    Text("Both")
-//                        .tag(DownloadIconStyle.iconAndAppIcon)
-//                }
-//
-//            } header: {
-//                HStack {
-//                    Text("Download indicators")
-//                    comingSoonTag()
-//                }
-//            }
-//            Section {
-//                List {
-//                    ForEach([].indices, id: \.self) { index in
-//                        Text("\(index)")
-//                    }
-//                }
-//                .frame(minHeight: 96)
-//                .overlay {
-//                    if true {
-//                        Text("No excluded apps")
-//                            .foregroundStyle(Color(.secondaryLabelColor))
-//                    }
-//                }
-//                .actionBar(padding: 0) {
-//                    Group {
-//                        Button {
-//                        } label: {
-//                            Image(systemName: "plus")
-//                                .frame(width: 25, height: 16, alignment: .center)
-//                                .contentShape(Rectangle())
-//                                .foregroundStyle(.secondary)
-//                        }
-//
-//                        Divider()
-//                        Button {
-//                        } label: {
-//                            Image(systemName: "minus")
-//                                .frame(width: 20, height: 16, alignment: .center)
-//                                .contentShape(Rectangle())
-//                                .foregroundStyle(.secondary)
-//                        }
-//                    }
-//                }
-//            } header: {
-//                HStack(spacing: 4) {
-//                    Text("Exclude apps")
-//                    comingSoonTag()
-//                }
-//            }
-//        }
-//        .navigationTitle("Downloads")
-//    }
-//}
 
 struct HUD: View {
     @EnvironmentObject var vm: BoringViewModel
@@ -1243,571 +1061,6 @@ struct Shelf: View {
 //    }
 //}
 
-struct Appearance: View {
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
-    @Default(.mirrorShape) var mirrorShape
-    @Default(.sliderColor) var sliderColor
-    @Default(.useMusicVisualizer) var useMusicVisualizer
-    @Default(.customVisualizers) var customVisualizers
-    @Default(.selectedVisualizer) var selectedVisualizer
-
-    let icons: [String] = ["logo2"]
-    @State private var selectedIcon: String = "logo2"
-    @State private var selectedListVisualizer: CustomVisualizer? = nil
-    @State private var isPresented: Bool = false
-    @State private var name: String = ""
-    @State private var url: String = ""
-    @State private var speed: CGFloat = 1.0
-    var body: some View {
-        Form {
-            Section {
-                Toggle("Always show tabs", isOn: $coordinator.alwaysShowTabs)
-                Defaults.Toggle(key: .settingsIconInNotch) {
-                    Text("Show settings icon in notch")
-                }
-
-            } header: {
-                Text("General")
-            }
-
-            Section {
-                Defaults.Toggle(key: .coloredSpectrogram) {
-                    Text("Colored spectrogram")
-                }
-                Defaults
-                    .Toggle("Player tinting", key: .playerColorTinting)
-                Defaults.Toggle(key: .lightingEffect) {
-                    Text("Enable blur effect behind album art")
-                }
-                Picker("Slider color", selection: $sliderColor) {
-                    ForEach(SliderColorEnum.allCases, id: \.self) { option in
-                        Text(option.rawValue)
-                    }
-                }
-            } header: {
-                Text("Media")
-            }
-
-            Section {
-                Toggle(
-                    "Use music visualizer spectrogram",
-                    isOn: $useMusicVisualizer.animation()
-                )
-                .disabled(true)
-                if !useMusicVisualizer {
-                    if customVisualizers.count > 0 {
-                        Picker(
-                            "Selected animation",
-                            selection: $selectedVisualizer
-                        ) {
-                            ForEach(
-                                customVisualizers,
-                                id: \.self
-                            ) { visualizer in
-                                Text(visualizer.name)
-                                    .tag(visualizer)
-                            }
-                        }
-                    } else {
-                        HStack {
-                            Text("Selected animation")
-                            Spacer()
-                            Text("No custom animation available")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            } header: {
-                HStack {
-                    Text("Custom music live activity animation")
-                    customBadge(text: "Coming soon")
-                }
-            }
-
-            Section {
-                List {
-                    ForEach(customVisualizers, id: \.self) { visualizer in
-                        HStack {
-                            LottieView(
-                                url: visualizer.url, speed: visualizer.speed,
-                                loopMode: .loop
-                            )
-                            .frame(width: 30, height: 30, alignment: .center)
-                            Text(visualizer.name)
-                            Spacer(minLength: 0)
-                            if selectedVisualizer == visualizer {
-                                Text("selected")
-                                    .font(.caption)
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(.secondary)
-                                    .padding(.trailing, 8)
-                            }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .padding(.vertical, 2)
-                        .background(
-                            selectedListVisualizer != nil
-                                ? selectedListVisualizer == visualizer
-                                    ? Color.effectiveAccent : Color.clear : Color.clear,
-                            in: RoundedRectangle(cornerRadius: 5)
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            if selectedListVisualizer == visualizer {
-                                selectedListVisualizer = nil
-                                return
-                            }
-                            selectedListVisualizer = visualizer
-                        }
-                    }
-                }
-                .safeAreaPadding(
-                    EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0)
-                )
-                .frame(minHeight: 120)
-                .actionBar {
-                    HStack(spacing: 5) {
-                        Button {
-                            name = ""
-                            url = ""
-                            speed = 1.0
-                            isPresented.toggle()
-                        } label: {
-                            Image(systemName: "plus")
-                                .foregroundStyle(.secondary)
-                                .contentShape(Rectangle())
-                        }
-                        Divider()
-                        Button {
-                            if selectedListVisualizer != nil {
-                                let visualizer = selectedListVisualizer!
-                                selectedListVisualizer = nil
-                                customVisualizers.remove(
-                                    at: customVisualizers.firstIndex(of: visualizer)!)
-                                if visualizer == selectedVisualizer && customVisualizers.count > 0 {
-                                    selectedVisualizer = customVisualizers[0]
-                                }
-                            }
-                        } label: {
-                            Image(systemName: "minus")
-                                .foregroundStyle(.secondary)
-                                .contentShape(Rectangle())
-                        }
-                    }
-                }
-                .controlSize(.small)
-                .buttonStyle(PlainButtonStyle())
-                .overlay {
-                    if customVisualizers.isEmpty {
-                        Text("No custom visualizer")
-                            .foregroundStyle(Color(.secondaryLabelColor))
-                            .padding(.bottom, 22)
-                    }
-                }
-                .sheet(isPresented: $isPresented) {
-                    VStack(alignment: .leading) {
-                        Text("Add new visualizer")
-                            .font(.largeTitle.bold())
-                            .padding(.vertical)
-                        TextField("Name", text: $name)
-                        TextField("Lottie JSON URL", text: $url)
-                        HStack {
-                            Text("Speed")
-                            Spacer(minLength: 80)
-                            Text("\(speed, specifier: "%.1f")s")
-                                .multilineTextAlignment(.trailing)
-                                .foregroundStyle(.secondary)
-                            Slider(value: $speed, in: 0...2, step: 0.1)
-                        }
-                        .padding(.vertical)
-                        HStack {
-                            Button {
-                                isPresented.toggle()
-                            } label: {
-                                Text("Cancel")
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                            }
-
-                            Button {
-                                let visualizer: CustomVisualizer = .init(
-                                    UUID: UUID(),
-                                    name: name,
-                                    url: URL(string: url)!,
-                                    speed: speed
-                                )
-
-                                if !customVisualizers.contains(visualizer) {
-                                    customVisualizers.append(visualizer)
-                                }
-
-                                isPresented.toggle()
-                            } label: {
-                                Text("Add")
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                            }
-                            .buttonStyle(BorderedProminentButtonStyle())
-                        }
-                    }
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .controlSize(.extraLarge)
-                    .padding()
-                }
-            } header: {
-                HStack(spacing: 0) {
-                    Text("Custom vizualizers (Lottie)")
-                    if !Defaults[.customVisualizers].isEmpty {
-                        Text(" – \(Defaults[.customVisualizers].count)")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            Section {
-                Defaults.Toggle(key: .showMirror) {
-                    Text("Enable boring mirror")
-                }
-                    .disabled(!checkVideoInput())
-                Picker("Mirror shape", selection: $mirrorShape) {
-                    Text("Circle")
-                        .tag(MirrorShapeEnum.circle)
-                    Text("Square")
-                        .tag(MirrorShapeEnum.rectangle)
-                }
-                Defaults.Toggle(key: .showNotHumanFace) {
-                    Text("Show cool face animation while inactive")
-                }
-            } header: {
-                HStack {
-                    Text("Additional features")
-                }
-            }
-        }
-        .accentColor(.effectiveAccent)
-        .navigationTitle("Appearance")
-    }
-
-    func checkVideoInput() -> Bool {
-        if AVCaptureDevice.default(for: .video) != nil {
-            return true
-        }
-
-        return false
-    }
-}
-
-struct Advanced: View {
-    @Default(.useCustomAccentColor) var useCustomAccentColor
-    @Default(.customAccentColorData) var customAccentColorData
-    @Default(.extendHoverArea) var extendHoverArea
-    @Default(.showOnLockScreen) var showOnLockScreen
-    @Default(.hideFromScreenRecording) var hideFromScreenRecording
-    
-    @State private var customAccentColor: Color = .accentColor
-    @State private var selectedPresetColor: PresetAccentColor? = nil
-    let icons: [String] = ["logo2"]
-    @State private var selectedIcon: String = "logo2"
-    
-    // macOS accent colors
-    enum PresetAccentColor: String, CaseIterable, Identifiable {
-        case blue = "Blue"
-        case purple = "Purple"
-        case pink = "Pink"
-        case red = "Red"
-        case orange = "Orange"
-        case yellow = "Yellow"
-        case green = "Green"
-        case graphite = "Graphite"
-        
-        var id: String { self.rawValue }
-        
-        var color: Color {
-            switch self {
-            case .blue: return Color(red: 0.0, green: 0.478, blue: 1.0)
-            case .purple: return Color(red: 0.686, green: 0.322, blue: 0.871)
-            case .pink: return Color(red: 1.0, green: 0.176, blue: 0.333)
-            case .red: return Color(red: 1.0, green: 0.271, blue: 0.227)
-            case .orange: return Color(red: 1.0, green: 0.584, blue: 0.0)
-            case .yellow: return Color(red: 1.0, green: 0.8, blue: 0.0)
-            case .green: return Color(red: 0.4, green: 0.824, blue: 0.176)
-            case .graphite: return Color(red: 0.557, green: 0.557, blue: 0.576)
-            }
-        }
-    }
-    
-    var body: some View {
-        Form {
-            Section {
-                VStack(alignment: .leading, spacing: 16) {
-                    // Toggle between system and custom
-                    Picker("Accent color", selection: $useCustomAccentColor) {
-                        Text("System").tag(false)
-                        Text("Custom").tag(true)
-                    }
-                    .pickerStyle(.segmented)
-                    
-                    if !useCustomAccentColor {
-                        // System accent info
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack(spacing: 12) {
-                                AccentCircleButton(
-                                    isSelected: true,
-                                    color: .accentColor,
-                                    isSystemDefault: true
-                                ) {}
-                                
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Using System Accent")
-                                        .font(.body)
-                                    Text("Your macOS system accent color")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                            }
-                        }
-                    } else {
-                        // Custom color options
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Color Presets")
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.secondary)
-                            
-                            HStack(spacing: 12) {
-                                ForEach(PresetAccentColor.allCases) { preset in
-                                    AccentCircleButton(
-                                        isSelected: selectedPresetColor == preset,
-                                        color: preset.color,
-                                        isMulticolor: false
-                                    ) {
-                                        selectedPresetColor = preset
-                                        customAccentColor = preset.color
-                                        saveCustomColor(preset.color)
-                                        forceUiUpdate()
-                                    }
-                                }
-                                Spacer()
-                            }
-                            
-                            Divider()
-                                .padding(.vertical, 4)
-                            
-                            // Custom color picker
-                            HStack(spacing: 12) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Pick a Color")
-                                        .font(.body)
-                                    Text("Choose any color")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                ColorPicker(selection: Binding(
-                                    get: { customAccentColor },
-                                    set: { newColor in
-                                        customAccentColor = newColor
-                                        selectedPresetColor = nil
-                                        saveCustomColor(newColor)
-                                        forceUiUpdate()
-                                    }
-                                ), supportsOpacity: false) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(customAccentColor)
-                                            .frame(width: 32, height: 32)
-                                        
-                                        if selectedPresetColor == nil {
-                                            Circle()
-                                                .strokeBorder(.primary.opacity(0.3), lineWidth: 2)
-                                                .frame(width: 32, height: 32)
-                                        }
-                                    }
-                                }
-                                .labelsHidden()
-                            }
-                        }
-                    }
-                }
-                .padding(.vertical, 4)
-            } header: {
-                Text("Accent color")
-            } footer: {
-                Text("Choose between your system accent color or customize it with your own selection.")
-                    .multilineTextAlignment(.trailing)
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
-            }
-            .onAppear {
-                initializeAccentColorState()
-            }
-            
-            Section {
-                Defaults.Toggle(key: .enableShadow) {
-                    Text("Enable window shadow")
-                }
-                Defaults.Toggle(key: .cornerRadiusScaling) {
-                    Text("Corner radius scaling")
-                }
-            } header: {
-                Text("Window Appearance")
-            }
-            
-            Section {
-                HStack {
-                    ForEach(icons, id: \.self) { icon in
-                        Spacer()
-                        VStack {
-                            Image(icon)
-                                .resizable()
-                                .frame(width: 80, height: 80)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 20, style: .circular)
-                                        .strokeBorder(
-                                            icon == selectedIcon ? Color.effectiveAccent : .clear,
-                                            lineWidth: 2.5
-                                        )
-                                )
-
-                            Text("Default")
-                                .fontWeight(.medium)
-                                .font(.caption)
-                                .foregroundStyle(icon == selectedIcon ? .white : .secondary)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 3)
-                                .background(
-                                    Capsule()
-                                        .fill(icon == selectedIcon ? Color.effectiveAccent : .clear)
-                                )
-                        }
-                        .onTapGesture {
-                            withAnimation {
-                                selectedIcon = icon
-                            }
-                            NSApp.applicationIconImage = NSImage(named: icon)
-                        }
-                        Spacer()
-                    }
-                }
-                .disabled(true)
-            } header: {
-                HStack {
-                    Text("App icon")
-                    customBadge(text: "Coming soon")
-                }
-            }
-            
-            Section {
-                Defaults.Toggle(key: .extendHoverArea) {
-                    Text("Extend hover area")
-                }
-                Defaults.Toggle(key: .hideTitleBar) {
-                    Text("Hide title bar")
-                }
-                Defaults.Toggle(key: .showOnLockScreen) {
-                    Text("Show notch on lock screen")
-                }
-                Defaults.Toggle(key: .hideFromScreenRecording) {
-                    Text("Hide from screen recording")
-                }
-            } header: {
-                Text("Window Behavior")
-            }
-        }
-        .accentColor(.effectiveAccent)
-        .navigationTitle("Advanced")
-        .onAppear {
-            loadCustomColor()
-        }
-    }
-    
-    private func forceUiUpdate() {
-        // Force refresh the UI
-        DispatchQueue.main.async {
-            NotificationCenter.default.post(name: Notification.Name("AccentColorChanged"), object: nil)
-        }
-    }
-    
-    private func saveCustomColor(_ color: Color) {
-        let nsColor = NSColor(color)
-        if let colorData = try? NSKeyedArchiver.archivedData(withRootObject: nsColor, requiringSecureCoding: false) {
-            Defaults[.customAccentColorData] = colorData
-            forceUiUpdate()
-        }
-    }
-    
-    private func loadCustomColor() {
-        if let colorData = Defaults[.customAccentColorData],
-           let nsColor = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSColor.self, from: colorData) {
-            customAccentColor = Color(nsColor: nsColor)
-            
-            // Check if loaded color matches a preset
-            selectedPresetColor = nil
-            for preset in PresetAccentColor.allCases {
-                if colorsAreEqual(Color(nsColor: nsColor), preset.color) {
-                    selectedPresetColor = preset
-                    break
-                }
-            }
-        }
-    }
-    
-    private func colorsAreEqual(_ color1: Color, _ color2: Color) -> Bool {
-        let nsColor1 = NSColor(color1).usingColorSpace(.sRGB) ?? NSColor(color1)
-        let nsColor2 = NSColor(color2).usingColorSpace(.sRGB) ?? NSColor(color2)
-        
-        return abs(nsColor1.redComponent - nsColor2.redComponent) < 0.01 &&
-               abs(nsColor1.greenComponent - nsColor2.greenComponent) < 0.01 &&
-               abs(nsColor1.blueComponent - nsColor2.blueComponent) < 0.01
-    }
-    
-    private func initializeAccentColorState() {
-        if !useCustomAccentColor {
-            selectedPresetColor = nil // Multicolor is selected when useCustomAccentColor is false
-        } else {
-            loadCustomColor()
-        }
-    }
-}
-
-// MARK: - Accent Circle Button Component
-struct AccentCircleButton: View {
-    let isSelected: Bool
-    let color: Color
-    var isSystemDefault: Bool = false
-    var isMulticolor: Bool = false
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            ZStack {
-                // Color circle
-                Circle()
-                    .fill(color)
-                    .frame(width: 32, height: 32)
-                
-                // Subtle border
-                Circle()
-                    .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
-                    .frame(width: 32, height: 32)
-                
-                // Apple-style highlight ring around the middle when selected
-                if isSelected {
-                    Circle()
-                        .strokeBorder(
-                            Color.white.opacity(0.5),
-                            lineWidth: 2
-                        )
-                        .frame(width: 28, height: 28)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .help(isSystemDefault ? "Use your macOS system accent color" : "")
-    }
-}
-
 struct Shortcuts: View {
     var body: some View {
         Form {
@@ -1830,27 +1083,6 @@ struct Shortcuts: View {
         .accentColor(.effectiveAccent)
         .navigationTitle("Shortcuts")
     }
-}
-
-func proFeatureBadge() -> some View {
-    Text("Upgrade to Pro")
-        .foregroundStyle(Color(red: 0.545, green: 0.196, blue: 0.98))
-        .font(.footnote.bold())
-        .padding(.vertical, 3)
-        .padding(.horizontal, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 4).stroke(
-                Color(red: 0.545, green: 0.196, blue: 0.98), lineWidth: 1))
-}
-
-func comingSoonTag() -> some View {
-    Text("Coming soon")
-        .foregroundStyle(.secondary)
-        .font(.footnote.bold())
-        .padding(.vertical, 3)
-        .padding(.horizontal, 6)
-        .background(Color(nsColor: .secondarySystemFill))
-        .clipShape(.capsule)
 }
 
 func customBadge(text: String) -> some View {
@@ -1888,7 +1120,7 @@ func warningBadge(_ text: String, _ description: String) -> some View {
 
 struct NotchUtilitySettingsView: View {
     enum SidebarItem: String, Hashable {
-        case general, layout, appearance, shortcuts, advanced
+        case general, layout, shortcuts, advanced
     }
     enum TopTab: String, CaseIterable {
         case settings = "Settings"
@@ -1983,7 +1215,6 @@ struct NotchUtilitySettingsView: View {
 
             VStack(spacing: 2) {
                 NMSidebarItem(title: "Layout", systemImage: "square.grid.3x3", isSelected: selectedItem == .layout) { selectedItem = .layout }
-                NMSidebarItem(title: "Appearance", systemImage: "paintbrush", isSelected: selectedItem == .appearance) { selectedItem = .appearance }
             }
             .padding(.horizontal, 14)
             .padding(.bottom, 18)
@@ -2064,12 +1295,10 @@ struct NotchUtilitySettingsView: View {
                 }
             case .layout:
                 NMLayoutCard()
-            case .appearance:
-                NMAppearanceCard()
             case .shortcuts:
                 NMShortcutsCard()
             case .advanced:
-                Advanced()
+                NMAdvancedCard()
             }
         }
     }
@@ -2425,88 +1654,6 @@ private struct NMLayoutCard: View {
     }
 }
 
-private struct NMAppearanceCard: View {
-    @Default(.useCustomAccentColor) var useCustom
-    @Default(.customAccentColorData) var accentData
-    @Default(.nmBackgroundStyle) var bg
-    @Default(.nmIconStyle) var iconStyle
-
-    private let palette: [NSColor] = [
-        .systemRed, .systemOrange, .systemYellow, .systemGreen,
-        .systemBlue, .systemIndigo, .systemPurple, .systemGray
-    ]
-
-    private var currentColor: NSColor? {
-        guard useCustom, let data = accentData,
-              let c = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSColor.self, from: data) else {
-            return nil
-        }
-        return c
-    }
-
-    private func setAccent(_ color: NSColor) {
-        if let data = try? NSKeyedArchiver.archivedData(withRootObject: color, requiringSecureCoding: true) {
-            accentData = data
-            useCustom = true
-            NotificationCenter.default.post(name: NSNotification.Name("AccentColorChanged"), object: nil)
-        }
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            NMCardHeader(title: "Appearance", subtitle: "Customize the look and feel.")
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Accent Color")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-                HStack(spacing: 8) {
-                    ForEach(palette, id: \.self) { c in
-                        let color = SwiftUI.Color(c)
-                        let isCurrent = currentColor.map { $0.isEqual(c) } ?? false
-                        Button { setAccent(c) } label: {
-                            Circle()
-                                .fill(color)
-                                .frame(width: 24, height: 24)
-                                .overlay(
-                                    Circle().stroke(.white, lineWidth: isCurrent ? 2 : 0)
-                                        .padding(-2)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Background")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-                Picker("", selection: $bg) {
-                    ForEach(NMBackgroundStyle.allCases, id: \.self) { s in
-                        Text(s.displayName).tag(s)
-                    }
-                }
-                .pickerStyle(.segmented).labelsHidden()
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Icon Style")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-                Picker("", selection: $iconStyle) {
-                    Text("Filled").tag(NMIconStyle.filled)
-                    Text("Outline").tag(NMIconStyle.outline)
-                }
-                .pickerStyle(.segmented).labelsHidden()
-            }
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(NMCardBG())
-    }
-}
-
 private struct NMBehaviorCard: View {
     @Default(.openNotchOnHover) var openOnHover
     @Default(.enableGestures) var enableGestures
@@ -2534,6 +1681,23 @@ private struct NMBehaviorCard: View {
     }
 }
 
+private struct NMAdvancedCard: View {
+    @Default(.extendHoverArea) var extendHoverArea
+    @Default(.hideTitleBar) var hideTitleBar
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Advanced", subtitle: "Extra window behavior for the notch.")
+
+            NMSwitchRow(title: "Extend Hover Area", subtitle: "Make the hover target easier to hit", isOn: $extendHoverArea)
+            NMSwitchRow(title: "Hide Title Bar", subtitle: "Keep the notch window visually clean", isOn: $hideTitleBar)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
 private struct NMAutoHideAppsCard: View {
     @Default(.nmAutoHideAppBundleIDs) var autoHideBundleIDs
     @State private var runningApps: [NMAppChoice] = []
@@ -2542,31 +1706,15 @@ private struct NMAutoHideAppsCard: View {
         VStack(alignment: .leading, spacing: 14) {
             NMCardHeader(title: "Auto-hide Apps", subtitle: "Hide the notch when selected apps are active.")
 
-            VStack(spacing: 10) {
-                ForEach(selectedApps) { app in
-                    NMAppRow(app: app) {
-                        remove(app.bundleID)
-                    }
-                }
-
-                if selectedApps.isEmpty {
-                    Text("No apps selected")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.45))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-
-            Divider().opacity(0.12)
-
             VStack(alignment: .leading, spacing: 8) {
-                Text("Running Apps")
+                Text("Apps")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.7))
 
-                ForEach(runningApps.prefix(5)) { app in
+                ForEach(availableApps.prefix(7)) { app in
                     NMAppToggleRow(
                         app: app,
+                        isActive: app.bundleID == NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
                         isOn: Binding(
                             get: { autoHideBundleIDs.contains(app.bundleID) },
                             set: { enabled in
@@ -2579,27 +1727,19 @@ private struct NMAutoHideAppsCard: View {
                         )
                     )
                 }
+
+                if availableApps.isEmpty {
+                    Text("Open an app or choose one manually.")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
 
-            HStack(spacing: 8) {
-                Button {
-                    addFrontmostApp()
-                } label: {
-                    Label("Add Active", systemImage: "plus.circle")
-                }
-
-                Button {
-                    pickApp()
-                } label: {
-                    Label("Choose App", systemImage: "folder")
-                }
-
-                Button {
-                    refreshRunningApps()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .help("Refresh running apps")
+            Button {
+                pickApp()
+            } label: {
+                Label("Choose App", systemImage: "folder")
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
@@ -2608,17 +1748,26 @@ private struct NMAutoHideAppsCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(NMCardBG())
         .onAppear(perform: refreshRunningApps)
+        .onReceive(workspacePublisher(NSWorkspace.didActivateApplicationNotification)) { _ in
+            refreshRunningApps()
+        }
+        .onReceive(workspacePublisher(NSWorkspace.didLaunchApplicationNotification)) { _ in
+            refreshRunningApps()
+        }
+        .onReceive(workspacePublisher(NSWorkspace.didTerminateApplicationNotification)) { _ in
+            refreshRunningApps()
+        }
     }
 
-    private var selectedApps: [NMAppChoice] {
-        autoHideBundleIDs
-            .map { NMAppChoice(bundleID: $0) }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
-
-    private func addFrontmostApp() {
-        guard let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else { return }
-        add(bundleID)
+    private var availableApps: [NMAppChoice] {
+        (runningApps + autoHideBundleIDs.map { NMAppChoice(bundleID: $0) })
+            .uniquedByBundleID()
+            .sorted { lhs, rhs in
+                let lhsSelected = autoHideBundleIDs.contains(lhs.bundleID)
+                let rhsSelected = autoHideBundleIDs.contains(rhs.bundleID)
+                if lhsSelected != rhsSelected { return lhsSelected && !rhsSelected }
+                return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+            }
     }
 
     private func add(_ bundleID: String) {
@@ -2633,12 +1782,18 @@ private struct NMAutoHideAppsCard: View {
     }
 
     private func refreshRunningApps() {
-        runningApps = NSWorkspace.shared.runningApplications
+        let frontmostBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        let apps = NSWorkspace.shared.runningApplications
             .compactMap { app -> NMAppChoice? in
                 guard let bundleID = app.bundleIdentifier,
                       bundleID != Bundle.main.bundleIdentifier else { return nil }
                 return NMAppChoice(bundleID: bundleID, fallbackName: app.localizedName)
             }
+
+        let frontmost = frontmostBundleID == Bundle.main.bundleIdentifier
+            ? nil
+            : frontmostBundleID.map { NMAppChoice(bundleID: $0) }
+        runningApps = (apps + [frontmost].compactMap { $0 })
             .uniquedByBundleID()
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
@@ -2660,6 +1815,10 @@ private struct NMAutoHideAppsCard: View {
 
     private func notifyChange() {
         NotificationCenter.default.post(name: .nmAutoHideAppsChanged, object: nil)
+    }
+
+    private func workspacePublisher(_ name: Notification.Name) -> NotificationCenter.Publisher {
+        NSWorkspace.shared.notificationCenter.publisher(for: name)
     }
 }
 
@@ -2693,37 +1852,9 @@ private struct NMAppChoice: Identifiable {
     }
 }
 
-private struct NMAppRow: View {
-    let app: NMAppChoice
-    let remove: () -> Void
-
-    var body: some View {
-        HStack(spacing: 9) {
-            Image(nsImage: app.icon)
-                .resizable()
-                .frame(width: 22, height: 22)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(app.name)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                Text(app.bundleID)
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.42))
-                    .lineLimit(1)
-            }
-            Spacer()
-            Button(action: remove) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.white.opacity(0.45))
-            }
-            .buttonStyle(.plain)
-        }
-    }
-}
-
 private struct NMAppToggleRow: View {
     let app: NMAppChoice
+    let isActive: Bool
     @Binding var isOn: Bool
 
     var body: some View {
@@ -2735,6 +1866,14 @@ private struct NMAppToggleRow: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.white.opacity(0.82))
                 .lineLimit(1)
+            if isActive {
+                Text("Active")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.green.opacity(0.95))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(.green.opacity(0.16)))
+            }
             Spacer()
             Toggle("", isOn: $isOn)
                 .labelsHidden()

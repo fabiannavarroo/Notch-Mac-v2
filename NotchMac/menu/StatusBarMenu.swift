@@ -11,13 +11,12 @@ final class BoringStatusMenu: NSObject {
     let statusItem: NSStatusItem
 
     override init() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         super.init()
 
         if let button = statusItem.button {
-            // logo = white minimal toolbar logo (tool-bar.png) engrosado, template para tinte sistema.
             if let logo = NSImage(named: "logo") {
-                let h: CGFloat = 20
+                let h: CGFloat = 17
                 let ratio = logo.size.width / max(logo.size.height, 1)
                 let resized = NSImage(size: NSSize(width: h * ratio, height: h))
                 resized.lockFocus()
@@ -29,6 +28,7 @@ final class BoringStatusMenu: NSObject {
                 resized.unlockFocus()
                 resized.isTemplate = true
                 button.image = resized
+                button.imageScaling = .scaleProportionallyDown
             } else {
                 button.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "NotchMac")
             }
