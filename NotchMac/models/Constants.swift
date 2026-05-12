@@ -39,6 +39,7 @@ enum HideNotchOption: String, Defaults.Serializable {
 // Define notification names at file scope
 extension Notification.Name {
     static let mediaControllerChanged = Notification.Name("mediaControllerChanged")
+    static let nmAutoHideAppsChanged = Notification.Name("nmAutoHideAppsChanged")
 }
 
 // Media controller types for selection in settings

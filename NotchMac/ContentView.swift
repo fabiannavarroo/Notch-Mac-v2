@@ -321,16 +321,22 @@ struct ContentView: View {
                               .padding(.leading, 4)
                               .padding(.trailing, 8)
                           }
-                          // Old sneak peek music — centered banner with title only
+                          // Old sneak peek music — centered banner with title + primary artist
                           else if coordinator.sneakPeek.type == .music {
                               if vm.notchState == .closed && !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard {
-                                  Text(musicManager.songTitle)
-                                      .font(.system(size: 11, weight: .semibold))
-                                      .foregroundStyle(.white)
-                                      .lineLimit(1)
-                                      .truncationMode(.tail)
-                                      .padding(.horizontal, 14)
-                                      .frame(maxWidth: .infinity, alignment: .center)
+                                  VStack(spacing: 0) {
+                                      Text(musicManager.songTitle)
+                                          .font(.system(size: 11, weight: .semibold))
+                                          .foregroundStyle(.white)
+                                          .lineLimit(1)
+                                          .truncationMode(.tail)
+                                      Text(musicManager.artistName.primaryArtistName)
+                                          .font(.system(size: 9, weight: .medium))
+                                          .foregroundStyle(.white.opacity(0.62))
+                                          .lineLimit(1)
+                                          .truncationMode(.tail)
+                                  }
+                                  .padding(.horizontal, 14)
                                   .frame(maxWidth: .infinity, alignment: .center)
                                   .padding(.bottom, 10)
                               }
@@ -615,6 +621,19 @@ struct ContentView: View {
                 haptics.toggle()
             }
         }
+    }
+}
+
+private extension String {
+    var primaryArtistName: String {
+        let separators = [",", " feat. ", " ft. ", " featuring ", " & ", " x ", " y "]
+        for separator in separators {
+            if let range = range(of: separator, options: [.caseInsensitive]) {
+                let primary = self[..<range.lowerBound].trimmingCharacters(in: .whitespacesAndNewlines)
+                if !primary.isEmpty { return primary }
+            }
+        }
+        return trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

@@ -86,6 +86,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func activeAppChanged(_ note: Notification) {
         guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
               let bundleID = app.bundleIdentifier else { return }
+        updateIslandVisibility(for: bundleID)
+    }
+
+    func refreshIslandVisibilityForActiveApp() {
+        guard let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else { return }
+        updateIslandVisibility(for: bundleID)
+    }
+
+    private func updateIslandVisibility(for bundleID: String) {
         let autoHide = Defaults[.nmAutoHideAppBundleIDs]
         let shouldHide = autoHide.contains(bundleID)
         if Defaults[.nmIslandHidden] != shouldHide {
@@ -372,6 +381,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        NotificationCenter.default.addObserver(
+            forName: .nmAutoHideAppsChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.refreshIslandVisibilityForActiveApp()
+        }
+
         // Use closure-based observers for DistributedNotificationCenter and keep tokens for removal
         screenLockedObserver = DistributedNotificationCenter.default().addObserver(
             forName: NSNotification.Name(rawValue: "com.apple.screenIsLocked"),
@@ -477,6 +492,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         setupDragDetectors()
+        refreshIslandVisibilityForActiveApp()
         applyIslandVisibility()
 
         if coordinator.firstLaunch {

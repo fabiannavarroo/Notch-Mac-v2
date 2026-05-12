@@ -13,6 +13,7 @@ import LaunchAtLogin
 import Sparkle
 import SwiftUI
 import SwiftUIIntrospect
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @State private var selectedTab = "General"
@@ -2069,6 +2070,7 @@ struct NotchUtilitySettingsView: View {
                 NMLayoutCard()
                 NMAppearanceCard()
                 NMBehaviorCard()
+                NMAutoHideAppsCard()
                 NMShortcutsCard()
                 NMReducedModeCard()
             }
@@ -2519,6 +2521,224 @@ private struct NMBehaviorCard: View {
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(NMCardBG())
+    }
+}
+
+private struct NMAutoHideAppsCard: View {
+    @Default(.nmAutoHideAppBundleIDs) var autoHideBundleIDs
+    @State private var runningApps: [NMAppChoice] = []
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Auto-hide Apps", subtitle: "Hide the notch when selected apps are active.")
+
+            VStack(spacing: 10) {
+                ForEach(selectedApps) { app in
+                    NMAppRow(app: app) {
+                        remove(app.bundleID)
+                    }
+                }
+
+                if selectedApps.isEmpty {
+                    Text("No apps selected")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+
+            Divider().opacity(0.12)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Running Apps")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+
+                ForEach(runningApps.prefix(5)) { app in
+                    NMAppToggleRow(
+                        app: app,
+                        isOn: Binding(
+                            get: { autoHideBundleIDs.contains(app.bundleID) },
+                            set: { enabled in
+                                if enabled {
+                                    add(app.bundleID)
+                                } else {
+                                    remove(app.bundleID)
+                                }
+                            }
+                        )
+                    )
+                }
+            }
+
+            HStack(spacing: 8) {
+                Button {
+                    addFrontmostApp()
+                } label: {
+                    Label("Add Active", systemImage: "plus.circle")
+                }
+
+                Button {
+                    pickApp()
+                } label: {
+                    Label("Choose App", systemImage: "folder")
+                }
+
+                Button {
+                    refreshRunningApps()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .help("Refresh running apps")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+        .onAppear(perform: refreshRunningApps)
+    }
+
+    private var selectedApps: [NMAppChoice] {
+        autoHideBundleIDs
+            .map { NMAppChoice(bundleID: $0) }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private func addFrontmostApp() {
+        guard let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else { return }
+        add(bundleID)
+    }
+
+    private func add(_ bundleID: String) {
+        guard !autoHideBundleIDs.contains(bundleID) else { return }
+        autoHideBundleIDs.append(bundleID)
+        notifyChange()
+    }
+
+    private func remove(_ bundleID: String) {
+        autoHideBundleIDs.removeAll { $0 == bundleID }
+        notifyChange()
+    }
+
+    private func refreshRunningApps() {
+        runningApps = NSWorkspace.shared.runningApplications
+            .compactMap { app -> NMAppChoice? in
+                guard let bundleID = app.bundleIdentifier,
+                      bundleID != Bundle.main.bundleIdentifier else { return nil }
+                return NMAppChoice(bundleID: bundleID, fallbackName: app.localizedName)
+            }
+            .uniquedByBundleID()
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private func pickApp() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.applicationBundle]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+
+        guard panel.runModal() == .OK,
+              let url = panel.url,
+              let bundle = Bundle(url: url),
+              let bundleID = bundle.bundleIdentifier else { return }
+        add(bundleID)
+    }
+
+    private func notifyChange() {
+        NotificationCenter.default.post(name: .nmAutoHideAppsChanged, object: nil)
+    }
+}
+
+private struct NMAppChoice: Identifiable {
+    let bundleID: String
+    let fallbackName: String?
+
+    init(bundleID: String, fallbackName: String? = nil) {
+        self.bundleID = bundleID
+        self.fallbackName = fallbackName
+    }
+
+    var id: String { bundleID }
+
+    var name: String {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID),
+              let bundle = Bundle(url: url) else {
+            return fallbackName ?? bundleID
+        }
+        return bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? bundle.object(forInfoDictionaryKey: "CFBundleName") as? String
+            ?? fallbackName
+            ?? url.deletingPathExtension().lastPathComponent
+    }
+
+    var icon: NSImage {
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            return NSWorkspace.shared.icon(forFile: url.path)
+        }
+        return NSWorkspace.shared.icon(for: .applicationBundle)
+    }
+}
+
+private struct NMAppRow: View {
+    let app: NMAppChoice
+    let remove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(nsImage: app.icon)
+                .resizable()
+                .frame(width: 22, height: 22)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(app.name)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Text(app.bundleID)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.42))
+                    .lineLimit(1)
+            }
+            Spacer()
+            Button(action: remove) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.white.opacity(0.45))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+private struct NMAppToggleRow: View {
+    let app: NMAppChoice
+    @Binding var isOn: Bool
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(nsImage: app.icon)
+                .resizable()
+                .frame(width: 20, height: 20)
+            Text(app.name)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.82))
+                .lineLimit(1)
+            Spacer()
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .tint(.green)
+        }
+    }
+}
+
+private extension Array where Element == NMAppChoice {
+    func uniquedByBundleID() -> [NMAppChoice] {
+        var seen: Set<String> = []
+        return filter { seen.insert($0.bundleID).inserted }
     }
 }
 
