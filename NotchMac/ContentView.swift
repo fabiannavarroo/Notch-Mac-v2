@@ -321,30 +321,16 @@ struct ContentView: View {
                               .padding(.leading, 4)
                               .padding(.trailing, 8)
                           }
-                          // Old sneak peek music — centered banner with album art + title/artist
+                          // Old sneak peek music — centered banner with title only
                           else if coordinator.sneakPeek.type == .music {
                               if vm.notchState == .closed && !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard {
-                                  HStack(spacing: 8) {
-                                      Image(nsImage: musicManager.albumArt)
-                                          .resizable()
-                                          .aspectRatio(contentMode: .fill)
-                                          .frame(width: 24, height: 24)
-                                          .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-                                      VStack(alignment: .leading, spacing: 0) {
-                                          Text(musicManager.songTitle)
-                                              .font(.system(size: 11, weight: .semibold))
-                                              .foregroundStyle(.white)
-                                              .lineLimit(1)
-                                          Text(musicManager.artistName)
-                                              .font(.system(size: 9))
-                                              .foregroundStyle(
-                                                  Defaults[.playerColorTinting]
-                                                  ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6)
-                                                  : .gray
-                                              )
-                                              .lineLimit(1)
-                                      }
-                                  }
+                                  Text(musicManager.songTitle)
+                                      .font(.system(size: 11, weight: .semibold))
+                                      .foregroundStyle(.white)
+                                      .lineLimit(1)
+                                      .truncationMode(.tail)
+                                      .padding(.horizontal, 14)
+                                      .frame(maxWidth: .infinity, alignment: .center)
                                   .frame(maxWidth: .infinity, alignment: .center)
                                   .padding(.bottom, 10)
                               }
