@@ -154,6 +154,9 @@ extension Defaults.Keys {
     static let nmShowBanners = Key<Bool>("nm.behavior.showBanners", default: true)
     static let nmReducedMode = Key<Bool>("nm.behavior.reducedMode", default: false)
 
+    // MARK: Ref-design dashboard (mockup-style expanded view)
+    static let nmDashboardRefDesign = Key<Bool>("nm.dashboard.refDesign", default: true)
+
     // MARK: Battery
     static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: true)
     static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: true)

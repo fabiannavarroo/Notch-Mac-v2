@@ -444,13 +444,19 @@ struct NotchHomeView: View {
             MusicPlayerView(albumArtNamespace: albumArtNamespace)
 
             if Defaults[.showCalendar] {
-                CalendarView()
-                    .frame(width: shouldShowCamera ? 170 : 215)
-                    .onHover { isHovering in
-                        vm.isHoveringCalendar = isHovering
+                Group {
+                    if Defaults[.nmDashboardRefDesign] {
+                        EventsDashboardPanelView()
+                    } else {
+                        CalendarView()
                     }
-                    .environmentObject(vm)
-                    .transition(.opacity)
+                }
+                .frame(width: shouldShowCamera ? 170 : 240)
+                .onHover { isHovering in
+                    vm.isHoveringCalendar = isHovering
+                }
+                .environmentObject(vm)
+                .transition(.opacity)
             }
 
             if shouldShowCamera {
