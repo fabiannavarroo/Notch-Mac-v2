@@ -98,30 +98,54 @@ struct GlowingSnake<
 
 struct HelloAnimation: View {
     @State private var progress: Double = 0.0
+    @State private var revealContent = false
     
     var onFinish: () -> Void
     
     var body: some View {
-        GlowingSnake(
-            progress: progress,
-            fill: .hello,
-            lineWidth: 8,
-            blurRadius: 8.0,
-            shape: { HelloShape() }
-        )
+        ZStack {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(.white.opacity(0.12), lineWidth: 1)
+                .frame(width: 250, height: 54)
+
+            GlowingSnake(
+                progress: progress,
+                fill: .hello,
+                lineWidth: 5,
+                blurRadius: 7.0,
+                shape: { RoundedRectangle(cornerRadius: 18, style: .continuous) }
+            )
+            .frame(width: 250, height: 54)
+
+            HStack(spacing: 10) {
+                Image("logo2")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 24, height: 24)
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                Text("NotchMac")
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+            }
+            .opacity(revealContent ? 1 : 0)
+            .scaleEffect(revealContent ? 1 : 0.94)
+        }
         .task {
-            // Wait for the "opening" animation (notch expansion) to complete before starting the snake
             try? await Task.sleep(for: .seconds(0.6))
             
             withAnimation(
-                .easeInOut(duration: 4.0)
+                .easeInOut(duration: 1.15)
             ) {
                 progress = 1.0
             }
-            
-            // Wait for the animation to complete
-            try? await Task.sleep(for: .seconds(4.0))
-            
+
+            try? await Task.sleep(for: .milliseconds(520))
+
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.78)) {
+                revealContent = true
+            }
+
+            try? await Task.sleep(for: .seconds(1.35))
             onFinish()
         }
     }

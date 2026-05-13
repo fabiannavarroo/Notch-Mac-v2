@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AVFoundation
+import Defaults
 
 enum OnboardingStep {
     case welcome
@@ -39,9 +40,9 @@ struct OnboardingView: View {
             case .cameraPermission:
                 PermissionRequestView(
                     icon: Image(systemName: "camera.fill"),
-                    title: "Enable Camera Access",
-                    description: "NotchMac includes a mirror feature that lets you quickly check your appearance using your camera, right from the notch. Camera access is required only to show this live preview. You can turn the mirror feature on or off at any time in the app.",
-                    privacyNote: "Your camera is never used without your consent, and nothing is recorded or stored.",
+                    title: "Camara",
+                    description: "Activa la camara solo si quieres usar el espejo rapido dentro del notch. Puedes desactivarlo despues desde ajustes.",
+                    privacyNote: "No se graba ni se guarda nada.",
                     onAllow: {
                         Task {
                             await requestCameraPermission()
@@ -61,9 +62,9 @@ struct OnboardingView: View {
             case .calendarPermission:
                 PermissionRequestView(
                     icon: Image(systemName: "calendar"),
-                    title: "Enable Calendar Access",
-                    description: "NotchMac can show all your upcoming events in one place. Access to your calendar is needed to display your schedule.",
-                    privacyNote: "Your calendar data is only used to show your events and is never shared.",
+                    title: "Calendario",
+                    description: "Permite el calendario si quieres ver tus eventos dentro del notch.",
+                    privacyNote: "Tus eventos solo se leen para mostrarlos en la app.",
                     onAllow: {
                         Task {
                                 await requestCalendarPermission()
@@ -83,9 +84,9 @@ struct OnboardingView: View {
                 case .remindersPermission:
                     PermissionRequestView(
                         icon: Image(systemName: "checklist"),
-                        title: "Enable Reminders Access",
-                        description: "NotchMac can show your scheduled reminders alongside your calendar events. Access to Reminders is needed to display your reminders.",
-                        privacyNote: "Your reminders data is only used to show your reminders and is never shared.",
+                        title: "Recordatorios",
+                        description: "Permite recordatorios si quieres mezclarlos con tus eventos.",
+                        privacyNote: "Tus recordatorios no se comparten.",
                         onAllow: {
                             Task {
                                 await requestRemindersPermission()
@@ -105,9 +106,9 @@ struct OnboardingView: View {
             case .accessibilityPermission:
                 PermissionRequestView(
                     icon: Image(systemName: "hand.raised.fill"),
-                    title: "Enable Accessibility Access",
-                    description: "Accessibility access is required to replace system notifications with the NotchMac HUD. This allows the app to intercept media and brightness events to display custom HUD overlays.",
-                    privacyNote: "Accessibility access is used only to improve media and brightness notifications. No data is collected or shared.",
+                    title: "Accesibilidad",
+                    description: "Activa accesibilidad si quieres que NotchMac pueda mostrar HUDs de volumen, brillo y multimedia.",
+                    privacyNote: "Se usa solo para esos controles del sistema.",
                     onAllow: {
                         Task {
                             await requestAccessibilityPermission()
@@ -149,10 +150,12 @@ struct OnboardingView: View {
     }
 
     func requestCalendarPermission() async {
+        Defaults[.calendarPermissionPrompted] = true
         _ = try? await calendarService.requestAccess(to: .event)
     }
 
     func requestRemindersPermission() async {
+        Defaults[.reminderPermissionPrompted] = true
         _ = try? await calendarService.requestAccess(to: .reminder)
     }
     

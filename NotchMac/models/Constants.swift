@@ -189,6 +189,8 @@ extension Defaults.Keys {
     static let hideAllDayEvents = Key<Bool>("hideAllDayEvents", default: false)
     static let showFullEventTitles = Key<Bool>("showFullEventTitles", default: false)
     static let autoScrollToNextEvent = Key<Bool>("autoScrollToNextEvent", default: true)
+    static let calendarPermissionPrompted = Key<Bool>("nm.calendar.permissionPrompted", default: false)
+    static let reminderPermissionPrompted = Key<Bool>("nm.reminders.permissionPrompted", default: false)
     
     // MARK: Fullscreen Media Detection
     static let hideNotchOption = Key<HideNotchOption>("hideNotchOption", default: .nowPlayingOnly)

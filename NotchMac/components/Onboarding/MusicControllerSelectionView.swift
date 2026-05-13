@@ -26,12 +26,12 @@ struct MusicControllerSelectionView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Choose a Music Source")
+            Text("Fuente de musica")
                 .font(.title)
                 .fontWeight(.bold)
                 .padding(.top, 24)
 
-            Text("Select the music source you want to use. You can change this later in the app settings.")
+            Text("Elige de donde leer la cancion actual. Luego puedes cambiarlo desde ajustes.")
                 .multilineTextAlignment(.center)
                 .font(.body)
                 .foregroundColor(.secondary)
@@ -56,7 +56,7 @@ struct MusicControllerSelectionView: View {
 
 //            Spacer()
 
-            Button("Continue", action: {
+            Button("Continuar", action: {
                 self.mediaController = self.selectedMediaController
                 NotificationCenter.default.post(
                     name: Notification.Name.mediaControllerChanged,
@@ -123,13 +123,13 @@ extension MediaControllerType {
     var description: String {
         switch self {
         case .nowPlaying:
-            return "Works with most media apps, including browsers, to detect what's playing. Note: This may be removed in a future macOS version."
+            return "Funciona con la mayoria de apps y navegadores."
         case .spotify:
-            return "Connects directly to the Spotify app."
+            return "Conexion directa con la app de Spotify."
         case .appleMusic:
-            return "Connects directly to the Apple Music app."
+            return "Conexion directa con Apple Music."
         case .youtubeMusic:
-            return "Requires a third-party client with API plugin enabled."
+            return "Requiere cliente compatible con API activada."
         }
     }
 }

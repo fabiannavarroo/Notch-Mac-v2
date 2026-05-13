@@ -16,46 +16,63 @@ struct PermissionRequestView: View {
     let onSkip: () -> Void
 
     var body: some View {
-        VStack(spacing: 28) {
-            icon
-                .resizable()
-                .scaledToFit()
-                .frame(width: 70, height: 56)
-                .foregroundColor(.effectiveAccent)
-                .padding(.top, 32)
+        VStack(spacing: 22) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(.white.opacity(0.08))
+                    .frame(width: 92, height: 92)
+                icon
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 46, height: 42)
+                    .foregroundColor(.effectiveAccent)
+            }
+            .padding(.top, 34)
 
-            Text(title)
-                .font(.title)
-                .fontWeight(.semibold)
+            VStack(spacing: 8) {
+                Text(title)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
 
-            Text(description)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+                Text(description)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.66))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 34)
+            }
 
             if let privacyNote = privacyNote {
                 HStack(spacing: 8) {
                     Image(systemName: "lock.shield")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.white.opacity(0.55))
                     Text(privacyNote)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.55))
                         .multilineTextAlignment(.leading)
                 }
-                .padding(.bottom, 8)
-                .padding(.horizontal)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(.white.opacity(0.05))
+                )
+                .padding(.horizontal, 34)
             }
 
+            Spacer(minLength: 0)
+
             HStack {
-                Button("Not Now") { onSkip() }
+                Button("Ahora no") { onSkip() }
                     .buttonStyle(.bordered)
-                Button("Allow Access") { onAllow() }
+                Button("Permitir") { onAllow() }
                     .buttonStyle(.borderedProminent)
             }
-            .padding(.top, 10)
+            .controlSize(.large)
+            .padding(.bottom, 32)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .background(
-            VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow)
+            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
                 .ignoresSafeArea()
         )
     }

@@ -75,6 +75,10 @@ class CalendarManager: ObservableObject {
 
         switch status {
         case .notDetermined:
+            guard !Defaults[.calendarPermissionPrompted] else {
+                return
+            }
+            Defaults[.calendarPermissionPrompted] = true
             guard let granted = try? await calendarService.requestAccess(to: .event) else {
                 self.calendarAuthorizationStatus = .notDetermined
                 return
@@ -108,6 +112,10 @@ class CalendarManager: ObservableObject {
 
         switch status {
         case .notDetermined:
+            guard !Defaults[.reminderPermissionPrompted] else {
+                return
+            }
+            Defaults[.reminderPermissionPrompted] = true
             guard let granted = try? await calendarService.requestAccess(to: .reminder) else {
                 self.reminderAuthorizationStatus = .notDetermined
                 return

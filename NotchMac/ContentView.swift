@@ -39,6 +39,9 @@ struct ContentView: View {
     @Default(.showMusicModule) var showMusicModule
     @Default(.showTimerModule) var showTimerModule
     @Default(.boringShelf) var showShelfModule
+    @Default(.showCalendar) var showCalendarModule
+    @Default(.showBatteryIndicator) var showBatteryModule
+    @State private var moduleRenderID = UUID()
 
     // Shared interactive spring for movement/resizing to avoid conflicting animations
     private let animationSpring = Animation.interactiveSpring(response: 0.38, dampingFraction: 0.8, blendDuration: 0)
@@ -94,6 +97,7 @@ struct ContentView: View {
         ZStack(alignment: .top) {
             VStack(spacing: 0) {
                 let mainLayout = NotchLayout()
+                    .id(moduleRenderID)
                     .frame(alignment: .top)
                     .padding(
                         .horizontal,
@@ -105,6 +109,29 @@ struct ContentView: View {
                     .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
                     .background(.black)
                     .clipShape(currentNotchShape)
+                    .overlay {
+                        if vm.notchState == .open {
+                            currentNotchShape
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [.white.opacity(0.24), .white.opacity(0.08), .clear],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 1
+                                )
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .overlay(alignment: .top) {
+                        if vm.notchState == .open {
+                            RoundedRectangle(cornerRadius: topCornerRadius, style: .continuous)
+                                .stroke(.white.opacity(0.14), lineWidth: 0.8)
+                                .frame(height: max(22, topCornerRadius + 8))
+                                .padding(.horizontal, 1)
+                                .allowsHitTesting(false)
+                        }
+                    }
                     .overlay(alignment: .top) {
                         Rectangle()
                             .fill(.black)
@@ -247,11 +274,30 @@ struct ContentView: View {
             if !enabled && coordinator.currentView == .focus {
                 coordinator.currentView = .home
             }
+            refreshModuleLayout()
         }
         .onChange(of: showShelfModule) { _, enabled in
             if !enabled && coordinator.currentView == .shelf {
                 coordinator.currentView = .home
             }
+            refreshModuleLayout()
+        }
+        .onChange(of: showMusicModule) { _, enabled in
+            if !enabled {
+                if coordinator.sneakPeek.type == .music {
+                    coordinator.sneakPeek.show = false
+                }
+                if coordinator.expandingView.type == .music {
+                    coordinator.expandingView.show = false
+                }
+            }
+            refreshModuleLayout()
+        }
+        .onChange(of: showCalendarModule) {
+            refreshModuleLayout()
+        }
+        .onChange(of: showBatteryModule) {
+            refreshModuleLayout()
         }
     }
 
@@ -410,6 +456,16 @@ struct ContentView: View {
 
     private var openPageHeight: CGFloat {
         max(0, openNotchSize.height - max(24, vm.effectiveClosedNotchHeight))
+    }
+
+    private func refreshModuleLayout() {
+        withAnimation(animationSpring) {
+            moduleRenderID = UUID()
+        }
+
+        if vm.notchState == .closed {
+            vm.close()
+        }
     }
 
     @ViewBuilder
