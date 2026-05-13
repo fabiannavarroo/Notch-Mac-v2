@@ -76,6 +76,11 @@ final class FocusSessionModel: ObservableObject {
         return String(format: "%02d:%02d", value / 60, value % 60)
     }
 
+    var totalString: String {
+        let value = Int(total)
+        return String(format: "%02d:%02d", value / 60, value % 60)
+    }
+
     var sessionLabel: String {
         isBreak ? "Break" : "Focus"
     }
@@ -91,16 +96,24 @@ struct FocusDashboardView: View {
     @Default(.pomodoroBreakMinutes) private var breakMinutes
 
     var body: some View {
-        VStack(spacing: 10) {
-            header
-            timerRing
-            controls
-            presets
+        HStack(spacing: 28) {
+            sideLabel
+            divider
+            circularAction(
+                session.isRunning ? "pause.fill" : "play.fill",
+                title: session.isRunning ? "Pause" : "Start"
+            ) {
+                session.toggle()
+            }
+            centerTimer
+            circularAction("arrow.clockwise", title: "Reset") {
+                session.isBreak ? session.resetToBreakDuration() : session.resetToFocusDuration()
+            }
+            divider
+            settingsButton
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 10)
-        .padding(.bottom, 14)
-        .frame(width: 520, height: 188)
+        .padding(.horizontal, 34)
+        .frame(width: 680, height: 188)
         .background(Color.black)
         .onChange(of: focusMinutes) { _, _ in
             if !session.isBreak && !session.isRunning {
@@ -114,22 +127,30 @@ struct FocusDashboardView: View {
         }
     }
 
-    private var header: some View {
-        HStack(spacing: 8) {
-            Image(systemName: session.isBreak ? "cup.and.saucer.fill" : "timer.circle.fill")
-                .font(.system(size: 14, weight: .semibold))
+    private var sideLabel: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "timer")
+                .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(.orange)
-            Text(session.sessionLabel)
-                .font(.system(size: 13, weight: .bold))
+            Text("Pomodoro")
+                .font(.system(size: 20, weight: .medium))
                 .foregroundStyle(.white)
-            Text(session.isRunning ? "Running" : "Paused")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(session.isRunning ? .green : .white.opacity(0.45))
-                .padding(.horizontal, 7)
-                .padding(.vertical, 3)
-                .background(Capsule().fill(.white.opacity(0.08)))
-            Spacer()
         }
+        .frame(width: 142, alignment: .leading)
+    }
+
+    private var divider: some View {
+        Rectangle()
+            .fill(.white.opacity(0.22))
+            .frame(width: 1, height: 78)
+    }
+
+    private var centerTimer: some View {
+        VStack(spacing: 8) {
+            timerRing
+            presets
+        }
+        .frame(width: 146)
     }
 
     private var timerRing: some View {
@@ -137,43 +158,69 @@ struct FocusDashboardView: View {
             Circle()
                 .stroke(.white.opacity(0.12), lineWidth: 9)
             Circle()
-                .trim(from: 0, to: session.remainingFraction)
+                .trim(from: 0.04, to: 0.96)
+                .stroke(.white.opacity(0.04), style: StrokeStyle(lineWidth: 13, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            Circle()
+                .trim(from: 0, to: session.remainingFraction * 0.92)
                 .stroke(
                     AngularGradient(
                         colors: [.orange, .yellow, .orange],
                         center: .center
                     ),
-                    style: StrokeStyle(lineWidth: 9, lineCap: .round)
+                    style: StrokeStyle(lineWidth: 10, lineCap: .round)
                 )
-                .rotationEffect(.degrees(-90))
+                .shadow(color: .orange.opacity(0.35), radius: 8)
+                .rotationEffect(.degrees(-82))
                 .animation(.linear(duration: 0.25), value: session.remainingFraction)
 
-            VStack(spacing: 2) {
+            VStack(spacing: 6) {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(.orange)
+                        .frame(width: 7, height: 7)
+                    Text(session.sessionLabel)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.orange)
+                }
                 Text(session.timeString)
-                    .font(.system(size: 31, weight: .bold, design: .rounded))
+                    .font(.system(size: 30, weight: .light, design: .rounded))
                     .foregroundStyle(.white)
                     .monospacedDigit()
-                Text("remaining")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.45))
+                Text("of \(session.totalString)")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.48))
+                    .monospacedDigit()
             }
         }
-        .frame(width: 96, height: 96)
+        .frame(width: 126, height: 126)
     }
 
-    private var controls: some View {
-        HStack(spacing: 10) {
-            iconButton(session.isRunning ? "pause.fill" : "play.fill", title: session.isRunning ? "Pause" : "Start") {
-                session.toggle()
+    private func circularAction(_ systemImage: String, title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(.white.opacity(0.07))
+                    Circle()
+                        .stroke(.white.opacity(0.14), lineWidth: 1)
+                    Image(systemName: systemImage)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: 54, height: 54)
+
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.58))
             }
-            iconButton("arrow.counterclockwise", title: "Reset") {
-                session.isBreak ? session.resetToBreakDuration() : session.resetToFocusDuration()
-            }
+            .frame(width: 66)
         }
+        .buttonStyle(.plain)
     }
 
     private var presets: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 0) {
             presetButton("Focus", minutes: focusMinutes, isSelected: !session.isBreak) {
                 session.resetToFocusDuration()
             }
@@ -181,21 +228,13 @@ struct FocusDashboardView: View {
                 session.resetToBreakDuration()
             }
         }
-    }
-
-    private func iconButton(_ systemImage: String, title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(.white.opacity(0.09))
-                )
-        }
-        .buttonStyle(.plain)
+        .padding(2)
+        .frame(width: 126, height: 30)
+        .background(
+            Capsule()
+                .fill(.white.opacity(0.08))
+                .overlay(Capsule().stroke(.white.opacity(0.12), lineWidth: 1))
+        )
     }
 
     private func presetButton(
@@ -205,14 +244,25 @@ struct FocusDashboardView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Text("\(title) \(minutes)m")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(isSelected ? .black : .white.opacity(0.72))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(isSelected ? .orange : .white.opacity(0.58))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(
-                    Capsule().fill(isSelected ? Color.orange : Color.white.opacity(0.08))
+                    Capsule().fill(isSelected ? Color.orange.opacity(0.28) : Color.clear)
                 )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var settingsButton: some View {
+        Button {
+            SettingsWindowController.shared.showWindow()
+        } label: {
+            Image(systemName: "gearshape")
+                .font(.system(size: 24, weight: .regular))
+                .foregroundStyle(.white.opacity(0.55))
+                .frame(width: 40, height: 40)
         }
         .buttonStyle(.plain)
     }

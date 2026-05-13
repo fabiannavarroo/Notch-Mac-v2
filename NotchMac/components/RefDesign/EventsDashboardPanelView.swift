@@ -31,7 +31,8 @@ struct EventsDashboardPanelView: View {
         .onAppear {
             Task {
                 await calendarManager.checkCalendarAuthorization()
-                await calendarManager.updateCurrentDate(Date.now)
+                await calendarManager.checkReminderAuthorization()
+                await calendarManager.updateDashboardEvents()
             }
         }
     }
@@ -54,6 +55,11 @@ struct EventsDashboardPanelView: View {
                 eventPill(next)
                 Spacer(minLength: 0)
                 countdownLabel(to: next.start)
+            } else if calendarManager.calendarAuthorizationStatus != .fullAccess {
+                Text("Activa Calendario")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.orange)
+                Spacer(minLength: 0)
             } else {
                 Text("Sin próximos eventos")
                     .font(.system(size: 11))
@@ -89,16 +95,17 @@ struct EventsDashboardPanelView: View {
     }
 
     private func countdownLabel(to date: Date) -> some View {
+        let isLive = date <= now
         let mins = max(0, Int(date.timeIntervalSince(now) / 60))
         let h = mins / 60
         let m = mins % 60
-        let text = h > 0 ? String(format: "%d:%02d", h, m) : String(format: "%d min", m)
+        let text = isLive ? "now" : h > 0 ? String(format: "%d:%02d", h, m) : String(format: "%d min", m)
         return VStack(alignment: .trailing, spacing: 0) {
             Text(text)
                 .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .monospacedDigit()
-            Text("until next event")
+            Text(isLive ? "in progress" : "until next event")
                 .font(.system(size: 8))
                 .foregroundStyle(.secondary)
         }
@@ -164,12 +171,20 @@ struct EventsDashboardPanelView: View {
 
     // MARK: - Helpers
     private var sortedUpcoming: [EventModel] {
-        calendarManager.events
-            .filter { $0.start >= now && !$0.isAllDay && $0.type.isEvent }
-            .sorted { $0.start < $1.start }
+        calendarManager.dashboardEvents
+            .filter { event in
+                event.type.isEvent
+                    && event.end > now
+                    && (!event.isAllDay || !Defaults[.hideAllDayEvents])
+            }
+            .sorted {
+                if $0.isAllDay != $1.isAllDay { return !$0.isAllDay }
+                return $0.start < $1.start
+            }
     }
 
     private func timeRange(for event: EventModel) -> String {
+        if event.isAllDay { return "All-day" }
         let f = DateFormatter()
         f.dateFormat = "HH:mm"
         return "\(f.string(from: event.start)) – \(f.string(from: event.end))"

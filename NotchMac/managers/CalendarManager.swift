@@ -17,6 +17,7 @@ class CalendarManager: ObservableObject {
 
     @Published var currentWeekStartDate: Date
     @Published var events: [EventModel] = []
+    @Published var dashboardEvents: [EventModel] = []
     @Published var allCalendars: [CalendarModel] = []
     @Published var eventCalendars: [CalendarModel] = []
     @Published var reminderLists: [CalendarModel] = []
@@ -51,6 +52,7 @@ class CalendarManager: ObservableObject {
             Task {
                 await self?.reloadCalendarAndReminderLists()
                 await self?.updateEvents()
+                await self?.updateDashboardEvents()
             }
         }
     }
@@ -81,6 +83,7 @@ class CalendarManager: ObservableObject {
             if granted {
                 await reloadCalendarAndReminderLists()
                 await updateEvents()
+                await updateDashboardEvents()
             }
         case .restricted, .denied:
             NSLog("Calendar access denied or restricted")
@@ -88,6 +91,7 @@ class CalendarManager: ObservableObject {
             NSLog("Full access")
             await reloadCalendarAndReminderLists()
             await updateEvents()
+            await updateDashboardEvents()
         case .writeOnly:
             NSLog("Write only")
         @unknown default:
@@ -167,6 +171,7 @@ class CalendarManager: ObservableObject {
         Defaults[.calendarSelectionState] = selectionState
         updateSelectedCalendars()
         await updateEvents()
+        await updateDashboardEvents()
     }
 
     static func startOfDay(_ date: Date) -> Date {
@@ -176,6 +181,16 @@ class CalendarManager: ObservableObject {
     func updateCurrentDate(_ date: Date) async {
         currentWeekStartDate = Calendar.current.startOfDay(for: date)
         await updateEvents()
+    }
+
+    func updateDashboardEvents(from date: Date = Date.now) async {
+        let start = Calendar.current.startOfDay(for: date)
+        let end = Calendar.current.date(byAdding: .day, value: 7, to: start) ?? start
+        dashboardEvents = await calendarService.events(
+            from: start,
+            to: end,
+            calendars: selectedCalendars.map { $0.id }
+        )
     }
 
     private func updateEvents() async {
@@ -195,5 +210,6 @@ class CalendarManager: ObservableObject {
             from: currentWeekStartDate,
             to: Calendar.current.date(byAdding: .day, value: 1, to: currentWeekStartDate)!,
             calendars: selectedCalendars.map { $0.id })
+        await updateDashboardEvents()
     }
 }
