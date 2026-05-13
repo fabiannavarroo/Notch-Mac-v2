@@ -423,6 +423,8 @@ struct NotchHomeView: View {
     @ObservedObject var webcamManager = WebcamManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @Default(.showMusicModule) private var showMusicModule
+    @Default(.showCalendar) private var showCalendar
     let albumArtNamespace: Namespace.ID
 
     var body: some View {
@@ -440,10 +442,12 @@ struct NotchHomeView: View {
     }
 
     private var mainContent: some View {
-        HStack(alignment: .top, spacing: (shouldShowCamera && Defaults[.showCalendar]) ? 10 : 15) {
-            MusicPlayerView(albumArtNamespace: albumArtNamespace)
+        HStack(alignment: .top, spacing: (shouldShowCamera && showCalendar) ? 10 : 15) {
+            if showMusicModule {
+                MusicPlayerView(albumArtNamespace: albumArtNamespace)
+            }
 
-            if Defaults[.showCalendar] {
+            if showCalendar {
                 Group {
                     if Defaults[.nmDashboardRefDesign] {
                         EventsDashboardPanelView()
@@ -465,6 +469,13 @@ struct NotchHomeView: View {
                     .opacity(vm.notchState == .closed ? 0 : 1)
                     .blur(radius: vm.notchState == .closed ? 20 : 0)
                     .animation(.interactiveSpring(response: 0.32, dampingFraction: 0.76, blendDuration: 0), value: shouldShowCamera)
+            }
+
+            if !showMusicModule && !showCalendar && !shouldShowCamera {
+                Text("No modules enabled")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .frame(width: 220, height: 80)
             }
         }
         .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))

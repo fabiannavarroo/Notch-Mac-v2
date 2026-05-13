@@ -36,6 +36,9 @@ struct ContentView: View {
     @Default(.useMusicVisualizer) var useMusicVisualizer
 
     @Default(.showNotHumanFace) var showNotHumanFace
+    @Default(.showMusicModule) var showMusicModule
+    @Default(.showTimerModule) var showTimerModule
+    @Default(.boringShelf) var showShelfModule
 
     // Shared interactive spring for movement/resizing to avoid conflicting animations
     private let animationSpring = Animation.interactiveSpring(response: 0.38, dampingFraction: 0.8, blendDuration: 0)
@@ -67,7 +70,7 @@ struct ContentView: View {
             chinWidth = 640
         } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music)
             && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle)
-            && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed
+            && coordinator.musicLiveActivityEnabled && showMusicModule && !vm.hideOnClosed
         {
             chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 20)
         } else if !coordinator.expandingView.show && vm.notchState == .closed
@@ -240,6 +243,16 @@ struct ContentView: View {
                 }
             }
         }
+        .onChange(of: showTimerModule) { _, enabled in
+            if !enabled && coordinator.currentView == .focus {
+                coordinator.currentView = .home
+            }
+        }
+        .onChange(of: showShelfModule) { _, enabled in
+            if !enabled && coordinator.currentView == .shelf {
+                coordinator.currentView = .home
+            }
+        }
     }
 
     @ViewBuilder
@@ -287,7 +300,7 @@ struct ContentView: View {
                       } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(.opacity)
-                      } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed {
+                      } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && showMusicModule && !vm.hideOnClosed {
                           MusicLiveActivity()
                               .frame(alignment: .center)
                       } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
@@ -355,13 +368,19 @@ struct ContentView: View {
                     case .home:
                         NotchHomeView(albumArtNamespace: albumArtNamespace)
                     case .shelf:
-                        if Defaults[.nmDashboardRefDesign] {
+                        if showShelfModule && Defaults[.nmDashboardRefDesign] {
                             AirDropDashboardView()
-                        } else {
+                        } else if showShelfModule {
                             ShelfView()
+                        } else {
+                            EmptyView()
                         }
                     case .focus:
-                        FocusDashboardView()
+                        if showTimerModule {
+                            FocusDashboardView()
+                        } else {
+                            EmptyView()
+                        }
                     }
                 }
                 .transition(

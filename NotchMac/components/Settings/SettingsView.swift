@@ -1120,7 +1120,7 @@ func warningBadge(_ text: String, _ description: String) -> some View {
 
 struct NotchUtilitySettingsView: View {
     enum SidebarItem: String, Hashable {
-        case general, shortcuts
+        case general
     }
     enum TopTab: String, CaseIterable {
         case settings = "Settings"
@@ -1162,6 +1162,7 @@ struct NotchUtilitySettingsView: View {
                                 settingsContent
                             case .modules:
                                 NMModulesCard()
+                                NMPomodoroSettingsCard()
                             case .about:
                                 NMAboutPanel(updaterController: updaterController)
                             }
@@ -1203,20 +1204,9 @@ struct NotchUtilitySettingsView: View {
                 NMSidebarToggle(title: "Calendar", systemImage: "calendar", key: .showCalendar)
                 NMSidebarToggle(title: "Battery", systemImage: "battery.100", key: .showBatteryIndicator)
                 NMSidebarToggle(title: "Timer / Pomodoro", systemImage: "timer", key: .showTimerModule)
-                NMSidebarToggle(title: "Clipboard", systemImage: "doc.on.clipboard", key: .showClipboardModule)
-                NMSidebarToggle(title: "Quick Actions", systemImage: "bolt.fill", key: .showQuickActionsModule)
             }
             .padding(.horizontal, 14)
             .padding(.bottom, 18)
-
-            NMSidebarSection(title: "SYSTEM")
-                .padding(.horizontal, 18)
-                .padding(.bottom, 8)
-
-            VStack(spacing: 2) {
-                NMSidebarItem(title: "Shortcuts", systemImage: "command", isSelected: selectedItem == .shortcuts) { selectedItem = .shortcuts }
-            }
-            .padding(.horizontal, 14)
 
             Spacer(minLength: 0)
 
@@ -1282,8 +1272,6 @@ struct NotchUtilitySettingsView: View {
                     NMBehaviorCard()
                     NMAutoHideAppsCard()
                 }
-            case .shortcuts:
-                NMShortcutsCard()
             }
         }
     }
@@ -1512,19 +1500,80 @@ private struct NMModulesCard: View {
                 NMModuleRow(title: "Calendar", subtitle: "Upcoming events and agenda", systemImage: "calendar", tint: .red, key: .showCalendar)
                 NMModuleRow(title: "Battery", subtitle: "Show battery status and charging", systemImage: "battery.100", tint: .green, key: .showBatteryIndicator)
                 NMModuleRow(title: "Timer / Pomodoro", subtitle: "Countdown timer and focus sessions", systemImage: "timer", tint: .orange, key: .showTimerModule)
-                NMModuleRow(title: "Clipboard", subtitle: "Quick clipboard history access", systemImage: "doc.on.clipboard", tint: .indigo, key: .showClipboardModule)
-                NMModuleRow(title: "Quick Actions", subtitle: "Custom actions and shortcuts", systemImage: "bolt.fill", tint: .purple, key: .showQuickActionsModule)
             }
-
-            Button("Manage Modules…") {}
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .frame(maxWidth: .infinity)
-                .padding(.top, 4)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(NMCardBG())
+    }
+}
+
+private struct NMPomodoroSettingsCard: View {
+    @Default(.pomodoroFocusMinutes) private var focusMinutes
+    @Default(.pomodoroBreakMinutes) private var breakMinutes
+    @ObservedObject private var session = FocusSessionModel.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            NMCardHeader(title: "Pomodoro", subtitle: "Configure the timer shown in the notch.")
+
+            NMStepperRow(
+                title: "Focus Session",
+                subtitle: "Main countdown duration",
+                value: $focusMinutes,
+                range: 1...180,
+                suffix: "min"
+            )
+            NMStepperRow(
+                title: "Break",
+                subtitle: "Short reset duration",
+                value: $breakMinutes,
+                range: 1...60,
+                suffix: "min"
+            )
+
+            Button {
+                session.resetToFocusDuration()
+            } label: {
+                Label("Apply to Current Timer", systemImage: "arrow.clockwise")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMStepperRow: View {
+    let title: String
+    let subtitle: String
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+    let suffix: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            Spacer()
+            Stepper(value: $value, in: range) {
+                Text("\(value) \(suffix)")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+                    .frame(width: 62, alignment: .trailing)
+            }
+            .controlSize(.small)
+            .frame(width: 145)
+        }
     }
 }
 
@@ -1807,74 +1856,6 @@ private struct NMSwitchRow: View {
             Toggle("", isOn: $isOn)
                 .labelsHidden().toggleStyle(.switch).controlSize(.small).tint(.green)
         }
-    }
-}
-
-private struct NMShortcutsCard: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            NMCardHeader(title: "Shortcuts", subtitle: "Customize keyboard shortcuts.")
-
-            NMShortcutRow(label: "Show / Hide Notch", keys: ["⌥","⌘","N"])
-            NMShortcutRow(label: "Next Module", keys: ["⌥","⌘","→"])
-            NMShortcutRow(label: "Previous Module", keys: ["⌥","⌘","←"])
-            NMShortcutRow(label: "Open Settings", keys: ["⌘",","])
-
-            Button("Restore Defaults") {}
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .frame(maxWidth: .infinity)
-                .padding(.top, 6)
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(NMCardBG())
-    }
-}
-
-private struct NMShortcutRow: View {
-    let label: String
-    let keys: [String]
-    var body: some View {
-        HStack {
-            Text(label)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white.opacity(0.85))
-            Spacer()
-            HStack(spacing: 4) {
-                ForEach(keys, id: \.self) { k in
-                    Text(k)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(minWidth: 22, minHeight: 22)
-                        .padding(.horizontal, 4)
-                        .background(
-                            RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                .fill(.white.opacity(0.1))
-                        )
-                }
-            }
-        }
-    }
-}
-
-private struct NMReducedModeCard: View {
-    @Default(.nmReducedMode) var reducedMode
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            NMCardHeader(title: "Reduced Mode", subtitle: "Lighter UI for Low Power Mode.")
-            HStack {
-                Image(systemName: "moon.zzz.fill").foregroundStyle(.indigo)
-                Text("Activate reduced UI automatically when battery is low.")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.7))
-            }
-            Toggle("Enabled", isOn: $reducedMode)
-                .toggleStyle(.switch).controlSize(.small).tint(.green)
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(NMCardBG())
     }
 }
 

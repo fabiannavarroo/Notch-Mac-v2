@@ -15,23 +15,14 @@ struct TabModel: Identifiable {
     let view: NotchViews
 }
 
-var tabs: [TabModel] {
-    var base = [
-        TabModel(label: "Home", icon: "house.fill", view: .home),
-        TabModel(label: "Shelf", icon: "tray.fill", view: .shelf)
-    ]
-    if Defaults[.nmDashboardRefDesign] {
-        base.append(TabModel(label: "Focus", icon: "timer.circle.fill", view: .focus))
-    }
-    return base
-}
-
 struct TabSelectionView: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @Default(.boringShelf) private var showShelf
+    @Default(.showTimerModule) private var showTimer
     @Namespace var animation
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(tabs) { tab in
+            ForEach(visibleTabs) { tab in
                     TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view) {
                         withAnimation(.smooth) {
                             coordinator.currentView = tab.view
@@ -54,6 +45,17 @@ struct TabSelectionView: View {
             }
         }
         .clipShape(Capsule())
+    }
+
+    private var visibleTabs: [TabModel] {
+        var base = [TabModel(label: "Home", icon: "house.fill", view: .home)]
+        if showShelf {
+            base.append(TabModel(label: "Shelf", icon: "tray.fill", view: .shelf))
+        }
+        if Defaults[.nmDashboardRefDesign] && showTimer {
+            base.append(TabModel(label: "Pomodoro", icon: "timer.circle.fill", view: .focus))
+        }
+        return base
     }
 }
 

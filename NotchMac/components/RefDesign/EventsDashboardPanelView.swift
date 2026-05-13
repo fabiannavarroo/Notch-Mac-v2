@@ -29,7 +29,10 @@ struct EventsDashboardPanelView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onReceive(timer) { date in now = date }
         .onAppear {
-            Task { await calendarManager.updateCurrentDate(Date.now) }
+            Task {
+                await calendarManager.checkCalendarAuthorization()
+                await calendarManager.updateCurrentDate(Date.now)
+            }
         }
     }
 

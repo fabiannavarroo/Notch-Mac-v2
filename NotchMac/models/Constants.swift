@@ -142,18 +142,8 @@ extension Defaults.Keys {
     // MARK: NotchMac modules (mockup parity)
     static let showMusicModule = Key<Bool>("nm.module.music", default: true)
     static let showTimerModule = Key<Bool>("nm.module.timer", default: true)
-    static let showClipboardModule = Key<Bool>("nm.module.clipboard", default: false)
-    static let showQuickActionsModule = Key<Bool>("nm.module.quickActions", default: false)
-    static let nmModuleOrder = Key<NMModuleOrder>("nm.layout.order", default: .automatic)
-    static let nmModuleSpacing = Key<NMSpacing>("nm.layout.spacing", default: .normal)
-    static let nmVerticalAlignment = Key<NMVerticalAlignment>("nm.layout.vAlign", default: .center)
-    static let nmCompactMode = Key<Bool>("nm.layout.compact", default: false)
-    static let nmIconStyle = Key<NMIconStyle>("nm.appearance.iconStyle", default: .filled)
-    static let nmBackgroundStyle = Key<NMBackgroundStyle>("nm.appearance.background", default: .solid)
-    static let nmShowOnNotch = Key<Bool>("nm.behavior.showOnNotch", default: true)
-    static let nmPlaySounds = Key<Bool>("nm.behavior.playSounds", default: false)
-    static let nmShowBanners = Key<Bool>("nm.behavior.showBanners", default: true)
-    static let nmReducedMode = Key<Bool>("nm.behavior.reducedMode", default: false)
+    static let pomodoroFocusMinutes = Key<Int>("nm.pomodoro.focusMinutes", default: 25)
+    static let pomodoroBreakMinutes = Key<Int>("nm.pomodoro.breakMinutes", default: 5)
 
     // MARK: Ref-design dashboard (mockup-style expanded view)
     static let nmDashboardRefDesign = Key<Bool>("nm.dashboard.refDesign", default: true)
@@ -222,48 +212,4 @@ extension Defaults.Keys {
     }
 
     static let didClearLegacyURLCacheV1 = Key<Bool>("didClearLegacyURLCache_v1", default: false)
-}
-
-// MARK: - NotchMac utility settings enums (mockup parity)
-
-enum NMModuleOrder: String, Codable, CaseIterable, Defaults.Serializable {
-    case automatic, musicFirst, calendarFirst, custom
-    var displayName: String {
-        switch self {
-        case .automatic: return "Automatic"
-        case .musicFirst: return "Music first"
-        case .calendarFirst: return "Calendar first"
-        case .custom: return "Custom"
-        }
-    }
-}
-
-enum NMSpacing: String, Codable, CaseIterable, Defaults.Serializable {
-    case compact, normal, spacious
-    var displayName: String {
-        switch self {
-        case .compact: return "Compact"
-        case .normal: return "Normal"
-        case .spacious: return "Spacious"
-        }
-    }
-}
-
-enum NMVerticalAlignment: String, Codable, CaseIterable, Defaults.Serializable {
-    case top, center, bottom
-}
-
-enum NMIconStyle: String, Codable, CaseIterable, Defaults.Serializable {
-    case filled, outline
-}
-
-enum NMBackgroundStyle: String, Codable, CaseIterable, Defaults.Serializable {
-    case blur, solid, transparent
-    var displayName: String {
-        switch self {
-        case .blur: return "Blur"
-        case .solid: return "Solid"
-        case .transparent: return "Transparent"
-        }
-    }
 }

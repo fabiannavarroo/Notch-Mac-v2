@@ -238,6 +238,7 @@ struct CalendarView: View {
         }
         .onAppear {
             Task {
+                await calendarManager.checkCalendarAuthorization()
                 await calendarManager.updateCurrentDate(Date.now)
                 selectedDate = Date.now
             }
