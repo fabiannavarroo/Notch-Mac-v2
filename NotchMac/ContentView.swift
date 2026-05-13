@@ -363,37 +363,53 @@ struct ContentView: View {
               }
               .zIndex(2)
             if vm.notchState == .open {
-                VStack(spacing: 0) {
-                    switch coordinator.currentView {
-                    case .home:
-                        NotchHomeView(albumArtNamespace: albumArtNamespace)
-                    case .shelf:
-                        if showShelfModule && Defaults[.nmDashboardRefDesign] {
-                            AirDropDashboardView()
-                        } else if showShelfModule {
-                            ShelfView()
-                        } else {
-                            EmptyView()
-                        }
-                    case .focus:
-                        if showTimerModule {
-                            FocusDashboardView()
-                        } else {
-                            EmptyView()
-                        }
-                    }
-                }
-                .transition(
-                    .scale(scale: 0.8, anchor: .top)
-                    .combined(with: .opacity)
-                    .animation(.smooth(duration: 0.35))
-                )
-                .zIndex(1)
-                .allowsHitTesting(vm.notchState == .open)
-                .opacity(gestureProgress != 0 ? 1.0 - min(abs(gestureProgress) * 0.1, 0.3) : 1.0)
+                openNotchPage()
             }
         }
         .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], delegate: GeneralDropTargetDelegate(isTargeted: $vm.generalDropTargeting))
+    }
+
+    @ViewBuilder
+    private func openNotchPage() -> some View {
+        ZStack(alignment: .top) {
+            switch coordinator.currentView {
+            case .home:
+                NotchHomeView(albumArtNamespace: albumArtNamespace)
+            case .shelf:
+                if showShelfModule && Defaults[.nmDashboardRefDesign] {
+                    AirDropDashboardView()
+                } else if showShelfModule {
+                    ShelfView()
+                } else {
+                    EmptyView()
+                }
+            case .focus:
+                if showTimerModule {
+                    FocusDashboardView()
+                } else {
+                    EmptyView()
+                }
+            }
+        }
+        .frame(width: openPageWidth, height: openPageHeight, alignment: .top)
+        .frame(maxWidth: .infinity, alignment: .top)
+        .clipped()
+        .transition(
+            .scale(scale: 0.8, anchor: .top)
+            .combined(with: .opacity)
+            .animation(.smooth(duration: 0.35))
+        )
+        .zIndex(1)
+        .allowsHitTesting(vm.notchState == .open)
+        .opacity(gestureProgress != 0 ? 1.0 - min(abs(gestureProgress) * 0.1, 0.3) : 1.0)
+    }
+
+    private var openPageWidth: CGFloat {
+        max(0, openNotchSize.width - 74)
+    }
+
+    private var openPageHeight: CGFloat {
+        max(0, openNotchSize.height - max(24, vm.effectiveClosedNotchHeight))
     }
 
     @ViewBuilder
