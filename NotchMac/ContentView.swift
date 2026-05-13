@@ -109,29 +109,6 @@ struct ContentView: View {
                     .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
                     .background(.black)
                     .clipShape(currentNotchShape)
-                    .overlay {
-                        if vm.notchState == .open {
-                            currentNotchShape
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [.white.opacity(0.24), .white.opacity(0.08), .clear],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    ),
-                                    lineWidth: 1
-                                )
-                                .allowsHitTesting(false)
-                        }
-                    }
-                    .overlay(alignment: .top) {
-                        if vm.notchState == .open {
-                            RoundedRectangle(cornerRadius: topCornerRadius, style: .continuous)
-                                .stroke(.white.opacity(0.14), lineWidth: 0.8)
-                                .frame(height: max(22, topCornerRadius + 8))
-                                .padding(.horizontal, 1)
-                                .allowsHitTesting(false)
-                        }
-                    }
                     .overlay(alignment: .top) {
                         Rectangle()
                             .fill(.black)
