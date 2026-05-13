@@ -442,38 +442,73 @@ struct NotchHomeView: View {
     }
 
     private var mainContent: some View {
-        HStack(alignment: .top, spacing: (shouldShowCamera && showCalendar) ? 10 : 15) {
+        Group {
             if showMusicModule {
-                MusicPlayerView(albumArtNamespace: albumArtNamespace)
-            }
-
-            if showCalendar {
-                CalendarView()
-                .frame(width: shouldShowCamera ? 170 : 215)
-                .onHover { isHovering in
-                    vm.isHoveringCalendar = isHovering
-                }
-                .environmentObject(vm)
-                .transition(.opacity)
-            }
-
-            if shouldShowCamera {
-                CameraPreviewView(webcamManager: webcamManager)
-                    .scaledToFit()
-                    .opacity(vm.notchState == .closed ? 0 : 1)
-                    .blur(radius: vm.notchState == .closed ? 20 : 0)
-                    .animation(.interactiveSpring(response: 0.32, dampingFraction: 0.76, blendDuration: 0), value: shouldShowCamera)
-            }
-
-            if !showMusicModule && !showCalendar && !shouldShowCamera {
-                Text("No modules enabled")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .frame(width: 220, height: 80)
+                originalHomeContent
+            } else if showCalendar || shouldShowCamera {
+                centeredModuleContent
+            } else {
+                emptyModulesContent
             }
         }
         .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
         .blur(radius: vm.notchState == .closed ? 30 : 0)
+    }
+
+    private var originalHomeContent: some View {
+        HStack(alignment: .top, spacing: (shouldShowCamera && showCalendar) ? 10 : 15) {
+            MusicPlayerView(albumArtNamespace: albumArtNamespace)
+
+            if showCalendar {
+                calendarModule(width: shouldShowCamera ? 170 : 215)
+            }
+
+            if shouldShowCamera {
+                cameraModule
+            }
+        }
+    }
+
+    private var centeredModuleContent: some View {
+        HStack(alignment: .top, spacing: shouldShowCamera && showCalendar ? 14 : 0) {
+            Spacer(minLength: 0)
+
+            if showCalendar {
+                calendarModule(width: shouldShowCamera ? 215 : 320)
+            }
+
+            if shouldShowCamera {
+                cameraModule
+            }
+
+            Spacer(minLength: 0)
+        }
+        .frame(width: openNotchSize.width - 74, alignment: .center)
+    }
+
+    private var emptyModulesContent: some View {
+        Text("No modules enabled")
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(.white.opacity(0.55))
+            .frame(width: openNotchSize.width - 120, height: 80)
+    }
+
+    private func calendarModule(width: CGFloat) -> some View {
+        CalendarView()
+            .frame(width: width)
+            .onHover { isHovering in
+                vm.isHoveringCalendar = isHovering
+            }
+            .environmentObject(vm)
+            .transition(.opacity)
+    }
+
+    private var cameraModule: some View {
+        CameraPreviewView(webcamManager: webcamManager)
+            .scaledToFit()
+            .opacity(vm.notchState == .closed ? 0 : 1)
+            .blur(radius: vm.notchState == .closed ? 20 : 0)
+            .animation(.interactiveSpring(response: 0.32, dampingFraction: 0.76, blendDuration: 0), value: shouldShowCamera)
     }
 }
 
