@@ -37,7 +37,6 @@ struct ContentView: View {
 
     @Default(.showNotHumanFace) var showNotHumanFace
     @Default(.showMusicModule) var showMusicModule
-    @Default(.showCalendar) var showCalendar
     @Default(.showTimerModule) var showTimerModule
     @Default(.boringShelf) var showShelfModule
 
@@ -122,10 +121,7 @@ struct ContentView: View {
                     )
                 
                 mainLayout
-                    .frame(
-                        width: vm.notchState == .open ? activeOpenNotchWidth : nil,
-                        height: vm.notchState == .open ? vm.notchSize.height : nil
-                    )
+                    .frame(height: vm.notchState == .open ? vm.notchSize.height : nil)
                     .conditionalModifier(true) { view in
                         let openAnimation = Animation.spring(response: 0.42, dampingFraction: 0.8, blendDuration: 0)
                         let closeAnimation = Animation.spring(response: 0.45, dampingFraction: 1.0, blendDuration: 0)
@@ -257,20 +253,6 @@ struct ContentView: View {
                 coordinator.currentView = .home
             }
         }
-    }
-
-    private var activeOpenNotchWidth: CGFloat {
-        guard coordinator.currentView == .home else {
-            return vm.notchSize.width
-        }
-
-        let cameraVisible = Defaults[.showMirror] && webcamManager.cameraAvailable && vm.isCameraExpanded
-
-        if showMusicModule { return vm.notchSize.width }
-        if showCalendar && cameraVisible { return 510 }
-        if showCalendar { return 390 }
-        if cameraVisible { return 240 }
-        return 300
     }
 
     @ViewBuilder

@@ -466,6 +466,7 @@ struct NotchHomeView: View {
             }
         }
         .frame(width: contentWidth, alignment: .center)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private var moduleSpacing: CGFloat {
