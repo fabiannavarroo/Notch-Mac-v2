@@ -67,7 +67,7 @@ struct AlbumArtView: View {
             }
             .buttonStyle(PlainButtonStyle())
             .scaleEffect(musicManager.isPlaying ? 1 : 0.85)
-            
+
             albumArtDarkOverlay
         }
     }
@@ -79,7 +79,7 @@ struct AlbumArtView: View {
             .opacity(musicManager.isPlaying ? 0 : 0.8)
             .blur(radius: 50)
     }
-                
+
 
     private var albumArtImage: some View {
         Image(nsImage: musicManager.albumArt)
@@ -334,7 +334,7 @@ struct VolumeControlView: View {
     @State private var showVolumeSlider: Bool = false
     @State private var lastVolumeUpdateTime: Date = Date.distantPast
     private let volumeUpdateThrottle: TimeInterval = 0.1
-    
+
     var body: some View {
         HStack(spacing: 4) {
             Button(action: {
@@ -399,8 +399,8 @@ struct VolumeControlView: View {
             // volumeUpdateTask?.cancel() // No longer needed
         }
     }
-    
-    
+
+
     private var volumeIcon: String {
         if !musicManager.volumeControlSupported {
             return "speaker.slash"
@@ -442,55 +442,56 @@ struct NotchHomeView: View {
     }
 
     private var mainContent: some View {
-        Group {
-            if showMusicModule {
-                originalHomeContent
-            } else if showCalendar || shouldShowCamera {
-                centeredModuleContent
-            } else {
-                emptyModulesContent
-            }
-        }
+        homeModules
         .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
         .blur(radius: vm.notchState == .closed ? 30 : 0)
     }
 
-    private var originalHomeContent: some View {
-        HStack(alignment: .top, spacing: (shouldShowCamera && showCalendar) ? 10 : 15) {
-            MusicPlayerView(albumArtNamespace: albumArtNamespace)
+    private var homeModules: some View {
+        HStack(alignment: .top, spacing: moduleSpacing) {
+            if showMusicModule {
+                MusicPlayerView(albumArtNamespace: albumArtNamespace)
+            }
 
             if showCalendar {
-                calendarModule(width: shouldShowCamera ? 170 : 215)
+                calendarModule(width: calendarWidth)
             }
 
             if shouldShowCamera {
                 cameraModule
             }
+
+            if !showMusicModule && !showCalendar && !shouldShowCamera {
+                emptyModulesContent
+            }
         }
+        .frame(width: contentWidth, alignment: .center)
     }
 
-    private var centeredModuleContent: some View {
-        HStack(alignment: .top, spacing: shouldShowCamera && showCalendar ? 14 : 0) {
-            Spacer(minLength: 0)
+    private var moduleSpacing: CGFloat {
+        shouldShowCamera && showCalendar ? 10 : 15
+    }
 
-            if showCalendar {
-                calendarModule(width: shouldShowCamera ? 215 : 320)
-            }
+    private var calendarWidth: CGFloat {
+        if showMusicModule && shouldShowCamera { return 170 }
+        if showMusicModule { return 215 }
+        if shouldShowCamera { return 215 }
+        return 320
+    }
 
-            if shouldShowCamera {
-                cameraModule
-            }
-
-            Spacer(minLength: 0)
-        }
-        .frame(width: openNotchSize.width - 74, alignment: .center)
+    private var contentWidth: CGFloat {
+        if showMusicModule { return openNotchSize.width - 74 }
+        if showCalendar && shouldShowCamera { return 450 }
+        if showCalendar { return 360 }
+        if shouldShowCamera { return 150 }
+        return openNotchSize.width - 120
     }
 
     private var emptyModulesContent: some View {
         Text("No modules enabled")
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(.white.opacity(0.55))
-            .frame(width: openNotchSize.width - 120, height: 80)
+            .frame(height: 80)
     }
 
     private func calendarModule(width: CGFloat) -> some View {

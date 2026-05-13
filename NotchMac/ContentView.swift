@@ -37,6 +37,7 @@ struct ContentView: View {
 
     @Default(.showNotHumanFace) var showNotHumanFace
     @Default(.showMusicModule) var showMusicModule
+    @Default(.showCalendar) var showCalendar
     @Default(.showTimerModule) var showTimerModule
     @Default(.boringShelf) var showShelfModule
 
@@ -121,7 +122,10 @@ struct ContentView: View {
                     )
                 
                 mainLayout
-                    .frame(height: vm.notchState == .open ? vm.notchSize.height : nil)
+                    .frame(
+                        width: vm.notchState == .open ? activeOpenNotchWidth : nil,
+                        height: vm.notchState == .open ? vm.notchSize.height : nil
+                    )
                     .conditionalModifier(true) { view in
                         let openAnimation = Animation.spring(response: 0.42, dampingFraction: 0.8, blendDuration: 0)
                         let closeAnimation = Animation.spring(response: 0.45, dampingFraction: 1.0, blendDuration: 0)
@@ -255,6 +259,20 @@ struct ContentView: View {
         }
     }
 
+    private var activeOpenNotchWidth: CGFloat {
+        guard coordinator.currentView == .home else {
+            return vm.notchSize.width
+        }
+
+        let cameraVisible = Defaults[.showMirror] && webcamManager.cameraAvailable && vm.isCameraExpanded
+
+        if showMusicModule { return vm.notchSize.width }
+        if showCalendar && cameraVisible { return 510 }
+        if showCalendar { return 390 }
+        if cameraVisible { return 240 }
+        return 300
+    }
+
     @ViewBuilder
     func NotchLayout() -> some View {
         VStack(alignment: .leading) {
@@ -363,7 +381,7 @@ struct ContentView: View {
               }
               .zIndex(2)
             if vm.notchState == .open {
-                VStack {
+                VStack(spacing: 0) {
                     switch coordinator.currentView {
                     case .home:
                         NotchHomeView(albumArtNamespace: albumArtNamespace)
