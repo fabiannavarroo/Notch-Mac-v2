@@ -448,14 +448,8 @@ struct NotchHomeView: View {
             }
 
             if showCalendar {
-                Group {
-                    if Defaults[.nmDashboardRefDesign] {
-                        EventsDashboardPanelView()
-                    } else {
-                        CalendarView()
-                    }
-                }
-                .frame(width: shouldShowCamera ? 170 : 240)
+                CalendarView()
+                .frame(width: shouldShowCamera ? 170 : 215)
                 .onHover { isHovering in
                     vm.isHoveringCalendar = isHovering
                 }
