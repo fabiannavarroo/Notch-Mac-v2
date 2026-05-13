@@ -467,10 +467,18 @@ struct NotchHomeView: View {
         }
         .frame(width: contentWidth, alignment: .center)
         .frame(maxWidth: .infinity, alignment: .center)
+        .offset(y: contentVerticalOffset)
     }
 
     private var moduleSpacing: CGFloat {
         shouldShowCamera && showCalendar ? 10 : 15
+    }
+
+    private var contentVerticalOffset: CGFloat {
+        guard !showMusicModule else { return 0 }
+        if showCalendar { return -20 }
+        if shouldShowCamera { return -14 }
+        return 0
     }
 
     private var calendarWidth: CGFloat {
