@@ -41,7 +41,7 @@ struct ContentView: View {
     @Default(.boringShelf) var showShelfModule
     @Default(.showCalendar) var showCalendarModule
     @Default(.showBatteryIndicator) var showBatteryModule
-    @Default(.pomodoroNotchRing) var pomodoroNotchRing
+    @Default(.pomodoroIndicatorStyle) var pomodoroIndicatorStyle
     @ObservedObject private var focusSession = FocusSessionModel.shared
     @State private var moduleRenderID = UUID()
 
@@ -73,7 +73,20 @@ struct ContentView: View {
     }
 
     private var pomodoroRingActive: Bool {
-        pomodoroNotchRing && showTimerModule && focusSession.isRunning && focusSession.remainingFraction > 0
+        pomodoroIndicatorStyle == .ring && showTimerModule && focusSession.isRunning && focusSession.remainingFraction > 0
+    }
+
+    private var pomodoroDotActive: Bool {
+        pomodoroIndicatorStyle == .dot && showTimerModule && focusSession.isRunning && focusSession.remainingFraction > 0
+    }
+
+    private var currentNotchOpenBorderShape: NotchOpenBorderShape {
+        NotchOpenBorderShape(
+            topCornerRadius: topCornerRadius,
+            bottomCornerRadius: vm.notchState == .open
+                ? cornerRadiusInsets.opened.bottom
+                : cornerRadiusInsets.closed.bottom
+        )
     }
 
     private var computedChinWidth: CGFloat {
@@ -126,13 +139,13 @@ struct ContentView: View {
                     }
                     .overlay {
                         if pomodoroRingActive {
-                            currentNotchShape
+                            currentNotchOpenBorderShape
                                 .trim(from: 0, to: CGFloat(focusSession.remainingFraction))
                                 .stroke(
                                     Color.yellow,
                                     style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round)
                                 )
-                                .animation(.linear(duration: 0.4), value: focusSession.remainingFraction)
+                                .animation(.linear(duration: 0.18), value: focusSession.remainingFraction)
                                 .allowsHitTesting(false)
                         }
                     }
@@ -420,9 +433,7 @@ struct ContentView: View {
             case .home:
                 NotchHomeView(albumArtNamespace: albumArtNamespace)
             case .shelf:
-                if showShelfModule && Defaults[.nmDashboardRefDesign] {
-                    AirDropDashboardView()
-                } else if showShelfModule {
+                if showShelfModule {
                     ShelfView()
                 } else {
                     EmptyView()
@@ -551,7 +562,7 @@ struct ContentView: View {
                 )
 
             HStack {
-                if pomodoroRingActive {
+                if pomodoroDotActive {
                     ZStack {
                         Circle()
                             .stroke(.white.opacity(0.18), lineWidth: 2)
@@ -559,9 +570,11 @@ struct ContentView: View {
                             .trim(from: 0, to: CGFloat(focusSession.remainingFraction))
                             .stroke(Color.yellow, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                             .rotationEffect(.degrees(-90))
-                            .animation(.linear(duration: 0.4), value: focusSession.remainingFraction)
+                            .animation(.linear(duration: 0.18), value: focusSession.remainingFraction)
                     }
                     .padding(2)
+                } else if pomodoroRingActive {
+                    Color.clear
                 } else if useMusicVisualizer {
                     Rectangle()
                         .fill(

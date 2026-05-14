@@ -1392,7 +1392,7 @@ private struct NMNotchMockup: View {
     @Default(.showTimerModule) private var showTimerModule
     @Default(.boringShelf) private var showShelf
     @Default(.showBatteryIndicator) private var showBattery
-    @Default(.pomodoroNotchRing) private var pomodoroRing
+    @Default(.pomodoroIndicatorStyle) private var pomodoroIndicator
     @ObservedObject private var session = FocusSessionModel.shared
     @ObservedObject private var musicManager = MusicManager.shared
     @ObservedObject private var batteryModel = BatteryStatusViewModel.shared
@@ -1418,10 +1418,10 @@ private struct NMNotchMockup: View {
                 .overlay(
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .stroke(
-                            pomodoroRing && session.isRunning
+                            pomodoroIndicator == .ring && session.isRunning
                                 ? Color.yellow.opacity(0.9)
                                 : .white.opacity(0.08),
-                            lineWidth: pomodoroRing && session.isRunning ? 2 : 0.8
+                            lineWidth: pomodoroIndicator == .ring && session.isRunning ? 2 : 0.8
                         )
                 )
         )
@@ -1569,7 +1569,7 @@ private struct NMModulesCard: View {
 private struct NMPomodoroSettingsCard: View {
     @Default(.pomodoroFocusMinutes) private var focusMinutes
     @Default(.pomodoroBreakMinutes) private var breakMinutes
-    @Default(.pomodoroNotchRing) private var notchRing
+    @Default(.pomodoroIndicatorStyle) private var indicatorStyle
     @ObservedObject private var session = FocusSessionModel.shared
 
     var body: some View {
@@ -1591,11 +1591,21 @@ private struct NMPomodoroSettingsCard: View {
                 suffix: "min"
             )
 
-            NMSwitchRow(
-                title: "Notch Ring",
-                subtitle: "Draw a yellow countdown line around the notch border while a session is running",
-                isOn: $notchRing
-            )
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Notch Indicator")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text("Choose how an active session appears on the closed notch.")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.5))
+                Picker("", selection: $indicatorStyle) {
+                    ForEach(PomodoroIndicatorStyle.allCases, id: \.self) { style in
+                        Text(style.rawValue).tag(style)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
 
             Button {
                 session.resetToFocusDuration()

@@ -29,14 +29,17 @@ final class FocusSessionModel: ObservableObject {
         isRunning ? pause() : start()
     }
 
+    private static let tickInterval: TimeInterval = 0.1
+
     func start() {
         guard !isRunning else { return }
         isRunning = true
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: Self.tickInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 guard let self else { return }
-                self.remaining = max(0, self.remaining - 1)
-                if self.remaining == 0 {
+                self.remaining = max(0, self.remaining - Self.tickInterval)
+                if self.remaining <= 0 {
+                    self.remaining = 0
                     self.pause()
                 }
             }
