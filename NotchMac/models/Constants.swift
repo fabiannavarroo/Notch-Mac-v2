@@ -144,6 +144,9 @@ extension Defaults.Keys {
     static let showTimerModule = Key<Bool>("nm.module.timer", default: true)
     static let pomodoroFocusMinutes = Key<Int>("nm.pomodoro.focusMinutes", default: 25)
     static let pomodoroBreakMinutes = Key<Int>("nm.pomodoro.breakMinutes", default: 5)
+    /// When ON, an active Pomodoro session draws a yellow countdown ring around the closed notch
+    /// instead of the music spectrum bars.
+    static let pomodoroNotchRing = Key<Bool>("nm.pomodoro.notchRing", default: true)
 
     // MARK: Ref-design dashboard (mockup-style expanded view)
     static let nmDashboardRefDesign = Key<Bool>("nm.dashboard.refDesign", default: true)

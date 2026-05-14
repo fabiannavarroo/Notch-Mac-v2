@@ -1387,80 +1387,135 @@ private struct NMLivePreviewCard: View {
 }
 
 private struct NMNotchMockup: View {
+    @Default(.showMusicModule) private var showMusicModule
+    @Default(.showCalendar) private var showCalendar
+    @Default(.showTimerModule) private var showTimerModule
+    @Default(.boringShelf) private var showShelf
+    @Default(.showBatteryIndicator) private var showBattery
+    @Default(.pomodoroNotchRing) private var pomodoroRing
+    @ObservedObject private var session = FocusSessionModel.shared
+    @ObservedObject private var musicManager = MusicManager.shared
+    @ObservedObject private var batteryModel = BatteryStatusViewModel.shared
+
     var body: some View {
-        HStack(spacing: 16) {
-            // Artwork
-            ZStack {
-                LinearGradient(colors: [.orange, .red], startPoint: .topLeading, endPoint: .bottomTrailing)
-                Text("🌅")
-                    .font(.system(size: 26))
+        HStack(spacing: 14) {
+            if showMusicModule { musicSection }
+            if !showMusicModule && !showCalendar && !showTimerModule && !showShelf {
+                emptyMessage
             }
-            .frame(width: 54, height: 54)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("AIRBNB")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white)
-                Text("Mora")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.6))
-            }
-
-            Spacer(minLength: 30)
-
-            HStack(spacing: 18) {
-                Image(systemName: "backward.fill")
-                Image(systemName: "pause.fill").font(.system(size: 14))
-                Image(systemName: "forward.fill")
-            }
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(.white)
-
-            Spacer(minLength: 12)
-
-            HStack(spacing: 14) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("may")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.6))
-                    Text("2026")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
-                HStack(spacing: 8) {
-                    ForEach(["sáb","dom","lun","mar","mié","jue"], id: \.self) { d in
-                        let isLun = d == "lun"
-                        VStack(spacing: 3) {
-                            Text(d)
-                                .font(.system(size: 9, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.55))
-                            Text(d == "sáb" ? "09" : d == "dom" ? "10" : d == "lun" ? "11" : d == "mar" ? "12" : d == "mié" ? "13" : "14")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(isLun ? .white : .white.opacity(0.7))
-                                .padding(5)
-                                .background(
-                                    Circle().fill(isLun ? Color.blue : Color.clear)
-                                )
-                        }
-                    }
-                }
-                Image(systemName: "calendar")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-            }
+            Spacer(minLength: 8)
+            if showTimerModule { timerSection }
+            if showShelf { shelfBadge }
+            if showCalendar { calendarSection }
+            if showBattery { batteryBadge }
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
-        .frame(maxWidth: 880)
+        .frame(maxWidth: 880, minHeight: 86)
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(Color.black)
                 .overlay(
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(.white.opacity(0.08), lineWidth: 0.8)
+                        .stroke(
+                            pomodoroRing && session.isRunning
+                                ? Color.yellow.opacity(0.9)
+                                : .white.opacity(0.08),
+                            lineWidth: pomodoroRing && session.isRunning ? 2 : 0.8
+                        )
                 )
         )
+    }
+
+    private var musicSection: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                LinearGradient(colors: [.orange, .red], startPoint: .topLeading, endPoint: .bottomTrailing)
+                Image(systemName: "music.note")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+            .frame(width: 48, height: 48)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(musicManager.songTitle.isEmpty ? "Now Playing" : musicManager.songTitle)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Text(musicManager.artistName.isEmpty ? "Artist" : musicManager.artistName)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .lineLimit(1)
+            }
+            HStack(spacing: 12) {
+                Image(systemName: "backward.fill")
+                Image(systemName: musicManager.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 13))
+                Image(systemName: "forward.fill")
+            }
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(.white)
+        }
+    }
+
+    private var timerSection: some View {
+        HStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .stroke(.white.opacity(0.15), lineWidth: 2)
+                Circle()
+                    .trim(from: 0, to: CGFloat(session.remainingFraction))
+                    .stroke(Color.yellow, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            }
+            .frame(width: 22, height: 22)
+            Text(session.timeString)
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+        }
+    }
+
+    private var shelfBadge: some View {
+        Image(systemName: "tray.full.fill")
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(.blue.opacity(0.85))
+    }
+
+    private var calendarSection: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "calendar")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.red.opacity(0.85))
+            Text(shortDate)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white)
+        }
+    }
+
+    private var batteryBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: batteryModel.isCharging ? "battery.100.bolt" : "battery.100")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.green.opacity(0.85))
+            Text("\(Int(batteryModel.levelBattery))%")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.white)
+        }
+    }
+
+    private var emptyMessage: some View {
+        Text("Enable a module to preview it here.")
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.white.opacity(0.5))
+            .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private var shortDate: String {
+        let f = DateFormatter()
+        f.dateFormat = "EEE d"
+        return f.string(from: Date())
     }
 }
 
