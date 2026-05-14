@@ -23,6 +23,15 @@ struct AirDropDashboardView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .contentShape(Rectangle())
+        .onDrop(
+            of: [.fileURL, .url, .utf8PlainText, .plainText, .data],
+            isTargeted: $vm.dragDetectorTargeting
+        ) { providers in
+            vm.dropEvent = true
+            tvm.load(providers)
+            return true
+        }
     }
 
     // MARK: - Left column (AirDrop card + drop zone stacked)

@@ -576,11 +576,14 @@ struct ContentView: View {
             Color.clear
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
-        .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
-            vm.dropEvent = true
-            ShelfStateViewModel.shared.load(providers)
-            return true
-        }
+                .onDrop(
+                    of: [.fileURL, .url, .utf8PlainText, .plainText, .data],
+                    isTargeted: $vm.dragDetectorTargeting
+                ) { providers in
+                    vm.dropEvent = true
+                    ShelfStateViewModel.shared.load(providers)
+                    return true
+                }
         } else {
             EmptyView()
         }
