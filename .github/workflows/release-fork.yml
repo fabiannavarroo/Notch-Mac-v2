@@ -174,6 +174,17 @@ jobs:
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Cambiamos a main para evitar non-fast-forward; trasladamos solo el appcast actualizado
+          cp "$APPCAST" /tmp/new_appcast.xml
+          git fetch origin main
+          git checkout -B main origin/main
+          cp /tmp/new_appcast.xml "$APPCAST"
           git add "$APPCAST"
-          git commit -m "release: appcast ${VERSION}" || echo "nothing to commit"
-          git push origin HEAD:main || true
+          if ! git diff --staged --quiet; then
+            git commit -m "release: appcast ${VERSION}"
+            for i in 1 2 3; do
+              git push origin main && break || (git pull --rebase origin main && sleep 2)
+            done
+          else
+            echo "appcast already up to date"
+          fi
