@@ -1330,8 +1330,7 @@ private struct NMSidebarToggle: View {
     let systemImage: String
     let key: Defaults.Key<Bool>
 
-    @Default(.showMusicModule) private var _placeholder // ignored, just for re-render
-    @State private var value: Bool = true
+    @State private var value: Bool = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -1343,17 +1342,21 @@ private struct NMSidebarToggle: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white.opacity(0.85))
             Spacer()
-            Toggle("", isOn: Binding(
-                get: { Defaults[key] },
-                set: { Defaults[key] = $0 }
-            ))
-            .labelsHidden()
-            .toggleStyle(.switch)
-            .controlSize(.mini)
-            .tint(.green)
+            Toggle("", isOn: $value)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .tint(.green)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
+        .onAppear { value = Defaults[key] }
+        .onChange(of: value) { _, newValue in
+            if Defaults[key] != newValue { Defaults[key] = newValue }
+        }
+        .onReceive(Defaults.publisher(key).receive(on: RunLoop.main)) { change in
+            if value != change.newValue { value = change.newValue }
+        }
     }
 }
 
@@ -1584,6 +1587,8 @@ private struct NMModuleRow: View {
     let tint: SwiftUI.Color
     let key: Defaults.Key<Bool>
 
+    @State private var value: Bool = false
+
     var body: some View {
         HStack(spacing: 10) {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -1604,14 +1609,18 @@ private struct NMModuleRow: View {
                     .foregroundStyle(.white.opacity(0.5))
             }
             Spacer()
-            Toggle("", isOn: Binding(
-                get: { Defaults[key] },
-                set: { Defaults[key] = $0 }
-            ))
-            .labelsHidden()
-            .toggleStyle(.switch)
-            .controlSize(.small)
-            .tint(.green)
+            Toggle("", isOn: $value)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .tint(.green)
+        }
+        .onAppear { value = Defaults[key] }
+        .onChange(of: value) { _, newValue in
+            if Defaults[key] != newValue { Defaults[key] = newValue }
+        }
+        .onReceive(Defaults.publisher(key).receive(on: RunLoop.main)) { change in
+            if value != change.newValue { value = change.newValue }
         }
     }
 }
