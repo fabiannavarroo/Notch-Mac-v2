@@ -41,6 +41,8 @@ struct ContentView: View {
     @Default(.boringShelf) var showShelfModule
     @Default(.showCalendar) var showCalendarModule
     @Default(.showBatteryIndicator) var showBatteryModule
+    @Default(.pomodoroNotchRing) var pomodoroNotchRing
+    @ObservedObject private var focusSession = FocusSessionModel.shared
     @State private var moduleRenderID = UUID()
 
     // Shared interactive spring for movement/resizing to avoid conflicting animations
@@ -68,6 +70,10 @@ struct ContentView: View {
         vm.notchState == .open
             ? cornerRadiusInsets.opened.top
             : cornerRadiusInsets.closed.bottom
+    }
+
+    private var pomodoroRingActive: Bool {
+        pomodoroNotchRing && showTimerModule && focusSession.isRunning && focusSession.remainingFraction > 0
     }
 
     private var computedChinWidth: CGFloat {
@@ -117,6 +123,18 @@ struct ContentView: View {
                             .fill(.black)
                             .frame(height: 1)
                             .padding(.horizontal, topCornerRadius)
+                    }
+                    .overlay {
+                        if pomodoroRingActive {
+                            currentNotchShape
+                                .trim(from: 0, to: CGFloat(focusSession.remainingFraction))
+                                .stroke(
+                                    Color.yellow,
+                                    style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round)
+                                )
+                                .animation(.linear(duration: 0.4), value: focusSession.remainingFraction)
+                                .allowsHitTesting(false)
+                        }
                     }
                     .shadow(
                         color: ((vm.notchState == .open || isHovering) && Defaults[.enableShadow])
@@ -533,7 +551,18 @@ struct ContentView: View {
                 )
 
             HStack {
-                if useMusicVisualizer {
+                if pomodoroRingActive {
+                    ZStack {
+                        Circle()
+                            .stroke(.white.opacity(0.18), lineWidth: 2)
+                        Circle()
+                            .trim(from: 0, to: CGFloat(focusSession.remainingFraction))
+                            .stroke(Color.yellow, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                            .animation(.linear(duration: 0.4), value: focusSession.remainingFraction)
+                    }
+                    .padding(2)
+                } else if useMusicVisualizer {
                     Rectangle()
                         .fill(
                             Defaults[.coloredSpectrogram]

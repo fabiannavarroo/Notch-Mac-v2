@@ -1569,6 +1569,7 @@ private struct NMModulesCard: View {
 private struct NMPomodoroSettingsCard: View {
     @Default(.pomodoroFocusMinutes) private var focusMinutes
     @Default(.pomodoroBreakMinutes) private var breakMinutes
+    @Default(.pomodoroNotchRing) private var notchRing
     @ObservedObject private var session = FocusSessionModel.shared
 
     var body: some View {
@@ -1588,6 +1589,12 @@ private struct NMPomodoroSettingsCard: View {
                 value: $breakMinutes,
                 range: 1...60,
                 suffix: "min"
+            )
+
+            NMSwitchRow(
+                title: "Notch Ring",
+                subtitle: "Draw a yellow countdown line around the notch border while a session is running",
+                isOn: $notchRing
             )
 
             Button {

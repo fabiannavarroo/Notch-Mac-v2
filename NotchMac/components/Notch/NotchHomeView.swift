@@ -423,7 +423,6 @@ struct NotchHomeView: View {
     @ObservedObject var webcamManager = WebcamManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
-    @ObservedObject private var musicManager = MusicManager.shared
     @Default(.showMusicModule) private var showMusicModule
     @Default(.showCalendar) private var showCalendar
     let albumArtNamespace: Namespace.ID
@@ -442,14 +441,6 @@ struct NotchHomeView: View {
         Defaults[.showMirror] && webcamManager.cameraAvailable && vm.isCameraExpanded
     }
 
-    private var shouldShowMusic: Bool {
-        showMusicModule && (!musicManager.isPlayerIdle || !showCalendar)
-    }
-
-    private var shouldShowCalendar: Bool {
-        showCalendar && !shouldShowMusic
-    }
-
     private var mainContent: some View {
         homeModules
         .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
@@ -458,11 +449,11 @@ struct NotchHomeView: View {
 
     private var homeModules: some View {
         HStack(alignment: .top, spacing: moduleSpacing) {
-            if shouldShowMusic {
+            if showMusicModule {
                 MusicPlayerView(albumArtNamespace: albumArtNamespace)
             }
 
-            if shouldShowCalendar {
+            if showCalendar {
                 calendarModule(width: calendarWidth)
             }
 
@@ -470,7 +461,7 @@ struct NotchHomeView: View {
                 cameraModule
             }
 
-            if !shouldShowMusic && !shouldShowCalendar && !shouldShowCamera {
+            if !showMusicModule && !showCalendar && !shouldShowCamera {
                 emptyModulesContent
             }
         }
@@ -479,16 +470,18 @@ struct NotchHomeView: View {
     }
 
     private var moduleSpacing: CGFloat {
-        shouldShowCamera && shouldShowCalendar ? 10 : 15
+        shouldShowCamera && showCalendar ? 10 : 15
     }
 
     private var calendarWidth: CGFloat {
+        if showMusicModule && shouldShowCamera { return 170 }
+        if showMusicModule { return 215 }
         if shouldShowCamera { return 215 }
         return 320
     }
 
     private var contentWidth: CGFloat {
-        if shouldShowMusic || shouldShowCalendar || shouldShowCamera { return openNotchSize.width - 74 }
+        if showMusicModule || showCalendar || shouldShowCamera { return openNotchSize.width - 74 }
         return openNotchSize.width - 120
     }
 
