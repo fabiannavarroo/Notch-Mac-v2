@@ -20,7 +20,7 @@
 	<key>SUFeedURL</key>
 	<string>https://raw.githubusercontent.com/fabiannavarroo/Notch-Mac-v2/main/updater/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>REPLACE_WITH_PUBLIC_KEY</string>
+	<string>Fgp6bCyEyooUJlOs8gkKbbqY/6M1b77ecdTPnz0LxeY=</string>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict/>
