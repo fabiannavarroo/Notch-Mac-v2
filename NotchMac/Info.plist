@@ -12,7 +12,15 @@
 		<true/>
 	</dict>
 	<key>SUEnableAutomaticChecks</key>
-	<false/>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>3600</integer>
+	<key>SUAllowsAutomaticUpdates</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/fabiannavarroo/Notch-Mac-v2/main/updater/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>REPLACE_WITH_PUBLIC_KEY</string>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict/>

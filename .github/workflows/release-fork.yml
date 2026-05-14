@@ -1,0 +1,179 @@
+name: Release Fork
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version sin la v, e.g. 1.2.3'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build, sign update and release
+    runs-on: macos-15
+    env:
+      SCHEME: NotchMac
+      APP_NAME: NotchMac
+      PROJECT: NotchMac.xcodeproj
+      CONFIG: Release
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            V="${GITHUB_REF_NAME#v}"
+          else
+            V="${{ github.event.inputs.version }}"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          BN=$(git rev-list --count HEAD)
+          echo "build=$BN" >> "$GITHUB_OUTPUT"
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app || true
+
+      - name: Cache SPM
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: spm-${{ runner.os }}-${{ hashFiles('**/Package.resolved', '**/project.pbxproj') }}
+
+      - name: Build .app
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          BUILD: ${{ steps.ver.outputs.build }}
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -configuration "$CONFIG" \
+            -derivedDataPath build/DerivedData \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD" \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet \
+            build
+
+      - name: Locate app + ad-hoc sign
+        id: app
+        run: |
+          set -euo pipefail
+          APP="build/DerivedData/Build/Products/${CONFIG}/${APP_NAME}.app"
+          test -d "$APP"
+          codesign --force --deep --sign - "$APP"
+          echo "path=$APP" >> "$GITHUB_OUTPUT"
+
+      - name: Zip app
+        id: zip
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          APP="${{ steps.app.outputs.path }}"
+          OUT="${APP_NAME}-${VERSION}.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$APP" "$OUT"
+          echo "file=$OUT" >> "$GITHUB_OUTPUT"
+
+      - name: Install Sparkle CLI tools
+        run: |
+          set -euo pipefail
+          SPARKLE_VER="2.6.4"
+          curl -L -o sparkle.tar.xz \
+            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VER}/Sparkle-${SPARKLE_VER}.tar.xz"
+          mkdir -p sparkle && tar -xf sparkle.tar.xz -C sparkle
+          echo "SPARKLE_BIN=$(pwd)/sparkle/bin" >> "$GITHUB_ENV"
+
+      - name: Sign update (EdDSA)
+        id: sig
+        env:
+          PRIV_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${PRIV_KEY:-}" ]]; then
+            echo "::error::Falta el secreto SPARKLE_ED_PRIVATE_KEY"
+            exit 1
+          fi
+          echo "$PRIV_KEY" > /tmp/sparkle_ed_priv.key
+          chmod 600 /tmp/sparkle_ed_priv.key
+          OUT=$("$SPARKLE_BIN/sign_update" -f /tmp/sparkle_ed_priv.key "${{ steps.zip.outputs.file }}")
+          echo "attr=$OUT" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ steps.ver.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: ${{ steps.zip.outputs.file }}
+
+      - name: Update appcast.xml in repo
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          BUILD: ${{ steps.ver.outputs.build }}
+          ATTR: ${{ steps.sig.outputs.attr }}
+          ZIP: ${{ steps.zip.outputs.file }}
+        run: |
+          set -euo pipefail
+          mkdir -p updater
+          APPCAST=updater/appcast.xml
+          if [[ ! -f "$APPCAST" ]] || ! grep -q "<rss" "$APPCAST"; then
+            printf '%s\n' \
+              '<?xml version="1.0" standalone="yes"?>' \
+              '<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">' \
+              '    <channel>' \
+              '        <title>NotchMac Updates</title>' \
+              '    </channel>' \
+              '</rss>' > "$APPCAST"
+          fi
+          PUBDATE=$(LC_ALL=en_US.UTF-8 date -u "+%a, %d %b %Y %H:%M:%S +0000")
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${ZIP}"
+          export VERSION BUILD ATTR URL PUBDATE
+          python3 - "$APPCAST" <<'PY'
+          import sys, pathlib, os
+          appcast = pathlib.Path(sys.argv[1])
+          version = os.environ["VERSION"]
+          build = os.environ["BUILD"]
+          attr = os.environ["ATTR"]
+          url = os.environ["URL"]
+          pubdate = os.environ["PUBDATE"]
+          item = (
+              "        <item>\n"
+              f"            <title>{version}</title>\n"
+              f"            <pubDate>{pubdate}</pubDate>\n"
+              f"            <sparkle:version>{build}</sparkle:version>\n"
+              f"            <sparkle:shortVersionString>{version}</sparkle:shortVersionString>\n"
+              f"            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>\n"
+              f"            <description><![CDATA[Auto-release {version} build {build}.]]></description>\n"
+              f'            <enclosure url="{url}" {attr} type="application/octet-stream"/>\n'
+              "        </item>\n"
+          )
+          src = appcast.read_text()
+          marker = "<channel>"
+          idx = src.find(marker)
+          if idx == -1:
+              raise SystemExit("no <channel> tag in appcast")
+          end = idx + len(marker)
+          appcast.write_text(src[:end] + "\n" + item + src[end:])
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$APPCAST"
+          git commit -m "release: appcast ${VERSION}" || echo "nothing to commit"
+          git push origin HEAD:main || true
