@@ -1955,6 +1955,10 @@ private struct NMAboutPanel: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.white.opacity(0.55))
 
+            if let updater = updaterController?.updater {
+                NMUpdateRow(updater: updater)
+            }
+
             HStack {
                 Link("Original repo", destination: URL(string: "https://github.com/TheBoredTeam/boring.notch")!)
                 Spacer()
@@ -1965,5 +1969,45 @@ private struct NMAboutPanel: View {
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(NMCardBG())
+    }
+}
+
+private struct NMUpdateRow: View {
+    @ObservedObject private var checker: CheckForUpdatesViewModel
+    private let updater: SPUUpdater
+
+    init(updater: SPUUpdater) {
+        self.updater = updater
+        self.checker = CheckForUpdatesViewModel(updater: updater)
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.triangle.2.circlepath")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 18)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Updates")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text(updater.automaticallyChecksForUpdates
+                     ? "Comprueba en GitHub cada hora."
+                     : "Comprobaciones automáticas desactivadas.")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+            Spacer()
+            Button {
+                updater.checkForUpdates()
+            } label: {
+                Label("Buscar actualizaciones", systemImage: "magnifyingglass")
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .tint(.accentColor)
+            .disabled(!checker.canCheckForUpdates)
+        }
+        .padding(.vertical, 4)
     }
 }
