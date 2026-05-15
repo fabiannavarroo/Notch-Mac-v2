@@ -81,6 +81,9 @@ extension Defaults.Keys {
     static let enableHaptics = Key<Bool>("enableHaptics", default: true)
     static let openNotchOnHover = Key<Bool>("openNotchOnHover", default: true)
     static let extendHoverArea = Key<Bool>("extendHoverArea", default: false)
+    static let hiddenHoverWidth = Key<CGFloat>("hiddenHoverWidth", default: openNotchSize.width + 80)
+    static let hiddenHoverHeight = Key<CGFloat>("hiddenHoverHeight", default: 20)
+    static let showHiddenZoneDebug = Key<Bool>("showHiddenZoneDebug", default: false)
     static let notchHeightMode = Key<WindowHeightMode>(
         "notchHeightMode",
         default: WindowHeightMode.matchRealNotchSize
