@@ -7,7 +7,7 @@
             <sparkle:version>86</sparkle:version>
             <sparkle:shortVersionString>1.2.9</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Auto-release 1.2.9 build 86.]]></description>
+            <description><![CDATA[<h3>NotchMac 1.2.9</h3><ul><li>Calendario: corregido el salto visual del notch cuando solo está activo el módulo de calendario (sin música).</li><li>Pomodoro: corregido el mismo salto visual en el tab Focus al estar solo.</li><li>Ambas vistas ahora rellenan el espacio disponible del notch de forma consistente con la vista de música.</li></ul>]]></description>
             <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.2.9/NotchMac-1.2.9.zip" sparkle:edSignature="gKxsmnfrNo+GVYSdXDNmnwyOv6bkAn2Cw2xUglWhoCz0BNTnPRM9T+zWCZEaR9/Ml8UWt0BEHPZE3sWyoJ8sBQ==" length="10070324" type="application/octet-stream"/>
         </item>
 
