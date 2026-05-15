@@ -100,6 +100,7 @@ class BoringViewCoordinator: ObservableObject {
     @Published var optionKeyPressed: Bool = true
     private var accessibilityObserver: Any?
     private var hudReplacementCancellable: AnyCancellable?
+    private var moduleMutexCancellables: Set<AnyCancellable> = []
 
     private init() {
         // Perform migration from name-based to UUID-based storage
@@ -160,6 +161,8 @@ class BoringViewCoordinator: ObservableObject {
                     }
                 }
             }
+
+        setupModuleMutex()
 
         Task { @MainActor in
             helloAnimationRunning = firstLaunch
@@ -296,5 +299,49 @@ class BoringViewCoordinator: ObservableObject {
     
     func showEmpty() {
         currentView = .home
+    }
+
+    // MARK: - Module mutual-exclusion
+
+    /// Música y Calendario no pueden estar ambos desactivados.
+    /// Si Shelf se apaga con `currentView == .shelf`, volvemos a Home.
+    private func setupModuleMutex() {
+        Defaults.publisher(.showMusicModule)
+            .receive(on: RunLoop.main)
+            .sink { change in
+                if change.newValue == false && Defaults[.showCalendar] == false {
+                    Defaults[.showCalendar] = true
+                }
+            }
+            .store(in: &moduleMutexCancellables)
+
+        Defaults.publisher(.showCalendar)
+            .receive(on: RunLoop.main)
+            .sink { change in
+                if change.newValue == false && Defaults[.showMusicModule] == false {
+                    Defaults[.showMusicModule] = true
+                }
+            }
+            .store(in: &moduleMutexCancellables)
+
+        Defaults.publisher(.boringShelf)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] change in
+                guard let self else { return }
+                if change.newValue == false && self.currentView == .shelf {
+                    self.currentView = .home
+                }
+            }
+            .store(in: &moduleMutexCancellables)
+
+        Defaults.publisher(.showTimerModule)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] change in
+                guard let self else { return }
+                if change.newValue == false && self.currentView == .focus {
+                    self.currentView = .home
+                }
+            }
+            .store(in: &moduleMutexCancellables)
     }
 }

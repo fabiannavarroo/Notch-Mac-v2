@@ -197,7 +197,7 @@ extension Defaults.Keys {
     static let reminderPermissionPrompted = Key<Bool>("nm.reminders.permissionPrompted", default: false)
     
     // MARK: Fullscreen Media Detection
-    static let hideNotchOption = Key<HideNotchOption>("hideNotchOption", default: .nowPlayingOnly)
+    static let hideNotchOption = Key<HideNotchOption>("hideNotchOption", default: .always)
     
     // MARK: Media Controller
     static let mediaController = Key<MediaControllerType>("mediaController", default: defaultMediaController)

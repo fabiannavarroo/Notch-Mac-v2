@@ -138,6 +138,14 @@ struct ContentView: View {
                             .padding(.horizontal, topCornerRadius)
                     }
                     .overlay {
+                        // Borde sutil (estilo original boring.notch) sólo en estado expandido
+                        if vm.notchState == .open {
+                            currentNotchOpenBorderShape
+                                .stroke(.white.opacity(0.10), lineWidth: 0.7)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .overlay {
                         if pomodoroRingActive {
                             currentNotchOpenBorderShape
                                 .trim(from: 0, to: CGFloat(focusSession.remainingFraction))
@@ -565,10 +573,10 @@ struct ContentView: View {
                 if pomodoroDotActive {
                     ZStack {
                         Circle()
-                            .stroke(.white.opacity(0.18), lineWidth: 2)
+                            .stroke(.white.opacity(0.18), lineWidth: 3.5)
                         Circle()
                             .trim(from: 0, to: CGFloat(focusSession.remainingFraction))
-                            .stroke(Color.yellow, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                            .stroke(Color.yellow, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
                             .rotationEffect(.degrees(-90))
                             .animation(.linear(duration: 0.18), value: focusSession.remainingFraction)
                     }

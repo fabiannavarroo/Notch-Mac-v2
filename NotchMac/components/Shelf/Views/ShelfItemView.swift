@@ -20,6 +20,7 @@ struct ShelfItemView: View {
     @State private var showStack = false
     @State private var cachedPreviewImage: NSImage?
     @State private var debouncedDropTarget = false
+    @State private var isHovered = false
 
     private var isSelected: Bool { viewModel.isSelected }
     private var shouldHideDuringDrag: Bool { selection.isDragging && selection.isSelected(item.id) && false }
@@ -30,7 +31,7 @@ struct ShelfItemView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) {
             if !shouldHideDuringDrag {
                 VStack(alignment: .center, spacing: 2) {
                     iconView
@@ -43,6 +44,29 @@ struct ShelfItemView: View {
                 .contentShape(Rectangle())
                 .animation(.easeInOut(duration: 0.1), value: debouncedDropTarget)
                 .animation(.easeInOut(duration: 0.1), value: isSelected)
+                .onHover { hovering in
+                    withAnimation(.easeOut(duration: 0.12)) { isHovered = hovering }
+                }
+
+                if isHovered {
+                    Button {
+                        if ShelfSelectionModel.shared.isSelected(item.id) {
+                            ShelfSelectionModel.shared.toggle(item)
+                        }
+                        ShelfStateViewModel.shared.remove(item)
+                    } label: {
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(5)
+                            .background(Circle().fill(Color.red.opacity(0.92)))
+                            .shadow(color: .black.opacity(0.4), radius: 2, y: 1)
+                    }
+                    .buttonStyle(.plain)
+                    .offset(x: -4, y: 4)
+                    .transition(.scale.combined(with: .opacity))
+                    .zIndex(2)
+                }
 
                 DraggableClickHandler(
                     item: item,

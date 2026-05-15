@@ -55,6 +55,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var isScreenLocked: Bool = false
     private var windowScreenDidChangeObserver: Any?
     private var dragDetectors: [String: DragDetector] = [:] // UUID -> DragDetector
+    private var hiddenHoverDetector: HiddenHoverDetector?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
@@ -108,9 +109,54 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let alpha: CGFloat = hidden ? 0 : 1
         Task { @MainActor in
             if hidden, self.vm.notchState == .open { self.vm.close() }
-            self.window?.animator().alphaValue = alpha
-            for w in self.windows.values { w.animator().alphaValue = alpha }
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.32
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                ctx.allowsImplicitAnimation = true
+                self.window?.animator().alphaValue = alpha
+                for w in self.windows.values { w.animator().alphaValue = alpha }
+            }
+            if hidden {
+                self.startHiddenHoverDetector()
+            } else {
+                self.stopHiddenHoverDetector()
+            }
         }
+    }
+
+    @MainActor
+    private func startHiddenHoverDetector() {
+        stopHiddenHoverDetector()
+        guard let screen = window?.screen ?? NSScreen.main else { return }
+        let f = screen.frame
+        // Zona generosa: ancho del notch open + 40px de margen para tolerancia.
+        let regionWidth: CGFloat = openNotchSize.width + 80
+        let regionHeight: CGFloat = 18
+        let region = CGRect(
+            x: f.midX - regionWidth / 2,
+            y: f.maxY - regionHeight,
+            width: regionWidth,
+            height: regionHeight
+        )
+        let detector = HiddenHoverDetector(notchRegion: region)
+        detector.onHover = { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                Defaults[.nmIslandHidden] = false
+                self.applyIslandVisibility()
+                // Damos un frame para que la ventana sea visible antes de abrir.
+                try? await Task.sleep(for: .milliseconds(60))
+                self.vm.open()
+            }
+        }
+        detector.start()
+        hiddenHoverDetector = detector
+    }
+
+    @MainActor
+    private func stopHiddenHoverDetector() {
+        hiddenHoverDetector?.stop()
+        hiddenHoverDetector = nil
     }
 
     func switchTab(_ view: NotchViews) {

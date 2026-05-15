@@ -25,6 +25,8 @@ struct ShelfView: View {
                     handleDrop(providers: providers)
                 }
         }
+        .padding(.top, 14)
+        .padding(.bottom, 6)
         // Bind Quick Look to shelf selection
         .onChange(of: selection.selectedIDs) {
             updateQuickLookSelection()
@@ -93,16 +95,22 @@ struct ShelfView: View {
                         .fontWeight(.medium)
                 }
             } else {
-                ScrollView(.horizontal) {
-                    HStack(spacing: spacing) {
+                ScrollView(.vertical, showsIndicators: true) {
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 110, maximum: 130), spacing: spacing)],
+                        alignment: .leading,
+                        spacing: spacing
+                    ) {
                         ForEach(tvm.items) { item in
                             ShelfItemView(item: item)
                                 .environmentObject(quickLookService)
                         }
                     }
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 6)
                 }
-                .padding(-spacing)
-                .scrollIndicators(.never)
+                .frame(maxHeight: .infinity)
+                .scrollIndicators(.visible)
                 .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
                     handleDrop(providers: providers)
                 }
