@@ -146,8 +146,9 @@ extension Defaults.Keys {
     static let pomodoroBreakMinutes = Key<Int>("nm.pomodoro.breakMinutes", default: 5)
     /// Legacy switch kept for migration; superseded by `pomodoroIndicatorStyle`.
     static let pomodoroNotchRing = Key<Bool>("nm.pomodoro.notchRing", default: true)
-    /// Visual style for an active Pomodoro session on the closed notch.
-    static let pomodoroIndicatorStyle = Key<PomodoroIndicatorStyle>("nm.pomodoro.indicatorStyle", default: .ring)
+    /// Visual style for an active Pomodoro session on the closed notch. Default `.off` para que
+    /// el notch se vea idéntico al boring.notch original; el usuario puede activar `.dot` o `.ring`.
+    static let pomodoroIndicatorStyle = Key<PomodoroIndicatorStyle>("nm.pomodoro.indicatorStyle", default: .off)
 
     // MARK: Ref-design dashboard (mockup-style expanded view)
     static let nmDashboardRefDesign = Key<Bool>("nm.dashboard.refDesign", default: true)

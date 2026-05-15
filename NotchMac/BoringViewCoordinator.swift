@@ -314,9 +314,8 @@ class BoringViewCoordinator: ObservableObject {
             .sink { change in
                 guard change.newValue == false else { return }
                 if Defaults[.showCalendar] == false {
-                    DispatchQueue.main.async {
-                        Defaults[.showCalendar] = true
-                    }
+                    // Síncrono — la toggle del otro módulo se actualiza en la misma tick visible.
+                    Defaults[.showCalendar] = true
                 }
             }
             .store(in: &moduleMutexCancellables)
@@ -326,9 +325,7 @@ class BoringViewCoordinator: ObservableObject {
             .sink { change in
                 guard change.newValue == false else { return }
                 if Defaults[.showMusicModule] == false {
-                    DispatchQueue.main.async {
-                        Defaults[.showMusicModule] = true
-                    }
+                    Defaults[.showMusicModule] = true
                 }
             }
             .store(in: &moduleMutexCancellables)

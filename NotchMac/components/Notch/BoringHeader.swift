@@ -48,7 +48,7 @@ struct BoringHeader: View {
                             }) {
                                 Capsule()
                                     .fill(.black)
-                                    .frame(width: 26, height: 26)
+                                    .frame(width: 30, height: 30)
                                     .overlay {
                                         Image(systemName: "web.camera")
                                             .foregroundColor(.white)
@@ -67,7 +67,7 @@ struct BoringHeader: View {
                             }) {
                                 Capsule()
                                     .fill(.black)
-                                    .frame(width: 26, height: 26)
+                                    .frame(width: 30, height: 30)
                                     .overlay {
                                         Image(systemName: "gear")
                                             .foregroundColor(.white)
@@ -79,7 +79,7 @@ struct BoringHeader: View {
                         }
                         if Defaults[.showBatteryIndicator] {
                             BoringBatteryView(
-                                batteryWidth: 24,
+                                batteryWidth: 30,
                                 isCharging: batteryModel.isCharging,
                                 isInLowPowerMode: batteryModel.isInLowPowerMode,
                                 isPluggedIn: batteryModel.isPluggedIn,

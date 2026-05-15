@@ -48,12 +48,10 @@ struct TabSelectionView: View {
     }
 
     private var visibleTabs: [TabModel] {
+        // Mismas tabs que boring.notch original: Home + Shelf cuando el módulo está activo.
         var base = [TabModel(label: "Home", icon: "house.fill", view: .home)]
         if showShelf {
             base.append(TabModel(label: "Shelf", icon: "tray.fill", view: .shelf))
-        }
-        if Defaults[.nmDashboardRefDesign] && showTimer {
-            base.append(TabModel(label: "Pomodoro", icon: "timer.circle.fill", view: .focus))
         }
         return base
     }
