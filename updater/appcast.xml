@@ -2,6 +2,16 @@
 <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <item>
+            <title>1.1.0</title>
+            <pubDate>Fri, 15 May 2026 10:18:11 +0000</pubDate>
+            <sparkle:version>51</sparkle:version>
+            <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Auto-release 1.1.0 build 51.]]></description>
+            <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.1.0/NotchMac-1.1.0.zip" sparkle:edSignature="BodUoTMgwCy6LjCFj9KKq8am299cy660GmGFlqL7i3wMy0X29RWhcGB9upa47QkJ4oKg2HMOVKs+uXSPF8gHCw==" length="9992017" type="application/octet-stream"/>
+        </item>
+
+        <item>
             <title>1.0.1</title>
             <pubDate>Thu, 14 May 2026 23:11:12 +0000</pubDate>
             <sparkle:version>48</sparkle:version>
