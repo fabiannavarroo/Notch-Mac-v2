@@ -7,7 +7,7 @@
             <sparkle:version>99</sparkle:version>
             <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Auto-release 1.3.0 build 99.]]></description>
+            <description><![CDATA[<h3>NotchMac 1.3.0</h3><ul><li><b>Indicador Pomodoro del notch cerrado:</b> anillo y círculo mucho más finos para un look más limpio.</li><li><b>Detección de cascos ampliada:</b> ahora se reconocen cascos USB/cableados y marcas gaming — Logitech, Sennheiser, Sony WH/WF, Bose QC/NC, Jabra, Razer, SteelSeries, HyperX.</li><li><b>Modo oculto:</b> zona de detección del cursor ajustada a 20 px.</li><li>Consolida ajustes finos de las versiones 1.2.10–1.2.11.</li></ul>]]></description>
             <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.3.0/NotchMac-1.3.0.zip" sparkle:edSignature="CdcNBhdOwFOTgklBIcTURyD7dti7KqGOxyc4RMcHQvi89pqSeJYO5HloKcj4/JC7MBYQLMS+D3Y4sFH4nqhBBg==" length="10070611" type="application/octet-stream"/>
         </item>
 
