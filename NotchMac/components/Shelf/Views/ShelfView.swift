@@ -72,22 +72,21 @@ struct ShelfView: View {
                 content
                     .padding()
             }
-            .overlay(alignment: .topTrailing) {
+            .overlay(alignment: .topLeading) {
                 if !tvm.isEmpty {
                     Button {
                         selection.clear()
                         for item in tvm.items { tvm.remove(item) }
                     } label: {
-                        Image(systemName: "trash.fill")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(7)
-                            .background(Circle().fill(Color.red.opacity(0.85)))
-                            .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+                        Image(systemName: "trash")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.75))
+                            .padding(6)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .help("Vaciar shelf")
-                    .padding(8)
+                    .padding(6)
                 }
             }
             .transaction { transaction in
@@ -113,24 +112,30 @@ struct ShelfView: View {
                         .fontWeight(.medium)
                 }
             } else {
-                ScrollView(.vertical, showsIndicators: true) {
-                    LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 110, maximum: 130), spacing: spacing)],
-                        alignment: .leading,
-                        spacing: spacing
-                    ) {
-                        ForEach(tvm.items) { item in
-                            ShelfItemView(item: item)
-                                .environmentObject(quickLookService)
+                GeometryReader { geo in
+                    ScrollView(.vertical, showsIndicators: true) {
+                        VStack(spacing: 0) {
+                            Spacer(minLength: 0)
+                            LazyVGrid(
+                                columns: [GridItem(.adaptive(minimum: 110, maximum: 130), spacing: spacing)],
+                                alignment: .center,
+                                spacing: spacing
+                            ) {
+                                ForEach(tvm.items) { item in
+                                    ShelfItemView(item: item)
+                                        .environmentObject(quickLookService)
+                                }
+                            }
+                            Spacer(minLength: 0)
                         }
+                        .frame(minWidth: geo.size.width, minHeight: geo.size.height)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 6)
                     }
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 6)
-                }
-                .frame(maxHeight: .infinity)
-                .scrollIndicators(.visible)
-                .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
-                    handleDrop(providers: providers)
+                    .scrollIndicators(.visible)
+                    .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
+                        handleDrop(providers: providers)
+                    }
                 }
             }
         }

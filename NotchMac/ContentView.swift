@@ -278,6 +278,12 @@ struct ContentView: View {
             anchor: .top
         )
         .animation(.smooth, value: gestureProgress)
+        .scaleEffect(
+            x: vm.isPerformingHideAnimation ? 0.01 : 1.0,
+            y: vm.isPerformingHideAnimation ? 0.01 : 1.0,
+            anchor: .top
+        )
+        .animation(.spring(response: 0.3, dampingFraction: 1.0, blendDuration: 0), value: vm.isPerformingHideAnimation)
         .background(dragDetector)
         .preferredColorScheme(.dark)
         .environmentObject(vm)
@@ -744,6 +750,7 @@ struct ContentView: View {
 
     private func handleUpGesture(translation: CGFloat, phase: NSEvent.Phase) {
         guard vm.notchState == .open && !vm.isHoveringCalendar else { return }
+        guard coordinator.currentView != .shelf else { return }
 
         withAnimation(animationSpring) {
             gestureProgress = (translation / Defaults[.gestureSensitivity]) * -20
