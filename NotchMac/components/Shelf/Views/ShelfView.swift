@@ -112,30 +112,25 @@ struct ShelfView: View {
                         .fontWeight(.medium)
                 }
             } else {
-                GeometryReader { geo in
-                    ScrollView(.vertical, showsIndicators: true) {
-                        VStack(spacing: 0) {
-                            Spacer(minLength: 0)
-                            LazyVGrid(
-                                columns: [GridItem(.adaptive(minimum: 110, maximum: 130), spacing: spacing)],
-                                alignment: .center,
-                                spacing: spacing
-                            ) {
-                                ForEach(tvm.items) { item in
-                                    ShelfItemView(item: item)
-                                        .environmentObject(quickLookService)
-                                }
-                            }
-                            Spacer(minLength: 0)
+                ScrollView(.vertical, showsIndicators: true) {
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 110, maximum: 130), spacing: spacing)],
+                        alignment: .center,
+                        spacing: spacing
+                    ) {
+                        ForEach(tvm.items) { item in
+                            ShelfItemView(item: item)
+                                .environmentObject(quickLookService)
                         }
-                        .frame(minWidth: geo.size.width, minHeight: geo.size.height)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 6)
                     }
-                    .scrollIndicators(.visible)
-                    .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
-                        handleDrop(providers: providers)
-                    }
+                    .padding(.horizontal, 4)
+                    .padding(.top, 2)
+                    .padding(.bottom, 6)
+                    .frame(maxWidth: .infinity, alignment: .top)
+                }
+                .scrollIndicators(.visible)
+                .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
+                    handleDrop(providers: providers)
                 }
             }
         }

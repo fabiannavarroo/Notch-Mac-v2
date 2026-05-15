@@ -38,7 +38,7 @@ struct ShelfItemView: View {
                     textView
                 }
                 .frame(width: 105)
-                .padding(.vertical, 10)
+                .padding(.vertical, 4)
                 .padding(.horizontal, 5)
                 .background(backgroundView)
                 .contentShape(Rectangle())
