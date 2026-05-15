@@ -151,7 +151,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let f = screen.frame
         // Zona generosa: ancho del notch open + 40px de margen para tolerancia.
         let regionWidth: CGFloat = openNotchSize.width + 80
-        let regionHeight: CGFloat = 18
+        let regionHeight: CGFloat = 40
         let region = CGRect(
             x: f.midX - regionWidth / 2,
             y: f.maxY - regionHeight,

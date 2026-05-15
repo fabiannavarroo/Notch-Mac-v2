@@ -228,7 +228,7 @@ struct FocusDashboardView: View {
                         .foregroundStyle(.orange)
                 }
                 Text(session.timeString)
-                    .font(.system(size: 23, weight: .light, design: .rounded))
+                    .font(.system(size: 23, weight: .thin, design: .rounded))
                     .foregroundStyle(.white)
                     .monospacedDigit()
                 Text("of \(session.totalString)")

@@ -120,7 +120,6 @@ jobs:
           name: ${{ steps.ver.outputs.version }}
           draft: false
           prerelease: false
-          generate_release_notes: true
           files: ${{ steps.zip.outputs.file }}
 
       - name: Update appcast.xml in repo

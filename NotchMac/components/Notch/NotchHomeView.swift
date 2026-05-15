@@ -333,6 +333,7 @@ private extension Array where Element == MusicControlButton {
 
 struct VolumeControlView: View {
     @ObservedObject var musicManager = MusicManager.shared
+    @ObservedObject var audioOutputManager = AudioOutputManager.shared
     @State private var volumeSliderValue: Double = 0.5
     @State private var dragging: Bool = false
     @State private var showVolumeSlider: Bool = false
@@ -410,12 +411,8 @@ struct VolumeControlView: View {
             return "speaker.slash"
         } else if volumeSliderValue == 0 {
             return "speaker.slash.fill"
-        } else if volumeSliderValue < 0.33 {
-            return "speaker.1.fill"
-        } else if volumeSliderValue < 0.66 {
-            return "speaker.2.fill"
         } else {
-            return "speaker.3.fill"
+            return audioOutputManager.currentOutputSymbolName
         }
     }
 }
