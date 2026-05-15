@@ -14,22 +14,12 @@ import SwiftUI
 
 struct MusicPlayerView: View {
     @EnvironmentObject var vm: BoringViewModel
-    @Default(.showCalendar) private var showCalendar
-    @Default(.showTimerModule) private var showTimer
     let albumArtNamespace: Namespace.ID
 
     var body: some View {
         HStack {
             AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace).padding(.all, 5)
             MusicControlsView().drawingGroup().compositingGroup()
-        }
-        .overlay(alignment: .bottomTrailing) {
-            // Sólo cuando la música ocupa el módulo sola (sin calendario/pomodoro al lado).
-            if !showCalendar && !showTimer {
-                AudioOutputPickerButton()
-                    .padding(.trailing, 6)
-                    .padding(.bottom, 4)
-            }
         }
     }
 }
@@ -229,6 +219,10 @@ struct MusicControlsView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .center)
+        .overlay(alignment: .trailing) {
+            AudioOutputPickerButton()
+                .padding(.trailing, 2)
+        }
     }
 
     private var activeSlots: [MusicControlButton] {
