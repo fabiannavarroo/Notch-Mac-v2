@@ -303,45 +303,65 @@ class BoringViewCoordinator: ObservableObject {
 
     // MARK: - Module mutual-exclusion
 
-    /// Música y Calendario no pueden estar ambos desactivados.
-    /// Si Shelf se apaga con `currentView == .shelf`, volvemos a Home.
+    /// Música y Calendario no pueden estar ambos desactivados — siempre uno activo.
+    /// Pomodoro y Shelf son libres de apagarse pero deben dejar de ser `currentView`.
     private func setupModuleMutex() {
+        // Sanity check inicial — si Defaults trae ambos en false por estado heredado, forzamos Calendar.
+        ensureMusicOrCalendarOn(prefer: .calendar)
+
         Defaults.publisher(.showMusicModule)
-            .receive(on: RunLoop.main)
+            .removeDuplicates(by: { $0.newValue == $1.newValue })
             .sink { change in
-                if change.newValue == false && Defaults[.showCalendar] == false {
-                    Defaults[.showCalendar] = true
+                guard change.newValue == false else { return }
+                if Defaults[.showCalendar] == false {
+                    DispatchQueue.main.async {
+                        Defaults[.showCalendar] = true
+                    }
                 }
             }
             .store(in: &moduleMutexCancellables)
 
         Defaults.publisher(.showCalendar)
-            .receive(on: RunLoop.main)
+            .removeDuplicates(by: { $0.newValue == $1.newValue })
             .sink { change in
-                if change.newValue == false && Defaults[.showMusicModule] == false {
-                    Defaults[.showMusicModule] = true
+                guard change.newValue == false else { return }
+                if Defaults[.showMusicModule] == false {
+                    DispatchQueue.main.async {
+                        Defaults[.showMusicModule] = true
+                    }
                 }
             }
             .store(in: &moduleMutexCancellables)
 
         Defaults.publisher(.boringShelf)
-            .receive(on: RunLoop.main)
+            .removeDuplicates(by: { $0.newValue == $1.newValue })
             .sink { [weak self] change in
                 guard let self else { return }
                 if change.newValue == false && self.currentView == .shelf {
-                    self.currentView = .home
+                    DispatchQueue.main.async { self.currentView = .home }
                 }
             }
             .store(in: &moduleMutexCancellables)
 
         Defaults.publisher(.showTimerModule)
-            .receive(on: RunLoop.main)
+            .removeDuplicates(by: { $0.newValue == $1.newValue })
             .sink { [weak self] change in
                 guard let self else { return }
                 if change.newValue == false && self.currentView == .focus {
-                    self.currentView = .home
+                    DispatchQueue.main.async { self.currentView = .home }
                 }
             }
             .store(in: &moduleMutexCancellables)
+    }
+
+    private enum HomeModulePreference { case music, calendar }
+
+    private func ensureMusicOrCalendarOn(prefer: HomeModulePreference) {
+        if Defaults[.showMusicModule] == false && Defaults[.showCalendar] == false {
+            switch prefer {
+            case .music: Defaults[.showMusicModule] = true
+            case .calendar: Defaults[.showCalendar] = true
+            }
+        }
     }
 }
