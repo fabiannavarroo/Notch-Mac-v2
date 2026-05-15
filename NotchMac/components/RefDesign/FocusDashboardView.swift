@@ -117,7 +117,7 @@ struct FocusDashboardView: View {
         }
         .padding(.horizontal, 18)
         .frame(width: 520, height: 152)
-        .background(Color.black)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .onChange(of: focusMinutes) { _, _ in
             if !session.isBreak && !session.isRunning {
                 session.resetToFocusDuration()
