@@ -51,8 +51,9 @@ struct ContentView: View {
     private let extendedHoverPadding: CGFloat = 30
     private let zeroHeightHoverPadding: CGFloat = 10
 
+    // Copia exacta de upstream/boring.notch (con `cornerRadiusScaling`)
     private var topCornerRadius: CGFloat {
-        vm.notchState == .open
+        ((vm.notchState == .open) && Defaults[.cornerRadiusScaling])
             ? cornerRadiusInsets.opened.top
             : cornerRadiusInsets.closed.top
     }
@@ -60,7 +61,7 @@ struct ContentView: View {
     private var currentNotchShape: NotchShape {
         NotchShape(
             topCornerRadius: topCornerRadius,
-            bottomCornerRadius: vm.notchState == .open
+            bottomCornerRadius: ((vm.notchState == .open) && Defaults[.cornerRadiusScaling])
                 ? cornerRadiusInsets.opened.bottom
                 : cornerRadiusInsets.closed.bottom
         )
@@ -68,7 +69,7 @@ struct ContentView: View {
 
     private var horizontalCornerInset: CGFloat {
         vm.notchState == .open
-            ? cornerRadiusInsets.opened.top
+            ? (Defaults[.cornerRadiusScaling] ? cornerRadiusInsets.opened.top : cornerRadiusInsets.opened.bottom)
             : cornerRadiusInsets.closed.bottom
     }
 
@@ -142,8 +143,16 @@ struct ContentView: View {
                             currentNotchOpenBorderShape
                                 .trim(from: 0, to: CGFloat(focusSession.remainingFraction))
                                 .stroke(
-                                    Color.yellow,
-                                    style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round)
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            Color(red: 1.00, green: 0.78, blue: 0.20),
+                                            Color(red: 1.00, green: 0.48, blue: 0.20),
+                                            Color(red: 1.00, green: 0.30, blue: 0.40)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round)
                                 )
                                 .animation(.linear(duration: 0.18), value: focusSession.remainingFraction)
                                 .allowsHitTesting(false)

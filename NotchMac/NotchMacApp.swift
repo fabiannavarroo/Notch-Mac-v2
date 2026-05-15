@@ -56,6 +56,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var windowScreenDidChangeObserver: Any?
     private var dragDetectors: [String: DragDetector] = [:] // UUID -> DragDetector
     private var hiddenHoverDetector: HiddenHoverDetector?
+    private var notchStateCancellable: AnyCancellable?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
@@ -104,24 +105,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private var fadeTimer: Timer?
+
     func applyIslandVisibility() {
         let hidden = Defaults[.nmIslandHidden]
-        let alpha: CGFloat = hidden ? 0 : 1
+        let target: CGFloat = hidden ? 0 : 1
         Task { @MainActor in
             if hidden, self.vm.notchState == .open { self.vm.close() }
-            NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.32
-                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                ctx.allowsImplicitAnimation = true
-                self.window?.animator().alphaValue = alpha
-                for w in self.windows.values { w.animator().alphaValue = alpha }
-            }
+            self.animateWindowAlpha(to: target, duration: 0.32)
             if hidden {
                 self.startHiddenHoverDetector()
             } else {
                 self.stopHiddenHoverDetector()
             }
         }
+    }
+
+    @MainActor
+    private func animateWindowAlpha(to target: CGFloat, duration: TimeInterval) {
+        fadeTimer?.invalidate()
+        let allWindows = ([self.window] + Array(self.windows.values)).compactMap { $0 }
+        guard !allWindows.isEmpty else { return }
+        let startAlphas = allWindows.map { $0.alphaValue }
+        let startTime = CACurrentMediaTime()
+        fadeTimer = Timer.scheduledTimer(withTimeInterval: 1.0/60.0, repeats: true) { [weak self] timer in
+            let t = min(1.0, (CACurrentMediaTime() - startTime) / duration)
+            // easeInOutSine
+            let eased = -(cos(.pi * t) - 1) / 2
+            for (idx, win) in allWindows.enumerated() {
+                let a = startAlphas[idx] + (target - startAlphas[idx]) * CGFloat(eased)
+                win.alphaValue = a
+            }
+            if t >= 1.0 {
+                timer.invalidate()
+                self?.fadeTimer = nil
+            }
+        }
+        RunLoop.main.add(fadeTimer!, forMode: .common)
     }
 
     @MainActor
@@ -151,6 +171,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         detector.start()
         hiddenHoverDetector = detector
+    }
+
+    @MainActor
+    private func reapplyAutoHideIfNeeded() {
+        guard let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else { return }
+        let autoHide = Defaults[.nmAutoHideAppBundleIDs]
+        if autoHide.contains(bundleID) && !Defaults[.nmIslandHidden] {
+            // Pequeño delay para que el cierre del notch se vea antes del fade-out.
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(280))
+                Defaults[.nmIslandHidden] = true
+                self.applyIslandVisibility()
+            }
+        }
     }
 
     @MainActor
@@ -433,6 +467,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ) { [weak self] _ in
             self?.refreshIslandVisibilityForActiveApp()
         }
+
+        // Cuando el notch se cierra, si el frontmost está en la lista de auto-hide
+        // re-ocultar la isla en vez de quedarnos en modo reducido.
+        notchStateCancellable = vm.$notchState
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] state in
+                guard let self else { return }
+                if state == .closed {
+                    self.reapplyAutoHideIfNeeded()
+                }
+            }
 
         // Use closure-based observers for DistributedNotificationCenter and keep tokens for removal
         screenLockedObserver = DistributedNotificationCenter.default().addObserver(
