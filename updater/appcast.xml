@@ -7,7 +7,13 @@
             <sparkle:version>72</sparkle:version>
             <sparkle:shortVersionString>1.2.6</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Auto-release 1.2.6 build 72.]]></description>
+            <description><![CDATA[
+                <h3>NotchMac 1.2.6</h3>
+                <ul>
+                    <li><b>Salida de audio en los controles de música:</b> nuevo botón de bocina al final de la fila de controles (anterior / play-pause / siguiente). Permite cambiar la salida del sistema (altavoces, auriculares, AirPods, AirPlay…) sin salir de la notch.</li>
+                    <li>Visible siempre — antes solo aparecía cuando el módulo de música estaba solo (sin calendario ni pomodoro).</li>
+                </ul>
+            ]]></description>
             <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.2.6/NotchMac-1.2.6.zip" sparkle:edSignature="FF1hCLq343DId+rEh8CIVrY04ly1I9aAJzojEBw7ai8gG6pgAnRDAGa+pvYzUuQHGMD2PbZaj4Xk/g9ucwipCw==" length="10062219" type="application/octet-stream"/>
         </item>
 
