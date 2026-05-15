@@ -56,9 +56,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var windowScreenDidChangeObserver: Any?
     private var dragDetectors: [String: DragDetector] = [:] // UUID -> DragDetector
     private var hiddenHoverDetector: HiddenHoverDetector?
-    private var debugOverlayWindow: DebugActivationZoneWindow?
     private var notchStateCancellable: AnyCancellable?
-    private var debugZoneCancellable: AnyCancellable?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
@@ -120,7 +118,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             } else {
                 self.stopHiddenHoverDetector()
             }
-            self.updateDebugOverlay()
         }
     }
 
@@ -148,23 +145,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @MainActor
-    private func hiddenHoverRegion(for screen: NSScreen) -> CGRect {
+    private func startHiddenHoverDetector() {
+        stopHiddenHoverDetector()
+        guard let screen = window?.screen ?? NSScreen.main else { return }
         let f = screen.frame
-        let regionWidth = Defaults[.hiddenHoverWidth]
-        let regionHeight = Defaults[.hiddenHoverHeight]
-        return CGRect(
+        // Zona ajustada al notch físico (W=210, H=37). Centrada en la parte superior.
+        let regionWidth: CGFloat = 210
+        let regionHeight: CGFloat = 37
+        let region = CGRect(
             x: f.midX - regionWidth / 2,
             y: f.maxY - regionHeight,
             width: regionWidth,
             height: regionHeight
         )
-    }
-
-    @MainActor
-    private func startHiddenHoverDetector() {
-        stopHiddenHoverDetector()
-        guard let screen = window?.screen ?? NSScreen.main else { return }
-        let region = hiddenHoverRegion(for: screen)
         let detector = HiddenHoverDetector(notchRegion: region)
         detector.onHover = { [weak self] in
             Task { @MainActor in
@@ -198,30 +191,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func stopHiddenHoverDetector() {
         hiddenHoverDetector?.stop()
         hiddenHoverDetector = nil
-    }
-
-    // MARK: - Debug overlay (zona de activación oculto)
-
-    @MainActor
-    func updateDebugOverlay() {
-        let show = Defaults[.showHiddenZoneDebug] && Defaults[.nmIslandHidden]
-        guard let screen = window?.screen ?? NSScreen.main else {
-            debugOverlayWindow?.orderOut(nil)
-            return
-        }
-        if show {
-            let region = hiddenHoverRegion(for: screen)
-            if let existing = debugOverlayWindow {
-                existing.reposition(to: region)
-                existing.orderFrontRegardless()
-            } else {
-                let w = DebugActivationZoneWindow(region: region)
-                debugOverlayWindow = w
-                w.orderFrontRegardless()
-            }
-        } else {
-            debugOverlayWindow?.orderOut(nil)
-        }
     }
 
     func switchTab(_ view: NotchViews) {
@@ -497,24 +466,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             forName: .nmAutoHideAppsChanged, object: nil, queue: .main
         ) { [weak self] _ in
             self?.refreshIslandVisibilityForActiveApp()
-        }
-
-        // Redibujar overlay debug cuando cambia el toggle o las dimensiones.
-        debugZoneCancellable = Publishers.MergeMany(
-            Defaults.publisher(.showHiddenZoneDebug).map { _ in () }.eraseToAnyPublisher(),
-            Defaults.publisher(.hiddenHoverWidth).map { _ in () }.eraseToAnyPublisher(),
-            Defaults.publisher(.hiddenHoverHeight).map { _ in () }.eraseToAnyPublisher()
-        )
-        .receive(on: RunLoop.main)
-        .sink { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                // Si isla oculta y cambian dimensiones → reiniciar detector con región nueva.
-                if Defaults[.nmIslandHidden] {
-                    self.startHiddenHoverDetector()
-                }
-                self.updateDebugOverlay()
-            }
         }
 
         // Cuando el notch se cierra, si el frontmost está en la lista de auto-hide

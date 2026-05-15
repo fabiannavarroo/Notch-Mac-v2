@@ -54,9 +54,6 @@ struct GeneralSettings: View {
     @Default(.automaticallySwitchDisplay) var automaticallySwitchDisplay
     @Default(.enableGestures) var enableGestures
     @Default(.openNotchOnHover) var openNotchOnHover
-    @Default(.hiddenHoverWidth) var hiddenHoverWidth
-    @Default(.hiddenHoverHeight) var hiddenHoverHeight
-    @Default(.showHiddenZoneDebug) var showHiddenZoneDebug
     
 
     var body: some View {
@@ -257,12 +254,6 @@ struct GeneralSettings: View {
         }
 
         AutoHideAppsSection()
-
-        HiddenZoneSection(
-            width: $hiddenHoverWidth,
-            height: $hiddenHoverHeight,
-            showDebug: $showHiddenZoneDebug
-        )
     }
 }
 
@@ -2022,50 +2013,3 @@ private struct NMUpdateRow: View {
     }
 }
 
-// MARK: - Zona de activación oculto (debug)
-
-struct HiddenZoneSection: View {
-    @Binding var width: CGFloat
-    @Binding var height: CGFloat
-    @Binding var showDebug: Bool
-
-    var body: some View {
-        Section {
-            Slider(value: $width, in: 100...1200, step: 10) {
-                HStack {
-                    Text("Ancho zona activación")
-                    Spacer()
-                    Text("\(Int(width)) pt")
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-            }
-            Slider(value: $height, in: 5...80, step: 1) {
-                HStack {
-                    Text("Alto zona activación")
-                    Spacer()
-                    Text("\(Int(height)) pt")
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-            }
-            Toggle(isOn: $showDebug) {
-                HStack(spacing: 6) {
-                    Image(systemName: "rectangle.dashed")
-                        .foregroundStyle(.orange)
-                    Text("Mostrar zona de activación")
-                }
-            }
-            .tint(.orange)
-            if showDebug {
-                Label("Oculta el notch (Opt+X) para ver el overlay naranja", systemImage: "info.circle")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        } header: {
-            Text("Zona activación (modo oculto)")
-        } footer: {
-            Text("Ajusta ancho y alto hasta que el rectángulo naranja cubra exactamente el notch de tu pantalla.")
-        }
-    }
-}
