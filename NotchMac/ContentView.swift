@@ -155,7 +155,7 @@ struct ContentView: View {
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     ),
-                                    style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round)
+                                    style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
                                 )
                                 .animation(.linear(duration: 0.18), value: focusSession.remainingFraction)
                                 .allowsHitTesting(false)
@@ -583,7 +583,7 @@ struct ContentView: View {
                 if pomodoroDotActive {
                     ZStack {
                         Circle()
-                            .stroke(.white.opacity(0.18), lineWidth: 3.5)
+                            .stroke(.white.opacity(0.23), lineWidth: 2)
                         Circle()
                             .trim(from: 0, to: CGFloat(focusSession.remainingFraction))
                             .stroke(
@@ -598,7 +598,7 @@ struct ContentView: View {
                                     startAngle: .degrees(0),
                                     endAngle: .degrees(360)
                                 ),
-                                style: StrokeStyle(lineWidth: 3.5, lineCap: .round)
+                                style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
                             )
                             .rotationEffect(.degrees(-90))
                             .animation(.linear(duration: 0.18), value: focusSession.remainingFraction)

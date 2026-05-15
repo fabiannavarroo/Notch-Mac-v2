@@ -41,11 +41,22 @@ enum AudioOutputKind: Equatable {
         } else if normalized.contains("beats") {
             self = .beats
         } else if normalized.contains("headphone")
+            || normalized.contains("headset")
             || normalized.contains("auricular")
             || normalized.contains("audifono")
             || normalized.contains("casco")
             || normalized.contains("earbud")
-            || normalized.contains("earphone") {
+            || normalized.contains("earphone")
+            || normalized.contains("logi")
+            || normalized.contains("sennheiser")
+            || normalized.contains("sony wh")
+            || normalized.contains("sony wf")
+            || normalized.contains("bose qc")
+            || normalized.contains("bose nc")
+            || normalized.contains("jabra")
+            || normalized.contains("razer")
+            || normalized.contains("steelseries")
+            || normalized.contains("hyperx") {
             self = .headphones
         } else if normalized.contains("homepod") {
             self = .homePod
