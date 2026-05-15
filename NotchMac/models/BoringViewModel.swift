@@ -27,6 +27,7 @@ class BoringViewModel: NSObject, ObservableObject {
     var cancellables: Set<AnyCancellable> = []
     
     @Published var hideOnClosed: Bool = true
+    @Published var isPerformingHideAnimation: Bool = false
 
     @Published var edgeAutoOpenActive: Bool = false
     @Published var isHoveringCalendar: Bool = false

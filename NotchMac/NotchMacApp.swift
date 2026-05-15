@@ -57,6 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var dragDetectors: [String: DragDetector] = [:] // UUID -> DragDetector
     private var hiddenHoverDetector: HiddenHoverDetector?
     private var notchStateCancellable: AnyCancellable?
+    private var hideAnimationTask: Task<Void, Never>?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
@@ -109,14 +110,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applyIslandVisibility() {
         let hidden = Defaults[.nmIslandHidden]
-        let target: CGFloat = hidden ? 0 : 1
-        Task { @MainActor in
-            if hidden, self.vm.notchState == .open { self.vm.close() }
-            self.animateWindowAlpha(to: target, duration: 0.32)
-            if hidden {
+        hideAnimationTask?.cancel()
+        if hidden {
+            hideAnimationTask = Task { @MainActor in
+                let allVMs = [self.vm] + Array(self.viewModels.values)
+                allVMs.forEach { $0.isPerformingHideAnimation = true }
+                try? await Task.sleep(for: .milliseconds(360))
+                guard !Task.isCancelled else {
+                    allVMs.forEach { $0.isPerformingHideAnimation = false }
+                    return
+                }
+                self.fadeTimer?.invalidate()
+                self.fadeTimer = nil
+                let allWindows = ([self.window] + Array(self.windows.values)).compactMap { $0 }
+                allWindows.forEach { $0.alphaValue = 0 }
+                if self.vm.notchState == .open { self.vm.close() }
+                allVMs.forEach { $0.isPerformingHideAnimation = false }
                 self.startHiddenHoverDetector()
-            } else {
+            }
+        } else {
+            Task { @MainActor in
+                let allVMs = [self.vm] + Array(self.viewModels.values)
+                allVMs.forEach { $0.isPerformingHideAnimation = false }
                 self.stopHiddenHoverDetector()
+                self.animateWindowAlpha(to: 1, duration: 0.32)
             }
         }
     }
