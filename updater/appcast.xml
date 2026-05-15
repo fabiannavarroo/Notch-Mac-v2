@@ -7,7 +7,7 @@
             <sparkle:version>90</sparkle:version>
             <sparkle:shortVersionString>1.2.10</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Auto-release 1.2.10 build 90.]]></description>
+            <description><![CDATA[<h3>NotchMac 1.2.10</h3><ul><li><b>Icono de salida de audio:</b> el icono ahora refleja el dispositivo real — auriculares, AirPods, AirPods Pro, AirPods Max, Beats o altavoz integrado — en lugar de mostrar siempre un altavoz genérico.</li><li><b>Pomodoro:</b> peso del texto del temporizador reducido para un trazo más fino.</li><li><b>Modo oculto:</b> zona de detección del cursor ampliada para expandir el notch con más facilidad al acercarse al borde superior.</li></ul>]]></description>
             <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.2.10/NotchMac-1.2.10.zip" sparkle:edSignature="qEthYsz271swz+UuN0y87xGRYBl6A3C7yY9006/gsXbYxAFjqrlgC8s7t+vn6DNnc8PCGc1ykPz9InrkpUk5Bw==" length="10070330" type="application/octet-stream"/>
         </item>
 
