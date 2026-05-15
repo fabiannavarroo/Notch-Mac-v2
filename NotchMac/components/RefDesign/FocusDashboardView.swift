@@ -99,24 +99,28 @@ struct FocusDashboardView: View {
     @Default(.pomodoroBreakMinutes) private var breakMinutes
 
     var body: some View {
-        HStack(spacing: 14) {
-            focusDurationControl
-            divider
-            circularAction(
-                session.isRunning ? "pause.fill" : "play.fill",
-                title: session.isRunning ? "Pause" : "Start"
-            ) {
-                session.toggle()
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            HStack(spacing: 14) {
+                focusDurationControl
+                divider
+                circularAction(
+                    session.isRunning ? "pause.fill" : "play.fill",
+                    title: session.isRunning ? "Pause" : "Start"
+                ) {
+                    session.toggle()
+                }
+                centerTimer
+                circularAction("arrow.clockwise", title: "Reset") {
+                    session.isBreak ? session.resetToBreakDuration() : session.resetToFocusDuration()
+                }
+                divider
+                settingsButton
             }
-            centerTimer
-            circularAction("arrow.clockwise", title: "Reset") {
-                session.isBreak ? session.resetToBreakDuration() : session.resetToFocusDuration()
-            }
-            divider
-            settingsButton
+            .padding(.horizontal, 18)
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 18)
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: focusMinutes) { _, _ in
             if !session.isBreak && !session.isRunning {
                 session.resetToFocusDuration()
