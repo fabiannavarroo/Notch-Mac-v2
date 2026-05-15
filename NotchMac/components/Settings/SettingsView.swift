@@ -1199,9 +1199,9 @@ struct NotchUtilitySettingsView: View {
                 .padding(.bottom, 8)
 
             VStack(spacing: 2) {
-                NMSidebarToggle(title: "Music", systemImage: "music.note", key: .showMusicModule)
+                NMSidebarToggle(title: "Music", systemImage: "music.note", key: .showMusicModule, pair: .showCalendar)
                 NMSidebarToggle(title: "Shelf", systemImage: "tray.full.fill", key: .boringShelf)
-                NMSidebarToggle(title: "Calendar", systemImage: "calendar", key: .showCalendar)
+                NMSidebarToggle(title: "Calendar", systemImage: "calendar", key: .showCalendar, pair: .showMusicModule)
                 NMSidebarToggle(title: "Battery", systemImage: "battery.100", key: .showBatteryIndicator)
                 NMSidebarToggle(title: "Timer / Pomodoro", systemImage: "timer", key: .showTimerModule)
             }
@@ -1329,6 +1329,11 @@ private struct NMSidebarToggle: View {
     let title: String
     let systemImage: String
     let key: Defaults.Key<Bool>
+    /// If set, turning this toggle OFF while the paired key is also OFF will auto-enable the pair
+    /// (mutual fallback). Used to guarantee at least one of music/calendar stays visible.
+    var pair: Defaults.Key<Bool>? = nil
+    @Default(.showMusicModule) private var musicOn
+    @Default(.showCalendar) private var calendarOn
 
     var body: some View {
         HStack(spacing: 10) {
@@ -1340,7 +1345,7 @@ private struct NMSidebarToggle: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white.opacity(0.85))
             Spacer()
-            Defaults.Toggle("", key: key)
+            Toggle("", isOn: binding)
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.mini)
@@ -1348,6 +1353,20 @@ private struct NMSidebarToggle: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
+    }
+
+    private var binding: Binding<Bool> {
+        Binding(
+            get: { Defaults[key] },
+            set: { newValue in
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                    Defaults[key] = newValue
+                    if let pair, newValue == false, Defaults[pair] == false {
+                        Defaults[pair] = true
+                    }
+                }
+            }
+        )
     }
 }
 

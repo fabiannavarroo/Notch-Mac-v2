@@ -437,7 +437,7 @@ struct ContentView: View {
 
     @ViewBuilder
     private func openNotchPage() -> some View {
-        ZStack(alignment: .top) {
+        VStack {
             switch coordinator.currentView {
             case .home:
                 NotchHomeView(albumArtNamespace: albumArtNamespace)
@@ -458,9 +458,6 @@ struct ContentView: View {
                 }
             }
         }
-        .frame(width: openPageWidth, height: openPageHeight, alignment: .top)
-        .frame(maxWidth: .infinity, alignment: .top)
-        .clipped()
         .transition(
             .scale(scale: 0.8, anchor: .top)
             .combined(with: .opacity)
@@ -469,14 +466,6 @@ struct ContentView: View {
         .zIndex(1)
         .allowsHitTesting(vm.notchState == .open)
         .opacity(gestureProgress != 0 ? 1.0 - min(abs(gestureProgress) * 0.1, 0.3) : 1.0)
-    }
-
-    private var openPageWidth: CGFloat {
-        max(0, openNotchSize.width - 74)
-    }
-
-    private var openPageHeight: CGFloat {
-        max(0, openNotchSize.height - max(24, vm.effectiveClosedNotchHeight))
     }
 
     private func refreshModuleLayout() {
