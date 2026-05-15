@@ -7,7 +7,7 @@
             <sparkle:version>95</sparkle:version>
             <sparkle:shortVersionString>1.2.11</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Auto-release 1.2.11 build 95.]]></description>
+            <description><![CDATA[<h3>NotchMac 1.2.11</h3><ul><li><b>Cascos Bluetooth:</b> dispositivos con nombre de marca (Sony, Bose, Jabra…) ahora muestran el icono de auriculares en lugar del altavoz genérico — detectados por tipo de transporte Bluetooth.</li><li><b>Icono de salida siempre visible:</b> ya no muestra altavoz tachado cuando no hay música activa; refleja el dispositivo real en todo momento.</li><li><b>Pomodoro:</b> texto del temporizador aún más fino (ultraLight).</li><li><b>Modo oculto:</b> zona de detección del cursor ajustada a 25 px.</li></ul>]]></description>
             <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.2.11/NotchMac-1.2.11.zip" sparkle:edSignature="tc0CEs76g9RRRYROdHgKwjGjFGzB+Ic0S+Odlgi4vj1aOReLZqYYmJ0PKsSzYvR3k27KEf3xCChm6aV1OrQYAQ==" length="10070444" type="application/octet-stream"/>
         </item>
 
