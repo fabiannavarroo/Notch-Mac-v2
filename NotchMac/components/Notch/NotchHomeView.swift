@@ -407,13 +407,10 @@ struct VolumeControlView: View {
 
 
     private var volumeIcon: String {
-        if !musicManager.volumeControlSupported {
-            return "speaker.slash"
-        } else if volumeSliderValue == 0 {
+        if volumeSliderValue == 0 && musicManager.volumeControlSupported {
             return "speaker.slash.fill"
-        } else {
-            return audioOutputManager.currentOutputSymbolName
         }
+        return audioOutputManager.currentOutputSymbolName
     }
 }
 

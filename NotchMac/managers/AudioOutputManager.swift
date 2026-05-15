@@ -10,10 +10,10 @@ struct OutputDevice: Identifiable, Equatable {
         kind.symbolName
     }
 
-    init(id: AudioDeviceID, name: String) {
+    init(id: AudioDeviceID, name: String, transportType: UInt32 = 0) {
         self.id = id
         self.name = name
-        self.kind = AudioOutputKind(deviceName: name)
+        self.kind = AudioOutputKind(deviceName: name, transportType: transportType)
     }
 }
 
@@ -29,7 +29,7 @@ enum AudioOutputKind: Equatable {
     case builtInSpeaker
     case speaker
 
-    init(deviceName: String) {
+    init(deviceName: String, transportType: UInt32 = 0) {
         let normalized = deviceName.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
 
         if normalized.contains("airpods max") {
@@ -65,6 +65,10 @@ enum AudioOutputKind: Equatable {
             || normalized.contains("altavoz interno")
             || normalized.contains("altavoces internos") {
             self = .builtInSpeaker
+        } else if transportType == kAudioDeviceTransportTypeBluetooth
+               || transportType == kAudioDeviceTransportTypeBluetoothLE {
+            // Bluetooth device with unrecognized name → likely headphones/earphones
+            self = .headphones
         } else {
             self = .speaker
         }
@@ -220,7 +224,8 @@ final class AudioOutputManager: ObservableObject {
         return ids.compactMap { id -> OutputDevice? in
             guard hasOutputChannels(id) else { return nil }
             let name = deviceName(id) ?? "Salida \(id)"
-            return OutputDevice(id: id, name: name)
+            let transport = deviceTransportType(id)
+            return OutputDevice(id: id, name: name, transportType: transport)
         }
     }
 
@@ -240,6 +245,18 @@ final class AudioOutputManager: ObservableObject {
             return true
         }
         return false
+    }
+
+    private func deviceTransportType(_ device: AudioDeviceID) -> UInt32 {
+        var addr = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyTransportType,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var transport: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        AudioObjectGetPropertyData(device, &addr, 0, nil, &size, &transport)
+        return transport
     }
 
     private func deviceName(_ device: AudioDeviceID) -> String? {
