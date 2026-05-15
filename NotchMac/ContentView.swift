@@ -138,14 +138,6 @@ struct ContentView: View {
                             .padding(.horizontal, topCornerRadius)
                     }
                     .overlay {
-                        // Borde sutil (estilo original boring.notch) sólo en estado expandido
-                        if vm.notchState == .open {
-                            currentNotchOpenBorderShape
-                                .stroke(.white.opacity(0.10), lineWidth: 0.7)
-                                .allowsHitTesting(false)
-                        }
-                    }
-                    .overlay {
                         if pomodoroRingActive {
                             currentNotchOpenBorderShape
                                 .trim(from: 0, to: CGFloat(focusSession.remainingFraction))
@@ -444,13 +436,16 @@ struct ContentView: View {
                 if showShelfModule {
                     ShelfView()
                 } else {
-                    EmptyView()
+                    // Fallback a Home si el módulo Shelf está apagado para no quedar en negro
+                    NotchHomeView(albumArtNamespace: albumArtNamespace)
+                        .onAppear { coordinator.currentView = .home }
                 }
             case .focus:
                 if showTimerModule {
                     FocusDashboardView()
                 } else {
-                    EmptyView()
+                    NotchHomeView(albumArtNamespace: albumArtNamespace)
+                        .onAppear { coordinator.currentView = .home }
                 }
             }
         }
@@ -576,7 +571,20 @@ struct ContentView: View {
                             .stroke(.white.opacity(0.18), lineWidth: 3.5)
                         Circle()
                             .trim(from: 0, to: CGFloat(focusSession.remainingFraction))
-                            .stroke(Color.yellow, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                            .stroke(
+                                AngularGradient(
+                                    gradient: Gradient(colors: [
+                                        Color(red: 1.00, green: 0.78, blue: 0.20),
+                                        Color(red: 1.00, green: 0.48, blue: 0.20),
+                                        Color(red: 1.00, green: 0.30, blue: 0.40),
+                                        Color(red: 1.00, green: 0.78, blue: 0.20)
+                                    ]),
+                                    center: .center,
+                                    startAngle: .degrees(0),
+                                    endAngle: .degrees(360)
+                                ),
+                                style: StrokeStyle(lineWidth: 3.5, lineCap: .round)
+                            )
                             .rotationEffect(.degrees(-90))
                             .animation(.linear(duration: 0.18), value: focusSession.remainingFraction)
                     }

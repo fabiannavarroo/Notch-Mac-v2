@@ -72,6 +72,24 @@ struct ShelfView: View {
                 content
                     .padding()
             }
+            .overlay(alignment: .topTrailing) {
+                if !tvm.isEmpty {
+                    Button {
+                        selection.clear()
+                        for item in tvm.items { tvm.remove(item) }
+                    } label: {
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(7)
+                            .background(Circle().fill(Color.red.opacity(0.85)))
+                            .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Vaciar shelf")
+                    .padding(8)
+                }
+            }
             .transaction { transaction in
                 transaction.animation = vm.animation
             }

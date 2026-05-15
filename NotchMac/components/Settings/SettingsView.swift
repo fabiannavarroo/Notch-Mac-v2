@@ -1330,8 +1330,6 @@ private struct NMSidebarToggle: View {
     let systemImage: String
     let key: Defaults.Key<Bool>
 
-    @State private var value: Bool = false
-
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: systemImage)
@@ -1342,7 +1340,7 @@ private struct NMSidebarToggle: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white.opacity(0.85))
             Spacer()
-            Toggle("", isOn: $value)
+            Defaults.Toggle("", key: key)
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.mini)
@@ -1350,13 +1348,6 @@ private struct NMSidebarToggle: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .onAppear { value = Defaults[key] }
-        .onChange(of: value) { _, newValue in
-            if Defaults[key] != newValue { Defaults[key] = newValue }
-        }
-        .onReceive(Defaults.publisher(key).receive(on: RunLoop.main)) { change in
-            if value != change.newValue { value = change.newValue }
-        }
     }
 }
 
@@ -1659,8 +1650,6 @@ private struct NMModuleRow: View {
     let tint: SwiftUI.Color
     let key: Defaults.Key<Bool>
 
-    @State private var value: Bool = false
-
     var body: some View {
         HStack(spacing: 10) {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -1681,18 +1670,11 @@ private struct NMModuleRow: View {
                     .foregroundStyle(.white.opacity(0.5))
             }
             Spacer()
-            Toggle("", isOn: $value)
+            Defaults.Toggle("", key: key)
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.small)
                 .tint(.green)
-        }
-        .onAppear { value = Defaults[key] }
-        .onChange(of: value) { _, newValue in
-            if Defaults[key] != newValue { Defaults[key] = newValue }
-        }
-        .onReceive(Defaults.publisher(key).receive(on: RunLoop.main)) { change in
-            if value != change.newValue { value = change.newValue }
         }
     }
 }

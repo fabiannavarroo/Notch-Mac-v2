@@ -13,9 +13,11 @@ let downloadSneakSize: CGSize = .init(width: 65, height: 1)
 let batterySneakSize: CGSize = .init(width: 160, height: 1)
 
 let shadowPadding: CGFloat = 20
-let openNotchSize: CGSize = .init(width: 640, height: 190)
+let openNotchSize: CGSize = .init(width: 640, height: 215)
 let windowSize: CGSize = .init(width: openNotchSize.width, height: openNotchSize.height + shadowPadding)
-let cornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (opened: (top: 28, bottom: 32), closed: (top: 6, bottom: 14))
+// Valores exactos del boring.notch original (upstream) para que el modo expandido
+// tenga las mismas curvas y trazo.
+let cornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (opened: (top: 19, bottom: 24), closed: (top: 6, bottom: 14))
 
 enum MusicPlayerImageSizes {
     static let cornerRadiusInset: (opened: CGFloat, closed: CGFloat) = (opened: 13.0, closed: 4.0)
