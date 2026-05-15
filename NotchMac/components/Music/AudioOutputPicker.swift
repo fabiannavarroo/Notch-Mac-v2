@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct AudioOutputPickerButton: View {
+    @EnvironmentObject private var vm: BoringViewModel
     @ObservedObject private var audio = AudioOutputManager.shared
     @State private var showPopover = false
 
@@ -29,6 +30,9 @@ struct AudioOutputPickerButton: View {
         .popover(isPresented: $showPopover, arrowEdge: .top) {
             AudioOutputPickerPopover()
                 .environmentObject(audio)
+        }
+        .onChange(of: showPopover) { _, isShowing in
+            vm.isAudioPopoverActive = isShowing
         }
     }
 }
