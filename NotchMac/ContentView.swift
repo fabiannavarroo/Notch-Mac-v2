@@ -124,7 +124,10 @@ struct ContentView: View {
             VStack(spacing: 0) {
                 let mainLayout = NotchLayout()
                     .id(moduleRenderID)
-                    .frame(alignment: .top)
+                    .frame(
+                        height: vm.notchState == .open ? openNotchSize.height - 12 : nil,
+                        alignment: .top
+                    )
                     .padding(
                         .horizontal,
                         horizontalCornerInset
