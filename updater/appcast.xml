@@ -7,7 +7,7 @@
             <sparkle:version>76</sparkle:version>
             <sparkle:shortVersionString>1.2.7</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Auto-release 1.2.7 build 76.]]></description>
+            <description><![CDATA[<h3>NotchMac 1.2.7</h3><ul><li>Pomodoro: el tab Focus mantiene el mismo borde redondeado que Inicio y Shelf.</li><li>Pomodoro: eliminada la transición de redimensionado del notch al cambiar al tab Focus.</li></ul>]]></description>
             <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.2.7/NotchMac-1.2.7.zip" sparkle:edSignature="qLBExQb2z9IPI3BBIW5wQbiSmI5AtGxHpVGtIX6elyl0pKZZMX9aNwYatZUhWeqcbEzr6UVujCfrT7UD/f6TDg==" length="10063753" type="application/octet-stream"/>
         </item>
 
