@@ -38,6 +38,9 @@ struct ContentView: View {
     @State private var albumArtOpacity: Double = 1.0
     @State private var albumArtFadeTask: Task<Void, Never>?
 
+    @State private var capsLockHUDVisible: Bool = false
+    @State private var capsLockHUDDismissTask: Task<Void, Never>?
+
     @Namespace var albumArtNamespace
 
     @Default(.useMusicVisualizer) var useMusicVisualizer
@@ -362,6 +365,24 @@ struct ContentView: View {
         .onChange(of: showBatteryModule) {
             refreshModuleLayout()
         }
+        .onReceive(capsLockManager.pulse) { _ in
+            showCapsLockHUD()
+        }
+    }
+
+    private func showCapsLockHUD() {
+        guard Defaults[.showCapsLockHUD] else { return }
+        capsLockHUDDismissTask?.cancel()
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+            capsLockHUDVisible = true
+        }
+        capsLockHUDDismissTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.25)) {
+                capsLockHUDVisible = false
+            }
+        }
     }
 
     @ViewBuilder
@@ -409,9 +430,9 @@ struct ContentView: View {
                       } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(.opacity)
-                      } else if capsLockManager.isOn && Defaults[.showCapsLockHUD] && vm.notchState == .closed && !coordinator.sneakPeek.show && !vm.hideOnClosed {
-                          CapsLockIndicatorView()
-                              .transition(.opacity)
+                      } else if capsLockHUDVisible && Defaults[.showCapsLockHUD] && vm.notchState == .closed && !coordinator.sneakPeek.show && !vm.hideOnClosed {
+                          CapsLockIndicatorView(isOn: capsLockManager.isOn)
+                              .transition(.opacity.combined(with: .scale(scale: 0.92)))
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && showMusicModule && !vm.hideOnClosed {
                           MusicLiveActivity()
                               .frame(alignment: .center)

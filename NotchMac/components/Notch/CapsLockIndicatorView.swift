@@ -9,13 +9,19 @@ import SwiftUI
 
 struct CapsLockIndicatorView: View {
     @EnvironmentObject var vm: BoringViewModel
+    let isOn: Bool
+
+    private var tint: Color { isOn ? .green : .secondary }
+    private var label: String { isOn ? "Caps Lock On" : "Caps Lock Off" }
+    private var icon: String { isOn ? "capslock.fill" : "capslock" }
 
     var body: some View {
         HStack(spacing: 0) {
             HStack {
-                Image(systemName: "capslock.fill")
+                Image(systemName: icon)
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(tint)
+                    .contentTransition(.symbolEffect(.replace))
                 Spacer(minLength: 0)
             }
             .frame(width: 88, alignment: .leading)
@@ -27,11 +33,12 @@ struct CapsLockIndicatorView: View {
 
             HStack {
                 Spacer(minLength: 0)
-                Text("Caps Lock")
+                Text(label)
                     .font(.subheadline)
                     .fontWeight(.semibold)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(tint)
                     .lineLimit(1)
+                    .contentTransition(.numericText())
             }
             .frame(width: 88, alignment: .trailing)
             .padding(.trailing, 10)
@@ -41,7 +48,7 @@ struct CapsLockIndicatorView: View {
 }
 
 #Preview {
-    CapsLockIndicatorView()
+    CapsLockIndicatorView(isOn: true)
         .frame(width: 360)
         .background(Color.black)
         .environmentObject(BoringViewModel())

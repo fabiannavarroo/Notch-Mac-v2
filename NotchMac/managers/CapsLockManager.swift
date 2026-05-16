@@ -15,6 +15,8 @@ final class CapsLockManager: ObservableObject {
 
     @Published private(set) var isOn: Bool = false
 
+    let pulse = PassthroughSubject<Bool, Never>()
+
     private var globalMonitor: Any?
     private var localMonitor: Any?
 
@@ -37,6 +39,7 @@ final class CapsLockManager: ObservableObject {
             guard let self else { return }
             if self.isOn != newValue {
                 self.isOn = newValue
+                self.pulse.send(newValue)
             }
         }
     }
