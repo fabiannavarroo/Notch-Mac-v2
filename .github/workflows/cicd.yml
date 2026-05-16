@@ -3,10 +3,8 @@ name: Build for macOS
 on:
   push:
     branches:
-      - '*'
-  pull_request:
-    branches:
-      - '*'
+      - main
+  workflow_dispatch:
 
 # https://stackoverflow.com/a/72408109/6942800
 concurrency:
@@ -29,6 +27,7 @@ jobs:
         scheme:
           - boringNotch
     runs-on: macos-latest
+    if: github.repository_owner == 'fabiannavarroo'
     steps:
     - name: Code Checkout
       # TODO: pin to immutable SHA
