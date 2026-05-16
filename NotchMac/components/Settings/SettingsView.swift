@@ -514,6 +514,10 @@ struct Media: View {
     @Default(.hideNotchOption) var hideNotchOption
     @Default(.enableSneakPeek) private var enableSneakPeek
     @Default(.sneakPeekStyles) var sneakPeekStyles
+    @Default(.albumArtDisplayMode) var albumArtDisplayMode
+    @Default(.liveActivityAlbumArtSize) var liveActivityAlbumArtSize
+    @Default(.liveActivityAlbumArtCornerRadius) var liveActivityAlbumArtCornerRadius
+    @Default(.liveActivityAlbumArtShadow) var liveActivityAlbumArtShadow
 
     @Default(.enableLyrics) var enableLyrics
 
@@ -591,6 +595,37 @@ struct Media: View {
                 }
             } header: {
                 Text("Media playback live activity")
+            }
+
+            Section {
+                Picker("Album art display", selection: $albumArtDisplayMode) {
+                    ForEach(AlbumArtDisplayMode.allCases) { mode in
+                        Text(mode.localizedString).tag(mode)
+                    }
+                }
+                HStack {
+                    Text("Album art size")
+                    Spacer()
+                    Text(String(format: "%.2fx", liveActivityAlbumArtSize))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                Slider(value: $liveActivityAlbumArtSize, in: 0.5...1.5, step: 0.05)
+                HStack {
+                    Text("Album art corner radius")
+                    Spacer()
+                    Text(String(format: "%.2fx", liveActivityAlbumArtCornerRadius))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                Slider(value: $liveActivityAlbumArtCornerRadius, in: 0.0...2.0, step: 0.05)
+                Toggle("Drop shadow on album art", isOn: $liveActivityAlbumArtShadow)
+            } header: {
+                Text("Album art")
+            } footer: {
+                Text("Size and corner radius are multipliers applied to the closed-notch base values. Fade hides the artwork after 3 seconds of inactivity; App icon swaps to the source media app icon.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             
             Section {

@@ -2202,6 +2202,153 @@
         }
       }
     },
+    "Album art" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album art"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carátula"
+          }
+        }
+      }
+    },
+    "Album art corner radius" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album art corner radius"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radio de esquina"
+          }
+        }
+      }
+    },
+    "Album art display" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album art display"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visualización de carátula"
+          }
+        }
+      }
+    },
+    "Album art size" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album art size"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamaño de carátula"
+          }
+        }
+      }
+    },
+    "album_art_always" : {
+      "comment" : "Album art display: Always show",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always show"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar siempre"
+          }
+        }
+      }
+    },
+    "album_art_app_icon" : {
+      "comment" : "Album art display: Show app icon",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show app icon"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar icono de la app"
+          }
+        }
+      }
+    },
+    "album_art_fade" : {
+      "comment" : "Album art display: Fade after 3 seconds",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fade after 3 seconds"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desvanecer tras 3 segundos"
+          }
+        }
+      }
+    },
+    "Drop shadow on album art" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop shadow on album art"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sombra paralela en carátula"
+          }
+        }
+      }
+    },
+    "Size and corner radius are multipliers applied to the closed-notch base values. Fade hides the artwork after 3 seconds of inactivity; App icon swaps to the source media app icon." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Size and corner radius are multipliers applied to the closed-notch base values. Fade hides the artwork after 3 seconds of inactivity; App icon swaps to the source media app icon."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El tamaño y el radio son multiplicadores aplicados al valor base del notch cerrado. Desvanecer oculta la carátula tras 3 s de inactividad; Mostrar icono usa el icono de la app fuente."
+          }
+        }
+      }
+    },
     "All-day" : {
       "localizations" : {
         "ar" : {

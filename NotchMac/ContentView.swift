@@ -35,11 +35,18 @@ struct ContentView: View {
 
     @State private var haptics: Bool = false
 
+    @State private var albumArtOpacity: Double = 1.0
+    @State private var albumArtFadeTask: Task<Void, Never>?
+
     @Namespace var albumArtNamespace
 
     @Default(.useMusicVisualizer) var useMusicVisualizer
 
     @Default(.showNotHumanFace) var showNotHumanFace
+    @Default(.albumArtDisplayMode) var albumArtDisplayMode
+    @Default(.liveActivityAlbumArtSize) var liveActivityAlbumArtSize
+    @Default(.liveActivityAlbumArtCornerRadius) var liveActivityAlbumArtCornerRadius
+    @Default(.liveActivityAlbumArtShadow) var liveActivityAlbumArtShadow
     @Default(.showMusicModule) var showMusicModule
     @Default(.showTimerModule) var showTimerModule
     @Default(.boringShelf) var showShelfModule
@@ -552,19 +559,24 @@ struct ContentView: View {
 
     @ViewBuilder
     func MusicLiveActivity() -> some View {
+        let baseArtSize = max(0, vm.effectiveClosedNotchHeight - 12)
+        let scaledArtSize = baseArtSize * max(0.5, min(1.5, liveActivityAlbumArtSize))
+        let cornerRadius = MusicPlayerImageSizes.cornerRadiusInset.closed
+            * max(0.0, min(2.0, liveActivityAlbumArtCornerRadius))
         HStack {
-            Image(nsImage: musicManager.albumArt)
+            currentAlbumArtImage
                 .resizable()
                 .clipped()
-                .clipShape(
-                    RoundedRectangle(
-                        cornerRadius: MusicPlayerImageSizes.cornerRadiusInset.closed)
-                )
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                 .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
-                .frame(
-                    width: max(0, vm.effectiveClosedNotchHeight - 12),
-                    height: max(0, vm.effectiveClosedNotchHeight - 12)
+                .frame(width: scaledArtSize, height: scaledArtSize)
+                .shadow(
+                    color: liveActivityAlbumArtShadow ? .black.opacity(0.45) : .clear,
+                    radius: liveActivityAlbumArtShadow ? 4 : 0,
+                    x: 0,
+                    y: liveActivityAlbumArtShadow ? 2 : 0
                 )
+                .opacity(albumArtDisplayMode == .fade ? albumArtOpacity : 1.0)
 
             Rectangle()
                 .fill(.black)
@@ -675,6 +687,58 @@ struct ContentView: View {
             height: vm.effectiveClosedNotchHeight,
             alignment: .center
         )
+        .onAppear { refreshAlbumArtFade() }
+        .onChange(of: musicManager.songTitle) { _, _ in refreshAlbumArtFade() }
+        .onChange(of: vm.notchState) { _, _ in refreshAlbumArtFade() }
+        .onChange(of: isHovering) { _, _ in refreshAlbumArtFade() }
+        .onChange(of: albumArtDisplayMode) { _, _ in refreshAlbumArtFade() }
+    }
+
+    private var currentAlbumArtImage: Image {
+        if albumArtDisplayMode == .appIcon,
+           let bundleID = musicManager.bundleIdentifier,
+           !bundleID.isEmpty {
+            return AppIcon(for: bundleID)
+        }
+        return Image(nsImage: musicManager.albumArt)
+    }
+
+    private func refreshAlbumArtFade() {
+        guard albumArtDisplayMode == .fade else {
+            albumArtFadeTask?.cancel()
+            albumArtFadeTask = nil
+            if albumArtOpacity != 1.0 {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    albumArtOpacity = 1.0
+                }
+            }
+            return
+        }
+
+        if vm.notchState != .closed || isHovering {
+            albumArtFadeTask?.cancel()
+            albumArtFadeTask = nil
+            withAnimation(.easeInOut(duration: 0.3)) {
+                albumArtOpacity = 1.0
+            }
+            return
+        }
+
+        scheduleAlbumArtFade()
+    }
+
+    private func scheduleAlbumArtFade() {
+        albumArtFadeTask?.cancel()
+        withAnimation(.easeInOut(duration: 0.3)) {
+            albumArtOpacity = 1.0
+        }
+        albumArtFadeTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3))
+            if Task.isCancelled { return }
+            withAnimation(.easeInOut(duration: 1.0)) {
+                albumArtOpacity = 0.0
+            }
+        }
     }
 
     @ViewBuilder
