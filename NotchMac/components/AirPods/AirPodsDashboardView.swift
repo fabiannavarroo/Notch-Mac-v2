@@ -147,14 +147,31 @@ struct AirPodsLiveActivity: View {
     @ObservedObject private var manager = AirPodsManager.shared
     @EnvironmentObject var vm: BoringViewModel
 
-    /// Slot height matches the music live activity, but the slot width is
-    /// roughly 2× because the buds need horizontal room to read.
+    // MARK: Tuneables (edit these to taste)
+
+    /// Width multiplier for the 3D tile relative to the chin height. Bigger
+    /// number = wider slot for the model. The physical MacBook notch sits
+    /// in the middle and hides the centre band, so each side needs room.
+    private let artWidthMultiplier: CGFloat = 1.9
+    /// Outer diameter of the battery ring (pt). Smaller looks tidier.
+    private let ringDiameter: CGFloat = 22
+    /// Stroke width of the battery ring (pt). Higher = thicker / chunkier.
+    private let ringStrokeWidth: CGFloat = 3.2
+    /// Extra horizontal padding around the ring tile (pt). Bumps the chin
+    /// width so the indicator doesn't hug the corner of the live activity.
+    private let ringSidePadding: CGFloat = 14
+    /// Extra horizontal padding around the 3D tile (pt). Same idea.
+    private let artSidePadding: CGFloat = 10
+
+    // MARK: Layout
+
     private var slotHeight: CGFloat {
         max(0, vm.effectiveClosedNotchHeight - 4)
     }
 
-    private var artWidth: CGFloat { slotHeight * 1.4 }
-    private var ringSize: CGFloat { slotHeight - 4 }
+    private var artWidth: CGFloat { slotHeight * artWidthMultiplier }
+    private var ringTileWidth: CGFloat { ringDiameter + ringSidePadding * 2 }
+    private var artTileWidth: CGFloat { artWidth + artSidePadding * 2 }
 
     var body: some View {
         if let s = manager.state {
@@ -166,7 +183,7 @@ struct AirPodsLiveActivity: View {
                     hideCase: true,
                     tightCrop: true
                 )
-                .frame(width: artWidth, height: slotHeight)
+                .frame(width: artTileWidth, height: slotHeight)
 
                 // Black filler matching the physical notch — same trick the
                 // music live activity uses to avoid drawing behind the
@@ -175,16 +192,27 @@ struct AirPodsLiveActivity: View {
                     .fill(.black)
                     .frame(width: vm.closedNotchSize.width - 20)
 
-                AirPodsMiniBatteryRing(level: s.averagePodLevel)
-                    .frame(width: ringSize + 12, height: slotHeight)
+                AirPodsMiniBatteryRing(
+                    level: s.averagePodLevel,
+                    diameter: ringDiameter,
+                    strokeWidth: ringStrokeWidth
+                )
+                .frame(width: ringTileWidth, height: slotHeight)
             }
             .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
         }
     }
+
+    static let defaultArtTileWidth: CGFloat = (32 - 4) * 1.9 + 10 * 2
+    static let defaultRingTileWidth: CGFloat = 22 + 14 * 2
 }
 
 private struct AirPodsMiniBatteryRing: View {
     let level: Int?
+    /// Outer diameter in points. Configured by the parent.
+    let diameter: CGFloat
+    /// Stroke thickness in points. Higher = chunkier ring.
+    let strokeWidth: CGFloat
 
     @State private var animatedFraction: Double = 0
     @State private var animatedLevel: Int = 0
@@ -203,24 +231,25 @@ private struct AirPodsMiniBatteryRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(.white.opacity(0.18), lineWidth: 2.2)
+                .stroke(.white.opacity(0.18), lineWidth: strokeWidth)
             Circle()
                 .trim(from: 0, to: max(0.001, animatedFraction))
                 .stroke(
                     AngularGradient(colors: [color.opacity(0.7), color, color.opacity(0.7)], center: .center),
-                    style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+                    style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
                 .shadow(color: color.opacity(0.45), radius: 2)
             if level != nil {
+                // Font scales with the ring so the digit always reads cleanly.
                 Text("\(animatedLevel)")
-                    .font(.system(size: 8, weight: .semibold, design: .rounded))
+                    .font(.system(size: diameter * 0.42, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .monospacedDigit()
                     .contentTransition(.numericText())
             }
         }
-        .padding(2)
+        .frame(width: diameter, height: diameter)
         .onAppear {
             animatedFraction = 0
             animatedLevel = 0

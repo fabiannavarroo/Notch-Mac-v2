@@ -140,8 +140,10 @@ private struct AirPods3DSceneView: NSViewRepresentable {
         let largest = max(extents.x, max(extents.y, extents.z))
         if largest > 0 {
             // Full-case mode keeps generous margin so the lid + buds never
-            // clip when the case spins past 90°. Bud-only modes zoom in.
-            let target: CGFloat = tightCrop ? 1.85 : (hideCase ? 1.55 : 1.35)
+            // clip when the case spins past 90°. Bud-only modes zoom in,
+            // but `tightCrop` (the closed-notch sneak) leaves headroom so
+            // the buds don't kiss the top/bottom of the chin.
+            let target: CGFloat = tightCrop ? 1.45 : (hideCase ? 1.55 : 1.35)
             let scale = target / CGFloat(largest)
             pivot.scale = SCNVector3(scale, scale, scale)
         }

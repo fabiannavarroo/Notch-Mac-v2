@@ -118,10 +118,11 @@ struct ContentView: View {
             && airPodsManager.state != nil
         {
             // AirPods activity uses wider 3D + ring tiles than music does,
-            // so the chin needs proportionally more horizontal room.
-            let slot = max(0, vm.effectiveClosedNotchHeight - 4)
-            let artWidth = slot * 1.4
-            let ringWidth = (slot - 4) + 12
+            // so the chin needs proportionally more horizontal room. Keep
+            // these constants in sync with AirPodsLiveActivity tuneables.
+            let slot: CGFloat = max(0, vm.effectiveClosedNotchHeight - 4)
+            let artWidth: CGFloat = slot * 1.9 + 10 * 2     // artWidthMultiplier + 2× artSidePadding
+            let ringWidth: CGFloat = 22 + 14 * 2             // ringDiameter + 2× ringSidePadding
             chinWidth += (artWidth + ringWidth + 24)
         } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music)
             && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle)
