@@ -2198,7 +2198,6 @@ private struct NMUpdateRow: View {
 // MARK: - AirPods debug card
 
 private struct NMAirPodsDebugCard: View {
-    @Default(.airPodsDebugAlwaysShow)     private var alwaysShow
     @Default(.airPodsShowConnectActivity) private var showOnConnect
     @Default(.airPodsDebugVariant)        private var debugVariantRaw
 
@@ -2211,20 +2210,17 @@ private struct NMAirPodsDebugCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             NMCardHeader(
-                title: "AirPods (debug)",
-                subtitle: "Vista previa en vivo y ajustes finos. Mueve los sliders y la animación se actualiza al instante."
+                title: "AirPods — apariencia",
+                subtitle: "Ajusta el modelo 3D y el anillo de batería para cada variante. Los previews abajo muestran cómo se verá; el notch real solo se activa al conectar AirPods de verdad."
             )
             .padding(.bottom, 12)
 
-            // Sticky header — preview + variant picker + global toggles
-            // stay pinned while the slider list scrolls below.
+            // Sticky header — preview + variant picker + show-on-connect
+            // toggle stay pinned while the slider list scrolls below.
             VStack(alignment: .leading, spacing: 12) {
                 preview
                 variantPicker
-                HStack(spacing: 14) {
-                    compactToggle($alwaysShow, label: "Forzar visible")
-                    compactToggle($showOnConnect, label: "Mostrar al conectar")
-                }
+                compactToggle($showOnConnect, label: "Mostrar animación al conectar")
                 Text("Ajustes para: \(variantDisplayName(selectedVariant))")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.mint)
