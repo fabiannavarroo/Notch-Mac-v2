@@ -3902,6 +3902,33 @@
         }
       }
     },
+    "1 hour" : {
+      "comment" : "A button that enables caffeinate for 1 hour."
+    },
+    "2 hours" : {
+      "comment" : "A button that enables caffeinate for 2 hours."
+    },
+    "5 minutes" : {
+      "comment" : "A button that enables caffeinate for 5 minutes."
+    },
+    "15 minutes" : {
+      "comment" : "A button that enables caffeinate for 15 minutes."
+    },
+    "30 minutes" : {
+      "comment" : "A button that enables caffeinate for 30 minutes."
+    },
+    "Caffeinate: off" : {
+      "comment" : "Tooltip for the caffeinate button when inactive."
+    },
+    "Caffeinate: on (system stays awake)" : {
+      "comment" : "Tooltip for the caffeinate button when active indefinitely."
+    },
+    "Indefinite" : {
+      "comment" : "Menu option to keep caffeinate on with no expiry."
+    },
+    "Show caffeinate button in notch" : {
+      "comment" : "Toggle to show or hide the caffeinate button in the notch."
+    },
     "Calendar" : {
       "localizations" : {
         "ar" : {

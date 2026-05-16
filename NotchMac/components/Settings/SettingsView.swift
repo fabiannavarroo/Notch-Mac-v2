@@ -87,6 +87,9 @@ struct GeneralSettings: View {
                 }
                 .disabled(showOnAllDisplays)
                 
+                Defaults.Toggle(key: .showCaffeinateButton) {
+                    Text("Show caffeinate button in notch")
+                }
                 Defaults.Toggle(key: .automaticallySwitchDisplay) {
                     Text("Automatically switch displays")
                 }
@@ -193,8 +196,9 @@ struct GeneralSettings: View {
             }
                 .disabled(!openNotchOnHover)
             if enableGestures {
-                Toggle("Change media with horizontal gestures", isOn: .constant(false))
-                    .disabled(true)
+                Defaults.Toggle(key: .enableHorizontalMediaGestures) {
+                    Text("Change media with horizontal gestures")
+                }
                 Defaults.Toggle(key: .closeGestureEnabled) {
                     Text("Close gesture")
                 }
@@ -475,6 +479,14 @@ struct HUD: View {
                 Text("Closed Notch")
             }
             .disabled(!Defaults[.hudReplacement])
+
+            Section {
+                Defaults.Toggle(key: .showCapsLockHUD) {
+                    Text("Show Caps Lock indicator in notch")
+                }
+            } header: {
+                Text("Caps Lock")
+            }
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("HUDs")

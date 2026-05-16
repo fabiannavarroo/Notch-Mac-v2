@@ -101,11 +101,13 @@ extension Defaults.Keys {
     static let showMirror = Key<Bool>("showMirror", default: false)
     static let mirrorShape = Key<MirrorShapeEnum>("mirrorShape", default: MirrorShapeEnum.rectangle)
     static let settingsIconInNotch = Key<Bool>("settingsIconInNotch", default: true)
+    static let showCaffeinateButton = Key<Bool>("showCaffeinateButton", default: true)
     static let lightingEffect = Key<Bool>("lightingEffect", default: true)
     static let enableShadow = Key<Bool>("enableShadow", default: true)
     static let cornerRadiusScaling = Key<Bool>("cornerRadiusScaling", default: true)
 
     static let showNotHumanFace = Key<Bool>("showNotHumanFace", default: false)
+    static let showCapsLockHUD = Key<Bool>("showCapsLockHUD", default: true)
     static let tileShowLabels = Key<Bool>("tileShowLabels", default: false)
     static let showCalendar = Key<Bool>("showCalendar", default: false)
     static let hideCompletedReminders = Key<Bool>("hideCompletedReminders", default: true)
@@ -120,6 +122,7 @@ extension Defaults.Keys {
     
     // MARK: Gestures
     static let enableGestures = Key<Bool>("enableGestures", default: true)
+    static let enableHorizontalMediaGestures = Key<Bool>("enableHorizontalMediaGestures", default: true)
     static let closeGestureEnabled = Key<Bool>("closeGestureEnabled", default: true)
     static let gestureSensitivity = Key<CGFloat>("gestureSensitivity", default: 200.0)
     
