@@ -7,7 +7,7 @@
             <sparkle:version>159</sparkle:version>
             <sparkle:shortVersionString>1.5.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Auto-release 1.5.3 build 159.]]></description>
+            <description><![CDATA[<h3>NotchMac 1.5.3 — AirPods vuelve, panel de tuning fuera</h3><ul><li><b>Restaurado:</b> live activity AirPods en el notch cerrado al conectar, pestaña "AirPods" en el notch abierto con batería L / R / Case, toggles en sidebar + tarjeta "Modules", polling de batería y notificaciones 50 / 20 / 10 %.</li><li><b>Oculto:</b> la tarjeta interna "AirPods — apariencia (modo tuning)" con los sliders del modelo 3D. Los valores curados por variante ya están bakeados como defaults, así que no hace falta tunear nada para el uso normal.</li><li>Fix del 1.5.2 que ocultaba todo el módulo AirPods por accidente.</li></ul>]]></description>
             <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.5.3/NotchMac-1.5.3.zip" sparkle:edSignature="9OiPje3aeqo7LDAJLzF0MJTw5Z3CGC0UlQmqnpJlyI/o/DXR9uOJesxL762MVQYRnVI59Op3+POMrv+2igQmBQ==" length="10363334" type="application/octet-stream"/>
         </item>
 
