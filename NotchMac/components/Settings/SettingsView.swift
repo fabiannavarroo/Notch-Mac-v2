@@ -2200,31 +2200,17 @@ private struct NMUpdateRow: View {
 private struct NMAirPodsDebugCard: View {
     @Default(.airPodsDebugAlwaysShow)     private var alwaysShow
     @Default(.airPodsShowConnectActivity) private var showOnConnect
-    @Default(.airPodsArtWidthMultiplier)  private var artWidthMul
-    @Default(.airPodsArtSidePadding)      private var artSidePad
-    @Default(.airPodsArtLeftShift)        private var artLeftShift
-    @Default(.airPodsModelZoom)           private var modelZoom
-    @Default(.airPodsRingDiameter)        private var ringDiam
-    @Default(.airPodsRingStrokeWidth)     private var ringStroke
-    @Default(.airPodsRingSidePadding)     private var ringSidePad
-    @Default(.airPodsRingTextScale)       private var ringTextScale
-
-    // 3D render tuning
-    @Default(.airPodsShowFullModel)       private var showFullModel
-    @Default(.airPodsModelTiltX)          private var tiltX
-    @Default(.airPodsModelYShift)         private var yShift
-    @Default(.airPodsCameraZ)             private var cameraZ
-    @Default(.airPodsCameraY)             private var cameraY
-    @Default(.airPodsCameraFOV)           private var cameraFOV
-    @Default(.airPodsRotationSeconds)     private var rotSeconds
-    @Default(.airPodsRotationReversed)    private var rotReversed
-    @Default(.airPodsFilterPositionCut)   private var filterPosCut
-    @Default(.airPodsFilterAreaCut)       private var filterAreaCut
-    @Default(.airPodsFilterStrict)        private var filterStrict
     @Default(.airPodsDebugVariant)        private var debugVariantRaw
 
+    // Per-variant tuning. We observe all four so the body re-evaluates
+    // whenever any slider in any variant changes; the active variant's
+    // struct is chosen by `currentTuning`.
+    @Default(.airPodsTuningRegular)       private var tuningRegular
+    @Default(.airPodsTuningANC)           private var tuningANC
+    @Default(.airPodsTuningPro)           private var tuningPro
+    @Default(.airPodsTuningMax)           private var tuningMax
+
     @State private var previewVM = BoringViewModel()
-    @State private var expanded3D: Bool = true
     @State private var expandedAdvanced: Bool = false
 
     var body: some View {
@@ -2253,50 +2239,55 @@ private struct NMAirPodsDebugCard: View {
 
             Divider().background(.white.opacity(0.08))
 
+            Text("Ajustes para: \(variantDisplayName(selectedVariant))")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.mint)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
             Group {
                 sectionTitle("Layout del tile 3D")
-                slider("Ancho del tile (× alto)",   $artWidthMul,  range: 1.0...3.5, step: 0.05, format: "%.2f")
-                slider("Padding lateral del 3D",    $artSidePad,   range: 0...40,    step: 1,    format: "%.0f pt")
-                slider("Desplazamiento horizontal", $artLeftShift, range: -60...30,  step: 1,    format: "%.0f pt")
+                slider("Ancho del tile (× alto)",   tuneBinding(\.artWidthMultiplier), range: 1.0...3.5, step: 0.05, format: "%.2f")
+                slider("Padding lateral del 3D",    tuneBinding(\.artSidePadding),     range: 0...40,    step: 1,    format: "%.0f pt")
+                slider("Desplazamiento horizontal", tuneBinding(\.artLeftShift),       range: -60...30,  step: 1,    format: "%.0f pt")
             }
 
             Divider().background(.white.opacity(0.08))
 
             Group {
                 sectionTitle("Modelo 3D — render")
-                Toggle(isOn: $showFullModel) {
+                Toggle(isOn: tuneBindingBool(\.showFullModel)) {
                     debugLabel("Mostrar modelo completo",
                                "Desactiva el filtro de caja y muestra los AirPods enteros (caja incluida).")
                 }
                 .toggleStyle(.switch)
-                Toggle(isOn: $rotReversed) {
+                Toggle(isOn: tuneBindingBool(\.rotationReversed)) {
                     debugLabel("Rotación invertida",
                                "Cambia el sentido de giro del modelo.")
                 }
                 .toggleStyle(.switch)
-                slider("Zoom modelo",            $modelZoom,   range: 0.3...2.5, step: 0.02, format: "%.2f")
-                slider("Inclinación X (°)",      $tiltX,       range: -45...45,  step: 1,    format: "%.0f°")
-                slider("Desplazamiento vertical", $yShift,     range: -0.4...0.4, step: 0.01, format: "%.2f")
-                slider("Segundos por vuelta",    $rotSeconds,  range: 1.0...20,  step: 0.5,  format: "%.1f s")
+                slider("Zoom modelo",             tuneBinding(\.modelZoom),       range: 0.3...2.5, step: 0.02, format: "%.2f")
+                slider("Inclinación X (°)",       tuneBinding(\.modelTiltX),      range: -45...45,  step: 1,    format: "%.0f°")
+                slider("Desplazamiento vertical", tuneBinding(\.modelYShift),     range: -0.4...0.4, step: 0.01, format: "%.2f")
+                slider("Segundos por vuelta",     tuneBinding(\.rotationSeconds), range: 1.0...20,  step: 0.5,  format: "%.1f s")
             }
 
             DisclosureGroup(isExpanded: $expandedAdvanced) {
                 VStack(alignment: .leading, spacing: 12) {
                     sectionTitle("Cámara")
-                    slider("Campo de visión (FOV)", $cameraFOV,    range: 10...60,   step: 1,    format: "%.0f°")
-                    slider("Distancia cámara (Z)",  $cameraZ,      range: 1.5...6.0, step: 0.05, format: "%.2f")
-                    slider("Altura cámara (Y)",     $cameraY,      range: -0.5...0.5, step: 0.01, format: "%.2f")
+                    slider("Campo de visión (FOV)", tuneBinding(\.cameraFOV), range: 10...60,   step: 1,    format: "%.0f°")
+                    slider("Distancia cámara (Z)",  tuneBinding(\.cameraZ),   range: 1.5...6.0, step: 0.05, format: "%.2f")
+                    slider("Altura cámara (Y)",     tuneBinding(\.cameraY),   range: -0.5...0.5, step: 0.01, format: "%.2f")
 
                     Divider().background(.white.opacity(0.08))
 
                     sectionTitle("Filtro de caja")
-                    Toggle(isOn: $filterStrict) {
+                    Toggle(isOn: tuneBindingBool(\.filterStrict)) {
                         debugLabel("Filtro estricto (OR)",
                                    "Quita LED + barra de metal + bisagra: borra mallas que estén bajo la línea Y *o* sean demasiado anchas. Desactivar = solo borra si cumple ambas (puede dejar piezas sueltas).")
                     }
                     .toggleStyle(.switch)
-                    slider("Línea de corte (Y)",    $filterPosCut, range: 0.0...1.0, step: 0.01, format: "%.2f")
-                    slider("Umbral de área",        $filterAreaCut, range: 0.1...0.9, step: 0.01, format: "%.2f")
+                    slider("Línea de corte (Y)",    tuneBinding(\.filterPositionCut), range: 0.0...1.0, step: 0.01, format: "%.2f")
+                    slider("Umbral de área",        tuneBinding(\.filterAreaCut),     range: 0.1...0.9, step: 0.01, format: "%.2f")
                     Text("Estricto borra cualquier malla bajo la línea Y. Si los palos (stems) desaparecen, baja la línea de corte hacia 0.35.")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.white.opacity(0.5))
@@ -2312,10 +2303,10 @@ private struct NMAirPodsDebugCard: View {
 
             Group {
                 sectionTitle("Anillo de batería")
-                slider("Diámetro",       $ringDiam,      range: 10...50, step: 1,    format: "%.0f pt")
-                slider("Grosor",         $ringStroke,    range: 0.5...8, step: 0.1,  format: "%.1f pt")
-                slider("Padding lateral", $ringSidePad,  range: 0...40,  step: 1,    format: "%.0f pt")
-                slider("Tamaño del %",   $ringTextScale, range: 0.2...0.7, step: 0.01, format: "%.2f")
+                slider("Diámetro",        tuneBinding(\.ringDiameter),    range: 10...50, step: 1,    format: "%.0f pt")
+                slider("Grosor",          tuneBinding(\.ringStrokeWidth), range: 0.5...8, step: 0.1,  format: "%.1f pt")
+                slider("Padding lateral", tuneBinding(\.ringSidePadding), range: 0...40,  step: 1,    format: "%.0f pt")
+                slider("Tamaño del %",    tuneBinding(\.ringTextScale),   range: 0.2...0.7, step: 0.01, format: "%.2f")
             }
 
             Divider().background(.white.opacity(0.08))
@@ -2429,24 +2420,59 @@ private struct NMAirPodsDebugCard: View {
     }
 
     private func resetDefaults() {
-        Defaults[.airPodsArtWidthMultiplier] = 1.9
-        Defaults[.airPodsArtSidePadding]     = 10.0
-        Defaults[.airPodsArtLeftShift]       = -14.0
-        Defaults[.airPodsModelZoom]          = 0.85
-        Defaults[.airPodsRingDiameter]       = 22.0
-        Defaults[.airPodsRingStrokeWidth]    = 3.0
-        Defaults[.airPodsRingSidePadding]    = 14.0
-        Defaults[.airPodsRingTextScale]      = 0.42
-        Defaults[.airPodsShowFullModel]      = false
-        Defaults[.airPodsModelTiltX]         = 0.0
-        Defaults[.airPodsModelYShift]        = 0.0
-        Defaults[.airPodsCameraZ]            = 3.2
-        Defaults[.airPodsCameraY]            = 0.05
-        Defaults[.airPodsCameraFOV]          = 28.0
-        Defaults[.airPodsRotationSeconds]    = 5.0
-        Defaults[.airPodsRotationReversed]   = false
-        Defaults[.airPodsFilterPositionCut]  = 0.50
-        Defaults[.airPodsFilterAreaCut]      = 0.30
-        Defaults[.airPodsFilterStrict]       = true
+        // Only the currently selected variant is reset — other variants
+        // keep their settings so the user doesn't lose all their work.
+        AirPodsTuningStore.reset(selectedVariant)
+    }
+
+    // MARK: Bindings into the active variant's tuning struct
+
+    private var currentTuning: AirPodsTuning {
+        switch selectedVariant {
+        case .airPods:    return tuningRegular
+        case .airPodsANC: return tuningANC
+        case .airPodsPro: return tuningPro
+        case .airPodsMax: return tuningMax
+        }
+    }
+
+    private func writeCurrentTuning(_ new: AirPodsTuning) {
+        switch selectedVariant {
+        case .airPods:    tuningRegular = new
+        case .airPodsANC: tuningANC     = new
+        case .airPodsPro: tuningPro     = new
+        case .airPodsMax: tuningMax     = new
+        }
+    }
+
+    private func tuneBinding(_ keyPath: WritableKeyPath<AirPodsTuning, Double>) -> Binding<Double> {
+        Binding(
+            get: { currentTuning[keyPath: keyPath] },
+            set: { newValue in
+                var t = currentTuning
+                t[keyPath: keyPath] = newValue
+                writeCurrentTuning(t)
+            }
+        )
+    }
+
+    private func tuneBindingBool(_ keyPath: WritableKeyPath<AirPodsTuning, Bool>) -> Binding<Bool> {
+        Binding(
+            get: { currentTuning[keyPath: keyPath] },
+            set: { newValue in
+                var t = currentTuning
+                t[keyPath: keyPath] = newValue
+                writeCurrentTuning(t)
+            }
+        )
+    }
+
+    private func variantDisplayName(_ v: AirPodsModelVariant) -> String {
+        switch v {
+        case .airPods:    return "AirPods"
+        case .airPodsANC: return "AirPods 4 ANC"
+        case .airPodsPro: return "AirPods Pro"
+        case .airPodsMax: return "AirPods Max"
+        }
     }
 }

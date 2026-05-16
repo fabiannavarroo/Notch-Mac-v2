@@ -153,16 +153,22 @@ struct AirPodsLiveActivity: View {
     @ObservedObject private var manager = AirPodsManager.shared
     @EnvironmentObject var vm: BoringViewModel
 
-    // MARK: Live-tuneables (read from @Default so the settings sliders
-    // update the view instantly).
-    @Default(.airPodsArtWidthMultiplier) private var artWidthMultiplier
-    @Default(.airPodsArtSidePadding)     private var artSidePadding
-    @Default(.airPodsArtLeftShift)       private var artLeftShift
-    @Default(.airPodsModelZoom)          private var modelZoom
-    @Default(.airPodsRingDiameter)       private var ringDiameter
-    @Default(.airPodsRingStrokeWidth)    private var ringStrokeWidth
-    @Default(.airPodsRingSidePadding)    private var ringSidePadding
-    @Default(.airPodsRingTextScale)      private var ringTextScale
+    // Observe every variant's tuning so SwiftUI re-runs body when sliders
+    // change anywhere. `tuning` then picks the struct for the active
+    // variant.
+    @Default(.airPodsTuningRegular) private var tuningRegular
+    @Default(.airPodsTuningANC)     private var tuningANC
+    @Default(.airPodsTuningPro)     private var tuningPro
+    @Default(.airPodsTuningMax)     private var tuningMax
+
+    private func tuning(for variant: AirPodsModelVariant) -> AirPodsTuning {
+        switch variant {
+        case .airPods:    return tuningRegular
+        case .airPodsANC: return tuningANC
+        case .airPodsPro: return tuningPro
+        case .airPodsMax: return tuningMax
+        }
+    }
 
     // MARK: Layout
 
@@ -206,15 +212,17 @@ struct AirPodsLiveActivity: View {
         max(0, chinHeight - 4)
     }
 
-    private var artWidth: CGFloat { slotHeight * CGFloat(artWidthMultiplier) }
-    private var ringTileWidth: CGFloat { CGFloat(ringDiameter) + CGFloat(ringSidePadding) * 2 }
-    private var artTileWidth: CGFloat { artWidth + CGFloat(artSidePadding) * 2 }
     private var notchWidth: CGFloat {
         override != nil ? 200 : vm.closedNotchSize.width - 20
     }
 
     var body: some View {
         if let s = resolvedState {
+            let t = tuning(for: s.variant)
+            let artWidth = slotHeight * CGFloat(t.artWidthMultiplier)
+            let artTileWidth = artWidth + CGFloat(t.artSidePadding) * 2
+            let ringTileWidth = CGFloat(t.ringDiameter) + CGFloat(t.ringSidePadding) * 2
+
             HStack(spacing: 0) {
                 AirPods3DView(
                     variant: s.variant,
@@ -222,10 +230,10 @@ struct AirPodsLiveActivity: View {
                     rotationSpeed: 5,
                     hideCase: true,
                     tightCrop: true,
-                    zoomOverride: CGFloat(modelZoom)
+                    zoomOverride: CGFloat(t.modelZoom)
                 )
                 .frame(width: artTileWidth, height: slotHeight)
-                .offset(x: CGFloat(artLeftShift))
+                .offset(x: CGFloat(t.artLeftShift))
 
                 Rectangle()
                     .fill(.black)
@@ -233,9 +241,9 @@ struct AirPodsLiveActivity: View {
 
                 AirPodsMiniBatteryRing(
                     level: s.averagePodLevel,
-                    diameter: CGFloat(ringDiameter),
-                    strokeWidth: CGFloat(ringStrokeWidth),
-                    textScale: CGFloat(ringTextScale)
+                    diameter: CGFloat(t.ringDiameter),
+                    strokeWidth: CGFloat(t.ringStrokeWidth),
+                    textScale: CGFloat(t.ringTextScale)
                 )
                 .frame(width: ringTileWidth, height: slotHeight)
             }

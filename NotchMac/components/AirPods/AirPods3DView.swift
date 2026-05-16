@@ -34,29 +34,30 @@ struct AirPodsRenderConfig: Equatable {
 
     static let `default` = AirPodsRenderConfig()
 
-    /// Builds a config from the live @Default values for the closed-notch
-    /// mini view. Settings sliders write to these defaults → this method
-    /// returns fresh values every render.
-    static func liveTuned(
+    /// Builds a config from a variant-specific tuning struct. Settings
+    /// sliders write into the variant's tuning, so this returns fresh
+    /// values every render automatically.
+    static func from(
+        _ tuning: AirPodsTuning,
         hideCase: Bool,
         tightCrop: Bool,
         rotationSpeed: Double? = nil
     ) -> AirPodsRenderConfig {
         AirPodsRenderConfig(
-            rotationSeconds: rotationSpeed ?? Defaults[.airPodsRotationSeconds],
-            rotationReversed: Defaults[.airPodsRotationReversed],
+            rotationSeconds: rotationSpeed ?? tuning.rotationSeconds,
+            rotationReversed: tuning.rotationReversed,
             hideCase: hideCase,
             tightCrop: tightCrop,
-            showFullModel: Defaults[.airPodsShowFullModel],
-            zoom: CGFloat(Defaults[.airPodsModelZoom]),
-            tiltX: CGFloat(Defaults[.airPodsModelTiltX]),
-            yShift: CGFloat(Defaults[.airPodsModelYShift]),
-            cameraZ: CGFloat(Defaults[.airPodsCameraZ]),
-            cameraY: CGFloat(Defaults[.airPodsCameraY]),
-            cameraFOV: CGFloat(Defaults[.airPodsCameraFOV]),
-            filterPositionCut: CGFloat(Defaults[.airPodsFilterPositionCut]),
-            filterAreaCut: CGFloat(Defaults[.airPodsFilterAreaCut]),
-            filterStrict: Defaults[.airPodsFilterStrict]
+            showFullModel: tuning.showFullModel,
+            zoom: CGFloat(tuning.modelZoom),
+            tiltX: CGFloat(tuning.modelTiltX),
+            yShift: CGFloat(tuning.modelYShift),
+            cameraZ: CGFloat(tuning.cameraZ),
+            cameraY: CGFloat(tuning.cameraY),
+            cameraFOV: CGFloat(tuning.cameraFOV),
+            filterPositionCut: CGFloat(tuning.filterPositionCut),
+            filterAreaCut: CGFloat(tuning.filterAreaCut),
+            filterStrict: tuning.filterStrict
         )
     }
 }
@@ -75,23 +76,26 @@ struct AirPods3DView: View {
 
     @ObservedObject private var loader = AirPodsAssetLoader.shared
 
-    // Observe individual @Default keys so SwiftUI re-runs body on slider
-    // changes. The values themselves are read inside `resolvedConfig`.
-    @Default(.airPodsModelZoom)          private var _modelZoom
-    @Default(.airPodsModelTiltX)         private var _tiltX
-    @Default(.airPodsModelYShift)        private var _yShift
-    @Default(.airPodsCameraZ)            private var _camZ
-    @Default(.airPodsCameraY)            private var _camY
-    @Default(.airPodsCameraFOV)          private var _camFOV
-    @Default(.airPodsRotationSeconds)    private var _rotSec
-    @Default(.airPodsRotationReversed)   private var _rotRev
-    @Default(.airPodsShowFullModel)      private var _showFull
-    @Default(.airPodsFilterPositionCut)  private var _posCut
-    @Default(.airPodsFilterAreaCut)      private var _areaCut
+    // Observe every variant's tuning so SwiftUI re-runs body when sliders
+    // change anywhere. `resolvedConfig` then picks the right struct.
+    @Default(.airPodsTuningRegular) private var tuningRegular
+    @Default(.airPodsTuningANC)     private var tuningANC
+    @Default(.airPodsTuningPro)     private var tuningPro
+    @Default(.airPodsTuningMax)     private var tuningMax
+
+    private var currentTuning: AirPodsTuning {
+        switch variant {
+        case .airPods:    return tuningRegular
+        case .airPodsANC: return tuningANC
+        case .airPodsPro: return tuningPro
+        case .airPodsMax: return tuningMax
+        }
+    }
 
     private var resolvedConfig: AirPodsRenderConfig {
         if let c = config { return c }
-        var c = AirPodsRenderConfig.liveTuned(
+        var c = AirPodsRenderConfig.from(
+            currentTuning,
             hideCase: hideCase,
             tightCrop: tightCrop,
             rotationSpeed: rotationSpeed

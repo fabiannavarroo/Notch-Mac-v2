@@ -620,6 +620,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // widget toggle is off, because the manager itself is cheap (no work
         // until a Bluetooth route change happens) and the toggle is checked
         // before any UI is shown.
+        // One-shot migration of legacy global tuning keys → Pro variant slot.
+        AirPodsTuningStore.migrateLegacyTuningIfNeeded()
+
         if Defaults[.enableAirPodsWidget] {
             AirPodsManager.shared.start()
         }

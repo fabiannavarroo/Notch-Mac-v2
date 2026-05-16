@@ -98,6 +98,13 @@ struct ContentView: View {
         return false
     }
 
+    /// Variant currently driving the live activity geometry — real device
+    /// state wins, otherwise the debug-picker variant.
+    private var currentAirPodsVariant: AirPodsModelVariant {
+        if let s = airPodsManager.state { return s.variant }
+        return AirPodsModelVariant(rawValue: Defaults[.airPodsDebugVariant]) ?? .airPodsPro
+    }
+
     private var pomodoroRingActive: Bool {
         pomodoroIndicatorStyle == .ring && showTimerModule && focusSession.isRunning && focusSession.remainingFraction > 0
     }
@@ -126,16 +133,13 @@ struct ContentView: View {
             && Defaults[.enableAirPodsWidget]
             && airPodsClosedActivityActive
         {
-            // AirPods activity geometry mirrors the @Default tuneables so
-            // chin width updates live when the user drags sliders in the
-            // debug settings panel.
+            // AirPods activity geometry pulls from the *currently rendered*
+            // variant's tuning so chin width matches what AirPodsLiveActivity
+            // draws inside.
+            let t = AirPodsTuningStore.tuning(for: currentAirPodsVariant)
             let slot: CGFloat = max(0, vm.effectiveClosedNotchHeight - 4)
-            let artMul: CGFloat = CGFloat(Defaults[.airPodsArtWidthMultiplier])
-            let artPad: CGFloat = CGFloat(Defaults[.airPodsArtSidePadding])
-            let ringDiam: CGFloat = CGFloat(Defaults[.airPodsRingDiameter])
-            let ringPad: CGFloat = CGFloat(Defaults[.airPodsRingSidePadding])
-            let artWidth: CGFloat = slot * artMul + artPad * 2
-            let ringWidth: CGFloat = ringDiam + ringPad * 2
+            let artWidth: CGFloat = slot * CGFloat(t.artWidthMultiplier) + CGFloat(t.artSidePadding) * 2
+            let ringWidth: CGFloat = CGFloat(t.ringDiameter) + CGFloat(t.ringSidePadding) * 2
             chinWidth += (artWidth + ringWidth + 24)
         } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music)
             && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle)

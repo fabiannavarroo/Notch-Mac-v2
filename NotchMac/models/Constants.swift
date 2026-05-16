@@ -251,6 +251,18 @@ extension Defaults.Keys {
     /// Multiplier applied to the chin height for the 3D tile.
     static let airPodsTileHeightMul = Key<Double>("nm.airpods.tune.tileHeightMul", default: 1.0)
 
+    // MARK: AirPods per-variant tuning
+    /// One settings struct per AirPods variant. The debug panel writes into
+    /// whichever struct corresponds to the currently selected variant, so
+    /// each model (regular, ANC, Pro, Max) keeps its own visual config.
+    static let airPodsTuningRegular = Key<AirPodsTuning>("nm.airpods.tuning.regular", default: AirPodsTuning())
+    static let airPodsTuningANC     = Key<AirPodsTuning>("nm.airpods.tuning.anc",     default: AirPodsTuning())
+    static let airPodsTuningPro     = Key<AirPodsTuning>("nm.airpods.tuning.pro",     default: AirPodsTuning())
+    static let airPodsTuningMax     = Key<AirPodsTuning>("nm.airpods.tuning.max",     default: AirPodsTuning())
+    /// One-shot marker flipped after the legacy global tune keys above are
+    /// copied into the Pro variant slot on first launch of this build.
+    static let airPodsTuningMigratedV1 = Key<Bool>("nm.airpods.tuning.migratedV1", default: false)
+
     // MARK: Battery
     static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: true)
     static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: true)

@@ -158,6 +158,7 @@
 		7A1436C3FBBB409DA3D6E4D1 /* AirPodsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2D13F28E5804A3CBD3E84EE /* AirPodsManager.swift */; };
 		3AF7FA9DD8834152ACC1465D /* AirPods3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE7E265753314DFBA5899E55 /* AirPods3DView.swift */; };
 		F7ED575A68C943B68957D6FB /* AirPodsDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB50306BE714622B1CA2E0E /* AirPodsDashboardView.swift */; };
+		82A7511EE96F4128989E63BD /* AirPodsTuning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 696E2B47C2CA4F60B285E2A7 /* AirPodsTuning.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -339,6 +340,7 @@
 		D2D13F28E5804A3CBD3E84EE /* AirPodsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPodsManager.swift; sourceTree = "<group>"; };
 		CE7E265753314DFBA5899E55 /* AirPods3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPods3DView.swift; sourceTree = "<group>"; };
 		DBB50306BE714622B1CA2E0E /* AirPodsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPodsDashboardView.swift; sourceTree = "<group>"; };
+		696E2B47C2CA4F60B285E2A7 /* AirPodsTuning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPodsTuning.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -566,6 +568,7 @@
 				CA751A002FB21CAF0061EA48 /* CapsLockManager.swift */,
 				80CA1CB236EA4EF6911774E3 /* AirPodsAssetLoader.swift */,
 				D2D13F28E5804A3CBD3E84EE /* AirPodsManager.swift */,
+				696E2B47C2CA4F60B285E2A7 /* AirPodsTuning.swift */,
 			);
 			path = managers;
 			sourceTree = "<group>";
@@ -974,6 +977,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				82A7511EE96F4128989E63BD /* AirPodsTuning.swift in Sources */,
 				ED3CE16BE6E3437E9D653987 /* AirPodsAssetLoader.swift in Sources */,
 				7A1436C3FBBB409DA3D6E4D1 /* AirPodsManager.swift in Sources */,
 				3AF7FA9DD8834152ACC1465D /* AirPods3DView.swift in Sources */,
