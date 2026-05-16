@@ -115,7 +115,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             hideAnimationTask = Task { @MainActor in
                 let allVMs = [self.vm] + Array(self.viewModels.values)
                 allVMs.forEach { $0.isPerformingHideAnimation = true }
-                try? await Task.sleep(for: .milliseconds(360))
+                try? await Task.sleep(for: .milliseconds(520))
                 guard !Task.isCancelled else {
                     allVMs.forEach { $0.isPerformingHideAnimation = false }
                     return
@@ -195,12 +195,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else { return }
         let autoHide = Defaults[.nmAutoHideAppBundleIDs]
         if autoHide.contains(bundleID) && !Defaults[.nmIslandHidden] {
-            // Pequeño delay para que el cierre del notch se vea antes del fade-out.
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(280))
-                Defaults[.nmIslandHidden] = true
-                self.applyIslandVisibility()
-            }
+            Defaults[.nmIslandHidden] = true
+            applyIslandVisibility()
         }
     }
 
