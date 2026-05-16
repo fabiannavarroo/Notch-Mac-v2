@@ -242,6 +242,9 @@ extension Defaults.Keys {
     static let airPodsFilterPositionCut = Key<Double>("nm.airpods.tune.filterPosCut", default: 0.50)
     /// Horizontal footprint fraction above which a mesh is treated as case.
     static let airPodsFilterAreaCut = Key<Double>("nm.airpods.tune.filterAreaCut", default: 0.30)
+    /// Filter strictness. `true` = drop if mesh is bulky OR sits below the
+    /// Y line (catches the LED + metal hinge bar). `false` = needs both.
+    static let airPodsFilterStrict = Key<Bool>("nm.airpods.tune.filterStrict", default: true)
     /// Multiplier applied to the chin height for the 3D tile.
     static let airPodsTileHeightMul = Key<Double>("nm.airpods.tune.tileHeightMul", default: 1.0)
 

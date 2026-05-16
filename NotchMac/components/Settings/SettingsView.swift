@@ -2220,6 +2220,7 @@ private struct NMAirPodsDebugCard: View {
     @Default(.airPodsRotationReversed)    private var rotReversed
     @Default(.airPodsFilterPositionCut)   private var filterPosCut
     @Default(.airPodsFilterAreaCut)       private var filterAreaCut
+    @Default(.airPodsFilterStrict)        private var filterStrict
 
     @State private var previewVM = BoringViewModel()
     @State private var expanded3D: Bool = true
@@ -2286,9 +2287,14 @@ private struct NMAirPodsDebugCard: View {
                     Divider().background(.white.opacity(0.08))
 
                     sectionTitle("Filtro de caja")
+                    Toggle(isOn: $filterStrict) {
+                        debugLabel("Filtro estricto (OR)",
+                                   "Quita LED + barra de metal + bisagra: borra mallas que estén bajo la línea Y *o* sean demasiado anchas. Desactivar = solo borra si cumple ambas (puede dejar piezas sueltas).")
+                    }
+                    .toggleStyle(.switch)
                     slider("Línea de corte (Y)",    $filterPosCut, range: 0.0...1.0, step: 0.01, format: "%.2f")
                     slider("Umbral de área",        $filterAreaCut, range: 0.1...0.9, step: 0.01, format: "%.2f")
-                    Text("La caja se elimina si la malla está bajo la línea Y *y* su huella horizontal supera el umbral. Sube el umbral si el palo (stem) desaparece.")
+                    Text("Estricto borra cualquier malla bajo la línea Y. Si los palos (stems) desaparecen, baja la línea de corte hacia 0.35.")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.white.opacity(0.5))
                 }
@@ -2412,5 +2418,6 @@ private struct NMAirPodsDebugCard: View {
         Defaults[.airPodsRotationReversed]   = false
         Defaults[.airPodsFilterPositionCut]  = 0.50
         Defaults[.airPodsFilterAreaCut]      = 0.30
+        Defaults[.airPodsFilterStrict]       = true
     }
 }

@@ -28,6 +28,9 @@ struct AirPodsRenderConfig: Equatable {
     var cameraFOV: CGFloat = 28
     var filterPositionCut: CGFloat = 0.5
     var filterAreaCut: CGFloat = 0.3
+    /// If true, a mesh is dropped if EITHER criterion matches (catches the
+    /// LED pill + hinge bar). If false, both must match.
+    var filterStrict: Bool = true
 
     static let `default` = AirPodsRenderConfig()
 
@@ -52,7 +55,8 @@ struct AirPodsRenderConfig: Equatable {
             cameraY: CGFloat(Defaults[.airPodsCameraY]),
             cameraFOV: CGFloat(Defaults[.airPodsCameraFOV]),
             filterPositionCut: CGFloat(Defaults[.airPodsFilterPositionCut]),
-            filterAreaCut: CGFloat(Defaults[.airPodsFilterAreaCut])
+            filterAreaCut: CGFloat(Defaults[.airPodsFilterAreaCut]),
+            filterStrict: Defaults[.airPodsFilterStrict]
         )
     }
 }
@@ -177,9 +181,9 @@ private struct AirPods3DSceneView: NSViewRepresentable {
         if config.hideCase && !config.showFullModel {
             Self.hideCaseMeshes(
                 in: pivot,
-                tight: config.tightCrop,
                 positionCutFrac: config.filterPositionCut,
-                areaCutFrac: config.filterAreaCut
+                areaCutFrac: config.filterAreaCut,
+                strict: config.filterStrict
             )
         }
 
@@ -257,14 +261,16 @@ private struct AirPods3DSceneView: NSViewRepresentable {
         context.coordinator.config = config
     }
 
-    /// Removes the charging-case meshes by horizontal footprint, keeping
-    /// the bud-and-stem mesh intact. See AirPods3DView documentation for
-    /// the full rationale.
+    /// Removes case meshes. Strict mode drops a mesh if EITHER criterion
+    /// matches — that's what catches the small LED pill and the metal
+    /// hinge bar that the lenient AND check used to miss. The position
+    /// check uses worldspace Y center; the area check compares horizontal
+    /// footprint against the bulkiest leaf.
     private static func hideCaseMeshes(
         in root: SCNNode,
-        tight: Bool,
         positionCutFrac: CGFloat,
-        areaCutFrac: CGFloat
+        areaCutFrac: CGFloat,
+        strict: Bool
     ) {
         let leaves = collectGeometryLeaves(root)
         guard leaves.count > 1 else { return }
@@ -297,7 +303,8 @@ private struct AirPods3DSceneView: NSViewRepresentable {
         for entry in entries {
             let bulky = entry.horizontalArea >= maxArea * areaCutFrac
             let bottomHeavy = entry.centerY < positionCut
-            if bulky && bottomHeavy {
+            let drop = strict ? (bulky || bottomHeavy) : (bulky && bottomHeavy)
+            if drop {
                 entry.node.removeFromParentNode()
             }
         }
