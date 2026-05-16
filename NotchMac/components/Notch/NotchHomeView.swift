@@ -15,11 +15,22 @@ import SwiftUI
 struct MusicPlayerView: View {
     @EnvironmentObject var vm: BoringViewModel
     let albumArtNamespace: Namespace.ID
+    let horizontalMediaGestureFeedback: CGFloat
+    @Binding var isHoveringMusicArea: Bool
 
     var body: some View {
         HStack {
             AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace).padding(.all, 5)
-            MusicControlsView().drawingGroup().compositingGroup()
+            MusicControlsView(horizontalMediaGestureFeedback: horizontalMediaGestureFeedback)
+                .drawingGroup()
+                .compositingGroup()
+        }
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            isHoveringMusicArea = hovering
+        }
+        .onDisappear {
+            isHoveringMusicArea = false
         }
     }
 }
@@ -111,8 +122,9 @@ struct AlbumArtView: View {
 
 struct MusicControlsView: View {
     @ObservedObject var musicManager = MusicManager.shared
-        @EnvironmentObject var vm: BoringViewModel
-        @ObservedObject var webcamManager = WebcamManager.shared
+    @EnvironmentObject var vm: BoringViewModel
+    @ObservedObject var webcamManager = WebcamManager.shared
+    let horizontalMediaGestureFeedback: CGFloat
     @State private var sliderValue: Double = 0
     @State private var dragging: Bool = false
     @State private var lastDragged: Date = .distantPast
@@ -252,6 +264,8 @@ struct MusicControlsView: View {
             HoverButton(icon: "backward.fill", scale: .medium) {
                 MusicManager.shared.previousTrack()
             }
+            .scaleEffect(horizontalMediaGestureFeedback > 0 ? 1.12 : 1)
+            .animation(.interactiveSpring(response: 0.18, dampingFraction: 0.62), value: horizontalMediaGestureFeedback)
         case .playPause:
             HoverButton(icon: musicManager.isPlaying ? "pause.fill" : "play.fill", scale: .large) {
                 MusicManager.shared.togglePlay()
@@ -260,6 +274,8 @@ struct MusicControlsView: View {
             HoverButton(icon: "forward.fill", scale: .medium) {
                 MusicManager.shared.nextTrack()
             }
+            .scaleEffect(horizontalMediaGestureFeedback < 0 ? 1.12 : 1)
+            .animation(.interactiveSpring(response: 0.18, dampingFraction: 0.62), value: horizontalMediaGestureFeedback)
         case .repeatMode:
             HoverButton(icon: repeatIcon, iconColor: repeatIconColor, scale: .medium) {
                 MusicManager.shared.toggleRepeat()
@@ -424,6 +440,8 @@ struct NotchHomeView: View {
     @Default(.showMusicModule) private var showMusicModule
     @Default(.showCalendar) private var showCalendar
     let albumArtNamespace: Namespace.ID
+    let horizontalMediaGestureFeedback: CGFloat
+    @Binding var isHoveringMusicArea: Bool
 
     var body: some View {
         Group {
@@ -448,7 +466,11 @@ struct NotchHomeView: View {
     private var homeModules: some View {
         HStack(alignment: .top, spacing: moduleSpacing) {
             if showMusicModule {
-                MusicPlayerView(albumArtNamespace: albumArtNamespace)
+                MusicPlayerView(
+                    albumArtNamespace: albumArtNamespace,
+                    horizontalMediaGestureFeedback: horizontalMediaGestureFeedback,
+                    isHoveringMusicArea: $isHoveringMusicArea
+                )
             }
 
             if showCalendar {
