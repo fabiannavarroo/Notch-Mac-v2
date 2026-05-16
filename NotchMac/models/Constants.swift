@@ -262,6 +262,10 @@ extension Defaults.Keys {
     /// One-shot marker flipped after the legacy global tune keys above are
     /// copied into the Pro variant slot on first launch of this build.
     static let airPodsTuningMigratedV1 = Key<Bool>("nm.airpods.tuning.migratedV1", default: false)
+    /// One-shot marker flipped after seeding ANC / Regular / Max from the
+    /// Pro tuning. Recovers the user's per-variant work that used to live
+    /// in the single global tuning before the per-variant refactor.
+    static let airPodsTuningMigratedV2 = Key<Bool>("nm.airpods.tuning.migratedV2", default: false)
 
     // MARK: Battery
     static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: true)

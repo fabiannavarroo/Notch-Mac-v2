@@ -165,30 +165,45 @@ enum AirPodsTuningStore {
     /// variant slot. Anyone who had spent time dialling the previous
     /// debug panel in keeps their settings under "AirPods Pro".
     static func migrateLegacyTuningIfNeeded() {
-        guard !Defaults[.airPodsTuningMigratedV1] else { return }
+        if !Defaults[.airPodsTuningMigratedV1] {
+            var pro = Defaults[.airPodsTuningPro]
+            pro.artWidthMultiplier = Defaults[.airPodsArtWidthMultiplier]
+            pro.artSidePadding     = Defaults[.airPodsArtSidePadding]
+            pro.artLeftShift       = Defaults[.airPodsArtLeftShift]
+            pro.modelZoom          = Defaults[.airPodsModelZoom]
+            pro.ringDiameter       = Defaults[.airPodsRingDiameter]
+            pro.ringStrokeWidth    = Defaults[.airPodsRingStrokeWidth]
+            pro.ringSidePadding    = Defaults[.airPodsRingSidePadding]
+            pro.ringTextScale      = Defaults[.airPodsRingTextScale]
+            pro.showFullModel      = Defaults[.airPodsShowFullModel]
+            pro.modelTiltX         = Defaults[.airPodsModelTiltX]
+            pro.modelYShift        = Defaults[.airPodsModelYShift]
+            pro.cameraZ            = Defaults[.airPodsCameraZ]
+            pro.cameraY            = Defaults[.airPodsCameraY]
+            pro.cameraFOV          = Defaults[.airPodsCameraFOV]
+            pro.rotationSeconds    = Defaults[.airPodsRotationSeconds]
+            pro.rotationReversed   = Defaults[.airPodsRotationReversed]
+            pro.filterPositionCut  = Defaults[.airPodsFilterPositionCut]
+            pro.filterAreaCut      = Defaults[.airPodsFilterAreaCut]
+            pro.filterStrict       = Defaults[.airPodsFilterStrict]
+            Defaults[.airPodsTuningPro] = pro
 
-        var pro = Defaults[.airPodsTuningPro]
-        pro.artWidthMultiplier = Defaults[.airPodsArtWidthMultiplier]
-        pro.artSidePadding     = Defaults[.airPodsArtSidePadding]
-        pro.artLeftShift       = Defaults[.airPodsArtLeftShift]
-        pro.modelZoom          = Defaults[.airPodsModelZoom]
-        pro.ringDiameter       = Defaults[.airPodsRingDiameter]
-        pro.ringStrokeWidth    = Defaults[.airPodsRingStrokeWidth]
-        pro.ringSidePadding    = Defaults[.airPodsRingSidePadding]
-        pro.ringTextScale      = Defaults[.airPodsRingTextScale]
-        pro.showFullModel      = Defaults[.airPodsShowFullModel]
-        pro.modelTiltX         = Defaults[.airPodsModelTiltX]
-        pro.modelYShift        = Defaults[.airPodsModelYShift]
-        pro.cameraZ            = Defaults[.airPodsCameraZ]
-        pro.cameraY            = Defaults[.airPodsCameraY]
-        pro.cameraFOV          = Defaults[.airPodsCameraFOV]
-        pro.rotationSeconds    = Defaults[.airPodsRotationSeconds]
-        pro.rotationReversed   = Defaults[.airPodsRotationReversed]
-        pro.filterPositionCut  = Defaults[.airPodsFilterPositionCut]
-        pro.filterAreaCut      = Defaults[.airPodsFilterAreaCut]
-        pro.filterStrict       = Defaults[.airPodsFilterStrict]
-        Defaults[.airPodsTuningPro] = pro
+            Defaults[.airPodsTuningMigratedV1] = true
+        }
 
-        Defaults[.airPodsTuningMigratedV1] = true
+        // V2 — before per-variant was a thing, every variant the user
+        // selected wrote into the same global keys. After V1 only the Pro
+        // slot kept those values; the other three sat at struct defaults
+        // and the user lost their work. Seed them from Pro so each variant
+        // starts from the same baseline; the user can then re-tune per
+        // model without re-doing the common bits from scratch.
+        if !Defaults[.airPodsTuningMigratedV2] {
+            let pro = Defaults[.airPodsTuningPro]
+            let blank = AirPodsTuning()
+            if Defaults[.airPodsTuningRegular] == blank { Defaults[.airPodsTuningRegular] = pro }
+            if Defaults[.airPodsTuningANC]     == blank { Defaults[.airPodsTuningANC]     = pro }
+            if Defaults[.airPodsTuningMax]     == blank { Defaults[.airPodsTuningMax]     = pro }
+            Defaults[.airPodsTuningMigratedV2] = true
+        }
     }
 }
