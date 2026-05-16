@@ -156,7 +156,7 @@ struct AirPodsLiveActivity: View {
     /// Outer diameter of the battery ring (pt). Smaller looks tidier.
     private let ringDiameter: CGFloat = 22
     /// Stroke width of the battery ring (pt). Higher = thicker / chunkier.
-    private let ringStrokeWidth: CGFloat = 3.2
+    private let ringStrokeWidth: CGFloat = 2
     /// Extra horizontal padding around the ring tile (pt). Bumps the chin
     /// width so the indicator doesn't hug the corner of the live activity.
     private let ringSidePadding: CGFloat = 14

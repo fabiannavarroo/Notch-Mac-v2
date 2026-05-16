@@ -24,6 +24,10 @@ struct AirPods3DView: View {
     /// Aggressive variant of `hideCase`: tighter Y threshold + filters out
     /// nodes whose vertical extent dominates the model (the case body).
     var tightCrop: Bool = false
+    /// Optional zoom override. If nil, the view picks a default based on
+    /// `hideCase` / `tightCrop`. Values < 1 zoom out, > 1 zoom in. Pass a
+    /// number when you want to fine-tune sizing from the parent view.
+    var zoomOverride: CGFloat? = nil
 
     @ObservedObject private var loader = AirPodsAssetLoader.shared
 
@@ -34,7 +38,8 @@ struct AirPods3DView: View {
                     url: url,
                     rotationSpeed: rotationSpeed,
                     hideCase: hideCase,
-                    tightCrop: tightCrop
+                    tightCrop: tightCrop,
+                    zoomOverride: zoomOverride
                 )
                 .frame(width: size, height: size)
                 .allowsHitTesting(false)
@@ -70,6 +75,7 @@ private struct AirPods3DSceneView: NSViewRepresentable {
     let rotationSpeed: Double
     let hideCase: Bool
     let tightCrop: Bool
+    let zoomOverride: CGFloat?
 
     func makeNSView(context: Context) -> SCNView {
         let view = SCNView(frame: .zero)
@@ -142,7 +148,8 @@ private struct AirPods3DSceneView: NSViewRepresentable {
             // Conservative zoom in tightCrop (closed-notch sneak) so the
             // buds never clip on the wide rotation cycles. Other modes can
             // zoom further because they live inside the open notch.
-            let target: CGFloat = tightCrop ? 1.15 : (hideCase ? 1.55 : 1.35)
+            let defaultTarget: CGFloat = tightCrop ? 0.85 : (hideCase ? 1.55 : 1.35)
+            let target = zoomOverride ?? defaultTarget
             let scale = target / CGFloat(largest)
             pivot.scale = SCNVector3(scale, scale, scale)
         }
