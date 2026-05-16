@@ -876,7 +876,7 @@ struct Shelf: View {
                     ForEach(quickShareService.availableProviders, id: \.id) { provider in
                         HStack {
                             Group {
-                                if let imgData = provider.imageData, let nsImg = NSImage(data: imgData) {
+                                if let nsImg = quickShareService.icon(for: provider.id, size: 16) {
                                     Image(nsImage: nsImg)
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
@@ -892,11 +892,11 @@ struct Shelf: View {
                     }
                 }
                 .pickerStyle(.menu)
-                
+
                 if let selectedProvider = selectedProvider {
                     HStack {
                         Group {
-                            if let imgData = selectedProvider.imageData, let nsImg = NSImage(data: imgData) {
+                            if let nsImg = quickShareService.icon(for: selectedProvider.id, size: 16) {
                                 Image(nsImage: nsImg)
                                     .resizable()
                                     .aspectRatio(contentMode: .fit)

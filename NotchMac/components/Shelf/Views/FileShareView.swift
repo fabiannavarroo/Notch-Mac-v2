@@ -20,7 +20,7 @@ struct FileShareView: View {
     @State private var isProcessing = false
     
     private var selectedProvider: QuickShareProvider {
-        quickShare.availableProviders.first(where: { $0.id == quickShareProvider }) ?? QuickShareProvider(id: "System Share Menu", imageData: nil, supportsRawText: true)
+        quickShare.availableProviders.first(where: { $0.id == quickShareProvider }) ?? .systemShareMenu
     }
 
     var body: some View {
@@ -66,7 +66,7 @@ struct FileShareView: View {
                         .frame(width: 55, height: 55)
                     Image(systemName: "square.and.arrow.up")
                     Group {
-                        if let imgData = selectedProvider.imageData, let nsImg = NSImage(data: imgData) {
+                        if let nsImg = quickShare.icon(for: selectedProvider.id, size: 34) {
                             Image(nsImage: nsImg)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
