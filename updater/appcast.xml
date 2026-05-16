@@ -7,7 +7,7 @@
             <sparkle:version>155</sparkle:version>
             <sparkle:shortVersionString>1.5.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Auto-release 1.5.2 build 155.]]></description>
+            <description><![CDATA[<h3>NotchMac 1.5.2 — AirPods oculto temporalmente</h3><ul><li><b>Módulo AirPods desactivado:</b> el notch ya no muestra live activity al conectar AirPods, no hay pestaña "AirPods" en el notch abierto y se ocultan las secciones de AirPods en Ajustes. Volverá en una página de debug dedicada cuando esté lista.</li><li><b>Valores curados preservados:</b> los ajustes 3D que se afinaron para AirPods, AirPods 4 ANC, AirPods Pro y AirPods Max quedan bakeados como defaults — cuando el módulo se reactive cada variante arrancará con su baseline visual.</li><li>Código intacto bajo un único interruptor; ningún path eliminado, nada que romper.</li></ul>]]></description>
             <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.5.2/NotchMac-1.5.2.zip" sparkle:edSignature="gsifQywlEqx5cqCiNnYnfX5kVvwPmQvIH6N+990U+giuQ8vg+agUMZua6uOb2dqW/jKbHflxC+KMmv6QuXatBQ==" length="10360764" type="application/octet-stream"/>
         </item>
 
