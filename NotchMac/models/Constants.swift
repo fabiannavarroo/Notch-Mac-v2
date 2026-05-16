@@ -245,6 +245,9 @@ extension Defaults.Keys {
     /// Filter strictness. `true` = drop if mesh is bulky OR sits below the
     /// Y line (catches the LED + metal hinge bar). `false` = needs both.
     static let airPodsFilterStrict = Key<Bool>("nm.airpods.tune.filterStrict", default: true)
+    /// Which AirPods variant the debug preview + the always-show fallback
+    /// render. Mirrors AirPodsModelVariant.rawValue.
+    static let airPodsDebugVariant = Key<String>("nm.airpods.debug.variant", default: "airPodsPro")
     /// Multiplier applied to the chin height for the 3D tile.
     static let airPodsTileHeightMul = Key<Double>("nm.airpods.tune.tileHeightMul", default: 1.0)
 

@@ -169,20 +169,34 @@ struct AirPodsLiveActivity: View {
     private var resolvedState: AirPodsState? {
         if let o = override { return o }
         if let s = manager.state { return s }
-        if Defaults[.airPodsDebugAlwaysShow] { return Self.mockState }
+        if Defaults[.airPodsDebugAlwaysShow] {
+            let raw = Defaults[.airPodsDebugVariant]
+            let variant = AirPodsModelVariant(rawValue: raw) ?? .airPodsPro
+            return Self.mockState(for: variant)
+        }
         return nil
     }
 
     /// Fake AirPods state used when the user has the debug-always-show
     /// toggle on but no real AirPods are connected.
-    static let mockState = AirPodsState(
-        name: "AirPods Pro (debug)",
-        variant: .airPodsPro,
-        left: 85,
-        right: 82,
-        case_: 60,
-        single: nil
-    )
+    static let mockState = mockState(for: .airPodsPro)
+
+    static func mockState(for variant: AirPodsModelVariant) -> AirPodsState {
+        switch variant {
+        case .airPods:
+            return AirPodsState(name: "AirPods (debug)", variant: .airPods,
+                                left: 92, right: 88, case_: 70, single: nil)
+        case .airPodsANC:
+            return AirPodsState(name: "AirPods 4 ANC (debug)", variant: .airPodsANC,
+                                left: 90, right: 87, case_: 65, single: nil)
+        case .airPodsPro:
+            return AirPodsState(name: "AirPods Pro (debug)", variant: .airPodsPro,
+                                left: 85, right: 82, case_: 60, single: nil)
+        case .airPodsMax:
+            return AirPodsState(name: "AirPods Max (debug)", variant: .airPodsMax,
+                                left: nil, right: nil, case_: nil, single: 78)
+        }
+    }
 
     private var chinHeight: CGFloat {
         heightOverride ?? vm.effectiveClosedNotchHeight

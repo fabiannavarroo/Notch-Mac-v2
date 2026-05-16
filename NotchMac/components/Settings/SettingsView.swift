@@ -2221,6 +2221,7 @@ private struct NMAirPodsDebugCard: View {
     @Default(.airPodsFilterPositionCut)   private var filterPosCut
     @Default(.airPodsFilterAreaCut)       private var filterAreaCut
     @Default(.airPodsFilterStrict)        private var filterStrict
+    @Default(.airPodsDebugVariant)        private var debugVariantRaw
 
     @State private var previewVM = BoringViewModel()
     @State private var expanded3D: Bool = true
@@ -2235,6 +2236,8 @@ private struct NMAirPodsDebugCard: View {
 
             preview
                 .padding(.vertical, 6)
+
+            variantPicker
 
             Toggle(isOn: $alwaysShow) {
                 debugLabel("Forzar visible siempre",
@@ -2346,7 +2349,7 @@ private struct NMAirPodsDebugCard: View {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color.black)
                 AirPodsLiveActivity(
-                    override: AirPodsLiveActivity.mockState,
+                    override: AirPodsLiveActivity.mockState(for: selectedVariant),
                     heightOverride: 32
                 )
                 .environmentObject(previewVM)
@@ -2354,6 +2357,32 @@ private struct NMAirPodsDebugCard: View {
             .frame(height: 56)
             .frame(maxWidth: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+    }
+
+    /// Variant the preview + the debug-always-show fallback render. Bound
+    /// to airPodsDebugVariant so the real notch reflects the choice too.
+    private var selectedVariant: AirPodsModelVariant {
+        AirPodsModelVariant(rawValue: debugVariantRaw) ?? .airPodsPro
+    }
+
+    private var variantPicker: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            sectionTitle("Modelo a previsualizar")
+            Picker("", selection: Binding(
+                get: { selectedVariant },
+                set: { debugVariantRaw = $0.rawValue }
+            )) {
+                Text("AirPods").tag(AirPodsModelVariant.airPods)
+                Text("AirPods 4 ANC").tag(AirPodsModelVariant.airPodsANC)
+                Text("AirPods Pro").tag(AirPodsModelVariant.airPodsPro)
+                Text("AirPods Max").tag(AirPodsModelVariant.airPodsMax)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            Text("La descarga del modelo es perezosa: la primera vez que cambies de variante puede tardar 1–2 s en aparecer mientras se baja desde Apple.")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.white.opacity(0.5))
         }
     }
 
