@@ -624,27 +624,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             AirPodsManager.shared.start()
         }
 
+        // Connection live activity is rendered inside the closed notch by
+        // ContentView's branch on `AirPodsManager.shared.showSneakActivity`.
+        // The manager itself toggles that flag for ~5 s on connect, so this
+        // observer is intentionally a no-op placeholder for future hooks
+        // (e.g. a sound, a menubar pulse).
         NotificationCenter.default.addObserver(
             forName: .airPodsConnected, object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                guard Defaults[.enableAirPodsWidget],
-                      Defaults[.airPodsShowConnectActivity] else { return }
-                self?.presentAirPodsConnectActivity()
-            }
-        }
-    }
-
-    @MainActor
-    private func presentAirPodsConnectActivity() {
-        coordinator.currentView = .airpods
-        vm.open()
-        closeNotchTask?.cancel()
-        closeNotchTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(4))
-            await MainActor.run {
-                self?.vm.close()
-            }
+        ) { _ in
+            // Reserved.
         }
     }
 

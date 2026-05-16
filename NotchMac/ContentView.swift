@@ -24,6 +24,7 @@ struct ContentView: View {
     @ObservedObject var brightnessManager = BrightnessManager.shared
     @ObservedObject var volumeManager = VolumeManager.shared
     @ObservedObject var capsLockManager = CapsLockManager.shared
+    @ObservedObject var airPodsManager = AirPodsManager.shared
     @State private var hoverTask: Task<Void, Never>?
     @State private var isHovering: Bool = false
     @State private var anyDropDebounceTask: Task<Void, Never>?
@@ -111,6 +112,12 @@ struct ContentView: View {
             && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
         {
             chinWidth = 640
+        } else if vm.notchState == .closed && !vm.hideOnClosed
+            && Defaults[.enableAirPodsWidget]
+            && airPodsManager.showSneakActivity
+            && airPodsManager.state != nil
+        {
+            chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 20)
         } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music)
             && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle)
             && coordinator.musicLiveActivityEnabled && showMusicModule && !vm.hideOnClosed
@@ -432,6 +439,9 @@ struct ContentView: View {
                               .transition(.opacity)
                       } else if capsLockHUDVisible && Defaults[.showCapsLockHUD] && vm.notchState == .closed && !coordinator.sneakPeek.show && !vm.hideOnClosed {
                           CapsLockIndicatorView(isOn: capsLockManager.isOn)
+                              .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                      } else if vm.notchState == .closed && !vm.hideOnClosed && Defaults[.enableAirPodsWidget] && airPodsManager.showSneakActivity && airPodsManager.state != nil {
+                          AirPodsLiveActivity()
                               .transition(.opacity.combined(with: .scale(scale: 0.92)))
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && showMusicModule && !vm.hideOnClosed {
                           MusicLiveActivity()

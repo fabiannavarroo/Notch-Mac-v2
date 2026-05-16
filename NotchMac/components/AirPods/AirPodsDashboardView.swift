@@ -36,31 +36,39 @@ struct AirPodsDashboardView: View {
     }
 
     private func content(for s: AirPodsState) -> some View {
-        HStack(spacing: 18) {
-            AirPods3DView(variant: s.variant, size: 92, rotationSpeed: 7)
-                .padding(.leading, 4)
+        HStack(spacing: 0) {
+            Spacer(minLength: 0)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(s.name)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                Text(statusLine(for: s))
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .lineLimit(1)
+            HStack(spacing: 16) {
+                AirPods3DView(variant: s.variant, size: 96, rotationSpeed: 7, hideCase: true)
+                    .frame(width: 96, height: 96)
 
-                HStack(spacing: 10) {
-                    BatteryRing(label: "L", level: s.left ?? s.single)
-                    BatteryRing(label: "R", level: s.right ?? s.single)
-                    BatteryRing(label: "Case", level: s.case_, isCase: true)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(s.name)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Text(statusLine(for: s))
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .lineLimit(1)
+
+                    HStack(spacing: 14) {
+                        BatteryRing(label: "L", level: s.left ?? s.single)
+                        BatteryRing(label: "R", level: s.right ?? s.single)
+                        if s.case_ != nil {
+                            BatteryRing(label: "Case", level: s.case_, isCase: true)
+                        }
+                    }
+                    .padding(.top, 4)
                 }
-                .padding(.top, 4)
+                .fixedSize(horizontal: true, vertical: false)
             }
+
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 18)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
     }
 
     private func statusLine(for s: AirPodsState) -> String {
@@ -119,37 +127,78 @@ struct BatteryRing: View {
     }
 }
 
-/// Compact closed-notch indicator: the lowest-pod battery ring beside the
-/// AirPods symbol. Used as a sneak peek when the notch is closed.
-struct AirPodsClosedNotchIndicator: View {
+/// Closed-notch live activity. Mirrors the music live activity layout:
+/// left slot holds a small rotating 3D buds-only model (case mesh hidden);
+/// right slot a tiny battery ring with the average pod %. Sized to slot
+/// into the same chin geometry the music activity uses.
+struct AirPodsLiveActivity: View {
     @ObservedObject private var manager = AirPodsManager.shared
+    @EnvironmentObject var vm: BoringViewModel
+
+    private var artSize: CGFloat {
+        max(0, vm.effectiveClosedNotchHeight - 12)
+    }
 
     var body: some View {
-        if let s = manager.state, let lo = s.lowestPodLevel {
-            HStack(spacing: 4) {
-                Image(systemName: s.variant.sfSymbolName)
-                    .font(.system(size: 10, weight: .medium))
+        if let s = manager.state {
+            HStack(spacing: 0) {
+                AirPods3DView(
+                    variant: s.variant,
+                    size: artSize,
+                    rotationSpeed: 5,
+                    hideCase: true
+                )
+                .frame(width: artSize, height: artSize)
+
+                // Black filler that maps to the physical notch — same trick
+                // the music live activity uses to avoid drawing behind the
+                // hardware notch on real MacBooks.
+                Rectangle()
+                    .fill(.black)
+                    .frame(width: vm.closedNotchSize.width - 20)
+
+                AirPodsMiniBatteryRing(level: s.averagePodLevel)
+                    .frame(width: artSize, height: artSize)
+            }
+            .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+        }
+    }
+}
+
+private struct AirPodsMiniBatteryRing: View {
+    let level: Int?
+
+    private var fraction: Double {
+        Double(level ?? 0) / 100.0
+    }
+
+    private var color: Color {
+        guard let level else { return .white.opacity(0.25) }
+        if level <= Defaults[.airPodsThresholdCritical] { return .red }
+        if level <= Defaults[.airPodsThresholdLow] { return .orange }
+        return Color(red: 0.18, green: 0.85, blue: 0.40)
+    }
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(.white.opacity(0.18), lineWidth: 2.2)
+            Circle()
+                .trim(from: 0, to: max(0.001, fraction))
+                .stroke(
+                    AngularGradient(colors: [color.opacity(0.7), color, color.opacity(0.7)], center: .center),
+                    style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .shadow(color: color.opacity(0.45), radius: 2)
+                .animation(.easeInOut(duration: 0.4), value: fraction)
+            if let level {
+                Text("\(level)")
+                    .font(.system(size: 8, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
-                ZStack {
-                    Circle()
-                        .stroke(.white.opacity(0.18), lineWidth: 2)
-                    Circle()
-                        .trim(from: 0, to: max(0.001, Double(lo) / 100.0))
-                        .stroke(color(for: lo), style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                }
-                .frame(width: 12, height: 12)
-                Text("\(lo)%")
-                    .font(.system(size: 9, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.85))
                     .monospacedDigit()
             }
         }
-    }
-
-    private func color(for level: Int) -> Color {
-        if level <= Defaults[.airPodsThresholdCritical] { return .red }
-        if level <= Defaults[.airPodsThresholdLow] { return .orange }
-        return .green
+        .padding(2)
     }
 }

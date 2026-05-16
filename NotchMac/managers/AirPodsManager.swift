@@ -42,6 +42,14 @@ struct AirPodsState: Equatable {
         if !pods.isEmpty { return pods.min() }
         return single
     }
+
+    /// Average of the two pods. Used for the closed-notch mini ring so it
+    /// reads a single representative value instead of flickering per side.
+    var averagePodLevel: Int? {
+        let pods = [left, right].compactMap { $0 }
+        if pods.isEmpty { return single }
+        return pods.reduce(0, +) / pods.count
+    }
 }
 
 @MainActor
@@ -53,11 +61,17 @@ final class AirPodsManager: ObservableObject {
     /// this session. Used to suppress repeated sneak peeks on transient
     /// route changes.
     @Published private(set) var didShowConnectActivity: Bool = false
+    /// Drives the closed-notch live activity (3D buds + avg battery ring).
+    /// Auto-resets after `sneakDuration` seconds; views just observe.
+    @Published var showSneakActivity: Bool = false
 
     private var pollTask: Task<Void, Never>?
+    private var sneakTask: Task<Void, Never>?
     private var routeChangeListener: AudioObjectPropertyListenerBlock?
     private var firedThresholds: Set<Int> = []
     private var lastVariantPrefetched: AirPodsModelVariant?
+
+    private let sneakDuration: TimeInterval = 5.0
 
     private init() {}
 
@@ -114,6 +128,7 @@ final class AirPodsManager: ObservableObject {
             // First time we see this connection in this session → ping sneak.
             if previous == nil {
                 didShowConnectActivity = true
+                triggerSneakActivity()
                 NotificationCenter.default.post(name: .airPodsConnected, object: nil)
             }
 
@@ -121,9 +136,32 @@ final class AirPodsManager: ObservableObject {
         } else if previous != nil {
             // Disconnected.
             didShowConnectActivity = false
+            showSneakActivity = false
+            sneakTask?.cancel()
+            sneakTask = nil
             firedThresholds.removeAll()
             NotificationCenter.default.post(name: .airPodsDisconnected, object: nil)
         }
+    }
+
+    private func triggerSneakActivity() {
+        guard Defaults[.airPodsShowConnectActivity] else { return }
+        showSneakActivity = true
+        sneakTask?.cancel()
+        sneakTask = Task { [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(for: .seconds(self.sneakDuration))
+            guard !Task.isCancelled else { return }
+            await MainActor.run { self.showSneakActivity = false }
+        }
+    }
+
+    /// Lets the user re-trigger the sneak peek by clicking the menubar /
+    /// running a shortcut. The view layer doesn't need this today but it's
+    /// here so it can be wired in later without touching the manager.
+    func replaySneakActivity() {
+        guard state != nil else { return }
+        triggerSneakActivity()
     }
 
     // MARK: - Notifications
