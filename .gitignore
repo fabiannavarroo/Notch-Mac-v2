@@ -54,3 +54,4 @@ build*/
 *.xcarchive
 *.dSYM
 
+.claude/
