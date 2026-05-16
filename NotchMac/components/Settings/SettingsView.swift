@@ -1210,6 +1210,7 @@ struct NotchUtilitySettingsView: View {
                             case .modules:
                                 NMModulesCard()
                                 NMPomodoroSettingsCard()
+                                NMAlbumArtCard()
                             case .about:
                                 NMAboutPanel(updaterController: updaterController)
                             }
@@ -1675,6 +1676,107 @@ private struct NMPomodoroSettingsCard: View {
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(NMCardBG())
+    }
+}
+
+private struct NMAlbumArtCard: View {
+    @Default(.albumArtDisplayMode) private var displayMode
+    @Default(.liveActivityAlbumArtSize) private var artSize
+    @Default(.liveActivityAlbumArtCornerRadius) private var artCornerRadius
+    @Default(.liveActivityAlbumArtShadow) private var artShadow
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            NMCardHeader(
+                title: "Album Art",
+                subtitle: "How the music live activity shows the artwork on the closed notch."
+            )
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Display Mode")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text("Always show, fade after 3 s of inactivity, or swap the artwork for the source app icon.")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.5))
+                Picker("", selection: $displayMode) {
+                    ForEach(AlbumArtDisplayMode.allCases) { mode in
+                        Text(mode.localizedString).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+
+            NMSliderRow(
+                title: "Size",
+                subtitle: "Multiplier over the closed-notch base size.",
+                value: $artSize,
+                range: 0.5...1.5,
+                step: 0.05,
+                format: "%.2fx"
+            )
+
+            NMSliderRow(
+                title: "Corner Radius",
+                subtitle: "Multiplier over the closed-notch base corner radius.",
+                value: $artCornerRadius,
+                range: 0.0...2.0,
+                step: 0.05,
+                format: "%.2fx"
+            )
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Drop Shadow")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text("Adds a subtle shadow under the artwork.")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                Spacer()
+                Toggle("", isOn: $artShadow)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .tint(.green)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMSliderRow: View {
+    let title: String
+    let subtitle: String
+    @Binding var value: CGFloat
+    let range: ClosedRange<CGFloat>
+    let step: CGFloat
+    let format: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text(subtitle)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                Spacer()
+                Text(String(format: format, value))
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+            }
+            Slider(value: $value, in: range, step: step)
+                .tint(.green)
+        }
     }
 }
 
