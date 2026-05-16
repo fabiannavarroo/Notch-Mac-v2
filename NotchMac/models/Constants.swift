@@ -205,6 +205,21 @@ extension Defaults.Keys {
     static let airPodsThresholdCritical = Key<Int>("nm.airpods.threshold.critical", default: 10)
     static let airPodsShowConnectActivity = Key<Bool>("nm.airpods.connectActivity", default: true)
 
+    // MARK: AirPods debug + live-tune
+    /// Forces the closed-notch live activity to render at all times, even
+    /// without AirPods connected (uses fake battery values). Lets the user
+    /// iterate on visuals without unpairing/repairing the buds.
+    static let airPodsDebugAlwaysShow = Key<Bool>("nm.airpods.debug.alwaysShow", default: false)
+    /// Live-tunable layout. Defaults match the prior hard-coded values.
+    static let airPodsArtWidthMultiplier = Key<Double>("nm.airpods.tune.artWidthMul", default: 1.9)
+    static let airPodsArtSidePadding = Key<Double>("nm.airpods.tune.artSidePad", default: 10.0)
+    static let airPodsArtLeftShift = Key<Double>("nm.airpods.tune.artLeftShift", default: -14.0)
+    static let airPodsModelZoom = Key<Double>("nm.airpods.tune.modelZoom", default: 0.85)
+    static let airPodsRingDiameter = Key<Double>("nm.airpods.tune.ringDiameter", default: 22.0)
+    static let airPodsRingStrokeWidth = Key<Double>("nm.airpods.tune.ringStroke", default: 3.0)
+    static let airPodsRingSidePadding = Key<Double>("nm.airpods.tune.ringSidePad", default: 14.0)
+    static let airPodsRingTextScale = Key<Double>("nm.airpods.tune.ringTextScale", default: 0.42)
+
     // MARK: Battery
     static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: true)
     static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: true)

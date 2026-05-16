@@ -144,71 +144,90 @@ struct BatteryRing: View {
 /// right slot a tiny battery ring with the average pod %. Sized to slot
 /// into the same chin geometry the music activity uses.
 struct AirPodsLiveActivity: View {
+    /// Optional injected state — when nil we read from the live manager.
+    /// The debug settings panel uses this to feed fake data into a preview.
+    var override: AirPodsState? = nil
+    /// Overrides the chin height for the preview. Real activity reads from vm.
+    var heightOverride: CGFloat? = nil
+
     @ObservedObject private var manager = AirPodsManager.shared
     @EnvironmentObject var vm: BoringViewModel
 
-    // MARK: Tuneables (edit these to taste)
-
-    /// Width multiplier for the 3D tile relative to the chin height. Bigger
-    /// number = wider slot for the model. The physical MacBook notch sits
-    /// in the middle and hides the centre band, so each side needs room.
-    private let artWidthMultiplier: CGFloat = 1.9
-    /// Outer diameter of the battery ring (pt). Smaller looks tidier.
-    private let ringDiameter: CGFloat = 22
-    /// Stroke width of the battery ring (pt). Higher = thicker / chunkier.
-    private let ringStrokeWidth: CGFloat = 2
-    /// Extra horizontal padding around the ring tile (pt). Bumps the chin
-    /// width so the indicator doesn't hug the corner of the live activity.
-    private let ringSidePadding: CGFloat = 14
-    /// Extra horizontal padding around the 3D tile (pt). Same idea.
-    private let artSidePadding: CGFloat = 10
-    /// Visual shift applied to the 3D buds. Negative = move further left,
-    /// away from the physical MacBook notch that sits at the centre.
-    private let artLeftShift: CGFloat = -14
+    // MARK: Live-tuneables (read from @Default so the settings sliders
+    // update the view instantly).
+    @Default(.airPodsArtWidthMultiplier) private var artWidthMultiplier
+    @Default(.airPodsArtSidePadding)     private var artSidePadding
+    @Default(.airPodsArtLeftShift)       private var artLeftShift
+    @Default(.airPodsModelZoom)          private var modelZoom
+    @Default(.airPodsRingDiameter)       private var ringDiameter
+    @Default(.airPodsRingStrokeWidth)    private var ringStrokeWidth
+    @Default(.airPodsRingSidePadding)    private var ringSidePadding
+    @Default(.airPodsRingTextScale)      private var ringTextScale
 
     // MARK: Layout
 
-    private var slotHeight: CGFloat {
-        max(0, vm.effectiveClosedNotchHeight - 4)
+    private var resolvedState: AirPodsState? {
+        if let o = override { return o }
+        if let s = manager.state { return s }
+        if Defaults[.airPodsDebugAlwaysShow] { return Self.mockState }
+        return nil
     }
 
-    private var artWidth: CGFloat { slotHeight * artWidthMultiplier }
-    private var ringTileWidth: CGFloat { ringDiameter + ringSidePadding * 2 }
-    private var artTileWidth: CGFloat { artWidth + artSidePadding * 2 }
+    /// Fake AirPods state used when the user has the debug-always-show
+    /// toggle on but no real AirPods are connected.
+    static let mockState = AirPodsState(
+        name: "AirPods Pro (debug)",
+        variant: .airPodsPro,
+        left: 85,
+        right: 82,
+        case_: 60,
+        single: nil
+    )
+
+    private var chinHeight: CGFloat {
+        heightOverride ?? vm.effectiveClosedNotchHeight
+    }
+
+    private var slotHeight: CGFloat {
+        max(0, chinHeight - 4)
+    }
+
+    private var artWidth: CGFloat { slotHeight * CGFloat(artWidthMultiplier) }
+    private var ringTileWidth: CGFloat { CGFloat(ringDiameter) + CGFloat(ringSidePadding) * 2 }
+    private var artTileWidth: CGFloat { artWidth + CGFloat(artSidePadding) * 2 }
+    private var notchWidth: CGFloat {
+        override != nil ? 200 : vm.closedNotchSize.width - 20
+    }
 
     var body: some View {
-        if let s = manager.state {
+        if let s = resolvedState {
             HStack(spacing: 0) {
                 AirPods3DView(
                     variant: s.variant,
                     size: artWidth,
                     rotationSpeed: 5,
                     hideCase: true,
-                    tightCrop: true
+                    tightCrop: true,
+                    zoomOverride: CGFloat(modelZoom)
                 )
                 .frame(width: artTileWidth, height: slotHeight)
-                .offset(x: artLeftShift)
+                .offset(x: CGFloat(artLeftShift))
 
-                // Black filler matching the physical notch — same trick the
-                // music live activity uses to avoid drawing behind the
-                // hardware notch on real MacBooks.
                 Rectangle()
                     .fill(.black)
-                    .frame(width: vm.closedNotchSize.width - 20)
+                    .frame(width: notchWidth)
 
                 AirPodsMiniBatteryRing(
                     level: s.averagePodLevel,
-                    diameter: ringDiameter,
-                    strokeWidth: ringStrokeWidth
+                    diameter: CGFloat(ringDiameter),
+                    strokeWidth: CGFloat(ringStrokeWidth),
+                    textScale: CGFloat(ringTextScale)
                 )
                 .frame(width: ringTileWidth, height: slotHeight)
             }
-            .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+            .frame(height: chinHeight, alignment: .center)
         }
     }
-
-    static let defaultArtTileWidth: CGFloat = (32 - 4) * 1.9 + 10 * 2
-    static let defaultRingTileWidth: CGFloat = 22 + 14 * 2
 }
 
 private struct AirPodsMiniBatteryRing: View {
@@ -217,6 +236,8 @@ private struct AirPodsMiniBatteryRing: View {
     let diameter: CGFloat
     /// Stroke thickness in points. Higher = chunkier ring.
     let strokeWidth: CGFloat
+    /// Font size relative to diameter (0.4 = 40 % of diameter).
+    var textScale: CGFloat = 0.42
 
     @State private var animatedFraction: Double = 0
     @State private var animatedLevel: Int = 0
@@ -247,7 +268,7 @@ private struct AirPodsMiniBatteryRing: View {
             if level != nil {
                 // Font scales with the ring so the digit always reads cleanly.
                 Text("\(animatedLevel)")
-                    .font(.system(size: diameter * 0.42, weight: .semibold, design: .rounded))
+                    .font(.system(size: diameter * textScale, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .monospacedDigit()
                     .contentTransition(.numericText())

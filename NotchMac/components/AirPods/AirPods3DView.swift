@@ -200,47 +200,63 @@ private struct AirPods3DSceneView: NSViewRepresentable {
         context.coordinator.tight = tightCrop
     }
 
-    /// Walks the imported hierarchy and *removes* geometry that belongs to
-    /// the charging case. Two passes:
-    ///   1. Y-position: drop any mesh whose bbox center sits in the bottom
-    ///      portion of the model (45 % default, 70 % when `tight`).
-    ///   2. Y-extent: drop meshes whose vertical span dominates the model
-    ///      (≤ 22 % when tight, ≤ 45 % default) — case body + lid + hinge.
+    /// Removes the charging-case meshes while keeping every bud-and-stem
+    /// mesh intact. Apple's AR USDZ encodes AirPods Pro stems as a single
+    /// tall narrow mesh per bud — so the previous Y-extent filter dropped
+    /// the stem along with the case, which is what the user kept seeing.
     ///
-    /// Removal (not `isHidden = true`) is critical: `SCNNode.boundingBox`
-    /// still includes hidden subtrees, so without removal the post-filter
-    /// bbox would match the original and the buds would render off-centre
-    /// and tiny inside the SCNView.
+    /// New strategy: rank meshes by *horizontal volume* (extentX × extentZ).
+    /// The case body is the only chunky cuboid in the model; buds and stems
+    /// are narrow regardless of how tall they are. Drop the meshes whose
+    /// horizontal footprint exceeds a fraction of the largest leaf's
+    /// footprint. Falls back gracefully if the model is single-mesh.
     private static func hideCaseMeshes(in root: SCNNode, tight: Bool) {
         let leaves = collectGeometryLeaves(root)
-        guard !leaves.isEmpty else { return }
+        guard leaves.count > 1 else { return }
 
         struct Entry {
             let node: SCNNode
+            /// X × Z extent in root coordinates. Buds + stems are tall but
+            /// narrow → small horizontal footprint. Case body is bulky.
+            let horizontalArea: CGFloat
             let centerY: CGFloat
-            let extentY: CGFloat
         }
 
         let entries: [Entry] = leaves.compactMap { node in
             let (lo, hi) = node.boundingBox
-            let local = SCNVector3((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, (lo.z + hi.z) / 2)
-            let worldCenter = node.convertPosition(local, to: root)
-            let bottomLocal = SCNVector3((lo.x + hi.x) / 2, lo.y, (lo.z + hi.z) / 2)
-            let topLocal    = SCNVector3((lo.x + hi.x) / 2, hi.y, (lo.z + hi.z) / 2)
-            let bottomWorld = node.convertPosition(bottomLocal, to: root)
-            let topWorld    = node.convertPosition(topLocal, to: root)
-            let extent = abs(CGFloat(topWorld.y) - CGFloat(bottomWorld.y))
-            return Entry(node: node, centerY: CGFloat(worldCenter.y), extentY: extent)
+            // Worldspace bbox corners.
+            let pMin = node.convertPosition(lo, to: root)
+            let pMax = node.convertPosition(hi, to: root)
+            let extX = abs(CGFloat(pMax.x) - CGFloat(pMin.x))
+            let extZ = abs(CGFloat(pMax.z) - CGFloat(pMin.z))
+            let centerY = (CGFloat(pMin.y) + CGFloat(pMax.y)) / 2
+            return Entry(node: node, horizontalArea: extX * extZ, centerY: centerY)
         }
 
-        let ys = entries.map { $0.centerY }
-        guard let minY = ys.min(), let maxY = ys.max(), maxY > minY else { return }
-        let totalRange = maxY - minY
-        let positionCut = minY + totalRange * (tight ? 0.70 : 0.45)
-        let extentLimit = totalRange * (tight ? 0.22 : 0.45)
+        // The biggest horizontal footprint sets the baseline. Anything
+        // close to it is the case.
+        guard let maxArea = entries.map(\.horizontalArea).max(), maxArea > 0 else { return }
+        // tight mode is more aggressive in case Apple ships an asset that
+        // splits the case body into smaller chunks.
+        let areaCut: CGFloat = tight ? 0.30 : 0.45
+
+        // Also keep the legacy position cut as a fallback for assets that
+        // don't separate case + buds horizontally (e.g. AirPods Max).
+        let ys = entries.map(\.centerY)
+        let minY = ys.min() ?? 0
+        let maxY = ys.max() ?? 0
+        let yRange = maxY - minY
+        let positionCut = yRange > 0
+            ? minY + yRange * (tight ? 0.50 : 0.25)
+            : -CGFloat.greatestFiniteMagnitude
 
         for entry in entries {
-            if entry.centerY < positionCut || entry.extentY > extentLimit {
+            let bulky = entry.horizontalArea >= maxArea * areaCut
+            let bottomHeavy = entry.centerY < positionCut
+            // Drop only meshes that are *both* bulky horizontally *and*
+            // sit in the lower half. Tall-narrow stems are bulky in Y but
+            // narrow in X×Z, so they survive.
+            if bulky && bottomHeavy {
                 entry.node.removeFromParentNode()
             }
         }

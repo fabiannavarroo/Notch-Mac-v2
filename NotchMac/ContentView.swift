@@ -88,6 +88,16 @@ struct ContentView: View {
             : cornerRadiusInsets.closed.bottom
     }
 
+    /// Closed-notch AirPods activity should appear when the manager just
+    /// detected a connection, OR when the debug "always show" flag is on
+    /// (in which case we synthesise a mock state if real AirPods aren't
+    /// connected). Centralised so the chin width + branch agree.
+    private var airPodsClosedActivityActive: Bool {
+        if airPodsManager.showSneakActivity && airPodsManager.state != nil { return true }
+        if Defaults[.airPodsDebugAlwaysShow] { return true }
+        return false
+    }
+
     private var pomodoroRingActive: Bool {
         pomodoroIndicatorStyle == .ring && showTimerModule && focusSession.isRunning && focusSession.remainingFraction > 0
     }
@@ -114,15 +124,18 @@ struct ContentView: View {
             chinWidth = 640
         } else if vm.notchState == .closed && !vm.hideOnClosed
             && Defaults[.enableAirPodsWidget]
-            && airPodsManager.showSneakActivity
-            && airPodsManager.state != nil
+            && airPodsClosedActivityActive
         {
-            // AirPods activity uses wider 3D + ring tiles than music does,
-            // so the chin needs proportionally more horizontal room. Keep
-            // these constants in sync with AirPodsLiveActivity tuneables.
+            // AirPods activity geometry mirrors the @Default tuneables so
+            // chin width updates live when the user drags sliders in the
+            // debug settings panel.
             let slot: CGFloat = max(0, vm.effectiveClosedNotchHeight - 4)
-            let artWidth: CGFloat = slot * 1.9 + 10 * 2     // artWidthMultiplier + 2× artSidePadding
-            let ringWidth: CGFloat = 22 + 14 * 2             // ringDiameter + 2× ringSidePadding
+            let artMul: CGFloat = CGFloat(Defaults[.airPodsArtWidthMultiplier])
+            let artPad: CGFloat = CGFloat(Defaults[.airPodsArtSidePadding])
+            let ringDiam: CGFloat = CGFloat(Defaults[.airPodsRingDiameter])
+            let ringPad: CGFloat = CGFloat(Defaults[.airPodsRingSidePadding])
+            let artWidth: CGFloat = slot * artMul + artPad * 2
+            let ringWidth: CGFloat = ringDiam + ringPad * 2
             chinWidth += (artWidth + ringWidth + 24)
         } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music)
             && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle)
@@ -446,7 +459,7 @@ struct ContentView: View {
                       } else if capsLockHUDVisible && Defaults[.showCapsLockHUD] && vm.notchState == .closed && !coordinator.sneakPeek.show && !vm.hideOnClosed {
                           CapsLockIndicatorView(isOn: capsLockManager.isOn)
                               .transition(.opacity.combined(with: .scale(scale: 0.92)))
-                      } else if vm.notchState == .closed && !vm.hideOnClosed && Defaults[.enableAirPodsWidget] && airPodsManager.showSneakActivity && airPodsManager.state != nil {
+                      } else if vm.notchState == .closed && !vm.hideOnClosed && Defaults[.enableAirPodsWidget] && airPodsClosedActivityActive {
                           AirPodsLiveActivity()
                               .transition(
                                   .asymmetric(

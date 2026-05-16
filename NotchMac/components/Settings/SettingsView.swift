@@ -1239,6 +1239,7 @@ struct NotchUtilitySettingsView: View {
                             case .modules:
                                 NMModulesCard()
                                 NMPomodoroSettingsCard()
+                                NMAirPodsDebugCard()
                                 NMAlbumArtCard()
                             case .about:
                                 NMAboutPanel(updaterController: updaterController)
@@ -2193,3 +2194,157 @@ private struct NMUpdateRow: View {
     }
 }
 
+
+// MARK: - AirPods debug card
+
+private struct NMAirPodsDebugCard: View {
+    @Default(.airPodsDebugAlwaysShow)     private var alwaysShow
+    @Default(.airPodsShowConnectActivity) private var showOnConnect
+    @Default(.airPodsArtWidthMultiplier)  private var artWidthMul
+    @Default(.airPodsArtSidePadding)      private var artSidePad
+    @Default(.airPodsArtLeftShift)        private var artLeftShift
+    @Default(.airPodsModelZoom)           private var modelZoom
+    @Default(.airPodsRingDiameter)        private var ringDiam
+    @Default(.airPodsRingStrokeWidth)     private var ringStroke
+    @Default(.airPodsRingSidePadding)     private var ringSidePad
+    @Default(.airPodsRingTextScale)       private var ringTextScale
+
+    @State private var previewVM = BoringViewModel()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            NMCardHeader(
+                title: "AirPods (debug)",
+                subtitle: "Vista previa en vivo y ajustes finos del notch reducido. Mueve los sliders y la animación se actualiza al instante."
+            )
+
+            preview
+                .padding(.vertical, 6)
+
+            Toggle(isOn: $alwaysShow) {
+                debugLabel("Forzar visible siempre",
+                           "Muestra la live activity aunque no haya AirPods conectados (con valores de prueba).")
+            }
+            .toggleStyle(.switch)
+
+            Toggle(isOn: $showOnConnect) {
+                debugLabel("Mostrar al conectar",
+                           "Activa la animación de 5 segundos cuando detecta unos AirPods.")
+            }
+            .toggleStyle(.switch)
+
+            Divider().background(.white.opacity(0.08))
+
+            Group {
+                sectionTitle("Modelo 3D")
+                slider("Ancho del tile (× alto)",       $artWidthMul,  range: 1.0...3.5, step: 0.05, format: "%.2f")
+                slider("Padding lateral del 3D",        $artSidePad,   range: 0...40,    step: 1,    format: "%.0f pt")
+                slider("Desplazamiento horizontal",     $artLeftShift, range: -60...30,  step: 1,    format: "%.0f pt")
+                slider("Zoom modelo",                   $modelZoom,    range: 0.3...2.0, step: 0.02, format: "%.2f")
+            }
+
+            Divider().background(.white.opacity(0.08))
+
+            Group {
+                sectionTitle("Anillo de batería")
+                slider("Diámetro",       $ringDiam,      range: 10...50, step: 1,    format: "%.0f pt")
+                slider("Grosor",         $ringStroke,    range: 0.5...8, step: 0.1,  format: "%.1f pt")
+                slider("Padding lateral", $ringSidePad,  range: 0...40,  step: 1,    format: "%.0f pt")
+                slider("Tamaño del %",   $ringTextScale, range: 0.2...0.7, step: 0.01, format: "%.2f")
+            }
+
+            Divider().background(.white.opacity(0.08))
+
+            HStack {
+                Button("Restablecer valores", action: resetDefaults)
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                Spacer()
+                Button("Replay animación") {
+                    AirPodsManager.shared.replaySneakActivity()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+
+    // Preview shows the actual closed-notch activity at the real chin
+    // geometry so the user sees exactly what will render.
+    private var preview: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("PREVIEW")
+                .font(.system(size: 9, weight: .bold))
+                .tracking(1.2)
+                .foregroundStyle(.white.opacity(0.45))
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.black)
+                AirPodsLiveActivity(
+                    override: AirPodsLiveActivity.mockState,
+                    heightOverride: 32
+                )
+                .environmentObject(previewVM)
+            }
+            .frame(height: 56)
+            .frame(maxWidth: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+    }
+
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 10, weight: .bold))
+            .tracking(1.0)
+            .foregroundStyle(.white.opacity(0.55))
+    }
+
+    private func debugLabel(_ title: String, _ subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+            Text(subtitle)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.white.opacity(0.5))
+        }
+    }
+
+    private func slider(
+        _ title: String,
+        _ binding: Binding<Double>,
+        range: ClosedRange<Double>,
+        step: Double,
+        format: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                Spacer()
+                Text(String(format: format, binding.wrappedValue))
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .monospacedDigit()
+            }
+            Slider(value: binding, in: range, step: step)
+                .controlSize(.small)
+                .tint(.mint)
+        }
+    }
+
+    private func resetDefaults() {
+        Defaults[.airPodsArtWidthMultiplier] = 1.9
+        Defaults[.airPodsArtSidePadding]     = 10.0
+        Defaults[.airPodsArtLeftShift]       = -14.0
+        Defaults[.airPodsModelZoom]          = 0.85
+        Defaults[.airPodsRingDiameter]       = 22.0
+        Defaults[.airPodsRingStrokeWidth]    = 3.0
+        Defaults[.airPodsRingSidePadding]    = 14.0
+        Defaults[.airPodsRingTextScale]      = 0.42
+    }
+}
