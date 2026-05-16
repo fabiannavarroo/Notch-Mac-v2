@@ -174,10 +174,30 @@ private struct AirPods3DSceneView: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: SCNView, context: Context) {
-        // Any config tweak reconfigures the scene so the user sees changes
-        // live as they drag sliders. URL changes also trigger reconfigure.
-        if context.coordinator.loadedURL != url || context.coordinator.config != config {
+        let coord = context.coordinator
+        let prev = coord.config
+
+        // Geometry-affecting changes require rebuilding the scene because
+        // we have to re-import + re-filter meshes. Everything else can be
+        // tweaked incrementally on the live scene so the rotation keeps
+        // spinning smoothly while the user drags sliders.
+        let geometryChanged =
+            coord.loadedURL != url
+            || prev.hideCase != config.hideCase
+            || prev.tightCrop != config.tightCrop
+            || prev.showFullModel != config.showFullModel
+            || prev.filterPositionCut != config.filterPositionCut
+            || prev.filterAreaCut != config.filterAreaCut
+            || prev.filterStrict != config.filterStrict
+
+        if geometryChanged || coord.pivotNode == nil {
             configureScene(nsView, context: context)
+            return
+        }
+
+        if prev != config {
+            applyLiveTweaks(coord: coord, oldConfig: prev)
+            coord.config = config
         }
     }
 
@@ -186,6 +206,60 @@ private struct AirPods3DSceneView: NSViewRepresentable {
     final class Coordinator {
         var loadedURL: URL?
         var config: AirPodsRenderConfig = .default
+        weak var pivotNode: SCNNode?
+        weak var cameraNode: SCNNode?
+        weak var camera: SCNCamera?
+        /// Cached "largest extent" so we can rescale on zoom changes
+        /// without re-measuring the bounding box every drag tick.
+        var baseLargestExtent: CGFloat = 1
+    }
+
+    private func applyLiveTweaks(coord: Coordinator, oldConfig: AirPodsRenderConfig) {
+        // Camera
+        if let cam = coord.camera, oldConfig.cameraFOV != config.cameraFOV {
+            cam.fieldOfView = config.cameraFOV
+        }
+        if let camNode = coord.cameraNode,
+           oldConfig.cameraY != config.cameraY || oldConfig.cameraZ != config.cameraZ {
+            camNode.position = SCNVector3(0, Float(config.cameraY), Float(config.cameraZ))
+        }
+        // Pivot transform (zoom + tilt + Y shift)
+        if let pivot = coord.pivotNode {
+            if oldConfig.zoom != config.zoom {
+                let baseTarget: CGFloat = config.tightCrop ? 1.0 : (config.hideCase ? 1.55 : 1.35)
+                let s = (baseTarget * config.zoom) / max(coord.baseLargestExtent, 0.0001)
+                pivot.scale = SCNVector3(s, s, s)
+            }
+            if oldConfig.tiltX != config.tiltX {
+                pivot.eulerAngles.x = CGFloat(config.tiltX) * .pi / 180
+            }
+            if oldConfig.yShift != config.yShift {
+                let m = pivot.pivot
+                pivot.pivot = SCNMatrix4(
+                    m11: m.m11, m12: m.m12, m13: m.m13, m14: m.m14,
+                    m21: m.m21, m22: m.m22, m23: m.m23, m24: m.m24,
+                    m31: m.m31, m32: m.m32, m33: m.m33, m34: m.m34,
+                    m41: m.m41,
+                    m42: m.m42 - CGFloat(config.yShift - oldConfig.yShift),
+                    m43: m.m43, m44: m.m44
+                )
+            }
+            // Rotation — replace the running action if speed or direction
+            // changed; otherwise leave it spinning to avoid jitter.
+            if oldConfig.rotationSeconds != config.rotationSeconds
+                || oldConfig.rotationReversed != config.rotationReversed
+            {
+                pivot.removeAllActions()
+                let sign: CGFloat = config.rotationReversed ? 1 : -1
+                let spin = SCNAction.rotateBy(
+                    x: 0,
+                    y: sign * CGFloat.pi * 2,
+                    z: 0,
+                    duration: max(0.5, config.rotationSeconds)
+                )
+                pivot.runAction(SCNAction.repeatForever(spin))
+            }
+        }
     }
 
     private func configureScene(_ view: SCNView, context: Context) {
@@ -238,6 +312,7 @@ private struct AirPods3DSceneView: NSViewRepresentable {
             let scale = (baseTarget * config.zoom) / CGFloat(largest)
             pivot.scale = SCNVector3(scale, scale, scale)
         }
+        context.coordinator.baseLargestExtent = CGFloat(largest)
 
         // Camera
         let camNode = SCNNode()
@@ -287,6 +362,9 @@ private struct AirPods3DSceneView: NSViewRepresentable {
 
         context.coordinator.loadedURL = url
         context.coordinator.config = config
+        context.coordinator.pivotNode = pivot
+        context.coordinator.cameraNode = camNode
+        context.coordinator.camera = cam
     }
 
     /// Removes case meshes. Strict mode drops a mesh if EITHER criterion

@@ -2451,19 +2451,45 @@ private struct NMAirPodsDebugCard: View {
         format: String
     ) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(title)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.85))
                 Spacer()
+                // Current value — big, bright, monospaced badge so the
+                // user sees the number change live as they drag.
                 Text(String(format: format, binding.wrappedValue))
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.mint)
                     .monospacedDigit()
+                    .frame(minWidth: 72, alignment: .trailing)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(.mint.opacity(0.10))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(.mint.opacity(0.35), lineWidth: 0.6)
+                            )
+                    )
+                    .contentTransition(.numericText())
+                    .animation(.easeOut(duration: 0.12), value: binding.wrappedValue)
             }
             Slider(value: binding, in: range, step: step)
                 .controlSize(.small)
                 .tint(.mint)
+            // Min / max hint so the user knows the bounds at a glance
+            // without having to drag to either end.
+            HStack {
+                Text(String(format: format, range.lowerBound))
+                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.30))
+                Spacer()
+                Text(String(format: format, range.upperBound))
+                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.30))
+            }
         }
     }
 
