@@ -14,6 +14,15 @@ import Combine
 import Defaults
 import Foundation
 
+/// Master switch for the AirPods module. Flip to `true` to expose the
+/// closed-notch live activity, open-notch dashboard tab, Settings cards
+/// and battery polling. Code paths and Defaults keys remain intact while
+/// this is `false`, so a future debug-only page can re-enable everything
+/// without restoring deleted code.
+enum AirPodsModule {
+    static let visible: Bool = false
+}
+
 struct AirPodsTuning: Codable, Equatable, Defaults.Serializable {
     // Closed-notch tile layout
     var artWidthMultiplier: Double = 1.9
@@ -52,6 +61,59 @@ struct AirPodsTuning: Codable, Equatable, Defaults.Serializable {
     var dashboardCameraFOV:       Double = 28.0
     var dashboardRotationSeconds: Double = 7.0
     var dashboardShowFullModel:   Bool   = true
+
+    // MARK: - Curated baselines per variant
+    //
+    // These are the values dialled in by the maintainer during the May
+    // 2026 tuning pass. New users (or users who haven't customised a
+    // variant) inherit these instead of the bare struct defaults above.
+
+    static let curatedRegular: AirPodsTuning = {
+        var t = AirPodsTuning()
+        t.cameraY = 0.01
+        t.modelZoom = 0.66
+        t.filterPositionCut = 0.76
+        t.filterAreaCut = 0.26
+        t.dashboardModelZoom = 1.14
+        return t
+    }()
+
+    static let curatedANC: AirPodsTuning = {
+        var t = AirPodsTuning()
+        t.modelZoom = 0.68
+        t.filterPositionCut = 0.77
+        t.dashboardModelZoom = 1.16
+        return t
+    }()
+
+    static let curatedPro: AirPodsTuning = {
+        var t = AirPodsTuning()
+        t.cameraY = -0.01
+        t.modelZoom = 0.90
+        t.filterAreaCut = 0.74
+        t.dashboardModelZoom = 1.12
+        return t
+    }()
+
+    static let curatedMax: AirPodsTuning = {
+        var t = AirPodsTuning()
+        t.cameraY = -0.01
+        t.modelZoom = 0.54
+        t.filterPositionCut = 0.0
+        t.filterAreaCut = 0.9
+        t.dashboardModelTiltX = 10
+        t.dashboardModelZoom = 1.10
+        return t
+    }()
+
+    static func curated(for variant: AirPodsModelVariant) -> AirPodsTuning {
+        switch variant {
+        case .airPods:    return curatedRegular
+        case .airPodsANC: return curatedANC
+        case .airPodsPro: return curatedPro
+        case .airPodsMax: return curatedMax
+        }
+    }
 }
 
 /// Central observable wrapper around the four per-variant Defaults keys.

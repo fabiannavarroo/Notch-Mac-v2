@@ -19,11 +19,18 @@ struct AirPodsDashboardView: View {
     @ObservedObject private var manager = AirPodsManager.shared
     @ObservedObject private var tuningCenter = AirPodsTuningCenter.shared
 
-    /// Real device state wins. The `override` parameter lets the Settings
-    /// preview force a specific variant + mock state without affecting
-    /// the live notch UI.
+    /// Real device state wins. `override` lets the Settings preview force
+    /// a specific variant. Debug always-show falls back to a mock so the
+    /// tab can be exercised without paired AirPods.
     private var resolvedState: AirPodsState? {
-        override ?? manager.state
+        if let o = override { return o }
+        if let s = manager.state { return s }
+        if Defaults[.airPodsDebugAlwaysShow] {
+            let raw = Defaults[.airPodsDebugVariant]
+            let variant = AirPodsModelVariant(rawValue: raw) ?? .airPodsPro
+            return AirPodsLiveActivity.mockState(for: variant)
+        }
+        return nil
     }
 
     private func tuning(for variant: AirPodsModelVariant) -> AirPodsTuning {
@@ -184,10 +191,14 @@ struct AirPodsLiveActivity: View {
     // MARK: Layout
 
     private var resolvedState: AirPodsState? {
-        // Real device state wins. The `override` parameter is what the
-        // Settings preview uses to render with a mock state; the live
-        // notch view never falls back to mock data anymore.
-        override ?? manager.state
+        if let o = override { return o }
+        if let s = manager.state { return s }
+        if Defaults[.airPodsDebugAlwaysShow] {
+            let raw = Defaults[.airPodsDebugVariant]
+            let variant = AirPodsModelVariant(rawValue: raw) ?? .airPodsPro
+            return AirPodsLiveActivity.mockState(for: variant)
+        }
+        return nil
     }
 
     /// Fake AirPods state used when the user has the debug-always-show

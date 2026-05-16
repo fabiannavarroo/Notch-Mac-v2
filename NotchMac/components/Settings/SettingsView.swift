@@ -1239,7 +1239,9 @@ struct NotchUtilitySettingsView: View {
                             case .modules:
                                 NMModulesCard()
                                 NMPomodoroSettingsCard()
-                                NMAirPodsDebugCard()
+                                if AirPodsModule.visible {
+                                    NMAirPodsDebugCard()
+                                }
                                 NMAlbumArtCard()
                             case .about:
                                 NMAboutPanel(updaterController: updaterController)
@@ -1282,7 +1284,9 @@ struct NotchUtilitySettingsView: View {
                 NMSidebarToggle(title: "Calendar", systemImage: "calendar", key: .showCalendar, pair: .showMusicModule)
                 NMSidebarToggle(title: "Battery", systemImage: "battery.100", key: .showBatteryIndicator)
                 NMSidebarToggle(title: "Timer / Pomodoro", systemImage: "timer", key: .showTimerModule)
-                NMSidebarToggle(title: "AirPods", systemImage: "airpods", key: .enableAirPodsWidget)
+                if AirPodsModule.visible {
+                    NMSidebarToggle(title: "AirPods", systemImage: "airpods", key: .enableAirPodsWidget)
+                }
             }
             .padding(.horizontal, 14)
             .padding(.bottom, 18)
@@ -1647,7 +1651,9 @@ private struct NMModulesCard: View {
                 NMModuleRow(title: "Calendar", subtitle: "Upcoming events and agenda", systemImage: "calendar", tint: .red, key: .showCalendar)
                 NMModuleRow(title: "Battery", subtitle: "Show battery status and charging", systemImage: "battery.100", tint: .green, key: .showBatteryIndicator)
                 NMModuleRow(title: "Timer / Pomodoro", subtitle: "Countdown timer and focus sessions", systemImage: "timer", tint: .orange, key: .showTimerModule)
-                NMModuleRow(title: "AirPods", subtitle: "Live activity 3D + battery alerts", systemImage: "airpods", tint: .mint, key: .enableAirPodsWidget)
+                if AirPodsModule.visible {
+                    NMModuleRow(title: "AirPods", subtitle: "Live activity 3D + battery alerts", systemImage: "airpods", tint: .mint, key: .enableAirPodsWidget)
+                }
             }
         }
         .padding(20)
@@ -2199,6 +2205,7 @@ private struct NMUpdateRow: View {
 
 private struct NMAirPodsDebugCard: View {
     @Default(.airPodsShowConnectActivity) private var showOnConnect
+    @Default(.airPodsDebugAlwaysShow)     private var alwaysShow
     @Default(.airPodsDebugVariant)        private var debugVariantRaw
 
     @ObservedObject private var tuningCenter = AirPodsTuningCenter.shared
@@ -2210,17 +2217,20 @@ private struct NMAirPodsDebugCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             NMCardHeader(
-                title: "AirPods — apariencia",
-                subtitle: "Ajusta el modelo 3D y el anillo de batería para cada variante. Los previews abajo muestran cómo se verá; el notch real solo se activa al conectar AirPods de verdad."
+                title: "AirPods — apariencia (modo tuning)",
+                subtitle: "Activa “Modo tuning” para que el notch real muestre la variante seleccionada sin tener que conectar AirPods. Útil para afinar cada modelo antes de fijar los valores por defecto."
             )
             .padding(.bottom, 12)
 
-            // Sticky header — preview + variant picker + show-on-connect
-            // toggle stay pinned while the slider list scrolls below.
+            // Sticky header — preview + variant picker + global toggles
+            // stay pinned while the slider list scrolls below.
             VStack(alignment: .leading, spacing: 12) {
                 preview
                 variantPicker
-                compactToggle($showOnConnect, label: "Mostrar animación al conectar")
+                HStack(spacing: 14) {
+                    compactToggle($alwaysShow, label: "Modo tuning (forzar visible)")
+                    compactToggle($showOnConnect, label: "Animación al conectar")
+                }
                 Text("Ajustes para: \(variantDisplayName(selectedVariant))")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.mint)

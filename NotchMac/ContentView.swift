@@ -89,19 +89,21 @@ struct ContentView: View {
             : cornerRadiusInsets.closed.bottom
     }
 
-    /// Closed-notch AirPods activity is driven exclusively by real device
-    /// connections. The debug-always-show flag in Settings is no longer
-    /// wired to the live notch — sliders still tune visuals, but the
-    /// notch only displays when real AirPods are paired.
+    /// Closed-notch AirPods activity is gated by the module visibility
+    /// flag. When the module is hidden the chin never opens for AirPods
+    /// regardless of connection state or debug toggle.
     private var airPodsClosedActivityActive: Bool {
-        airPodsManager.showSneakActivity && airPodsManager.state != nil
+        guard AirPodsModule.visible else { return false }
+        if airPodsManager.showSneakActivity && airPodsManager.state != nil { return true }
+        if Defaults[.airPodsDebugAlwaysShow] { return true }
+        return false
     }
 
-    /// Variant currently driving the live activity geometry. Only the
-    /// real device state matters here; the debug-picker variant is now
-    /// scoped to the Settings preview.
+    /// Variant currently driving the live activity geometry — real device
+    /// state wins, otherwise the debug picker variant.
     private var currentAirPodsVariant: AirPodsModelVariant {
-        airPodsManager.state?.variant ?? .airPodsPro
+        if let s = airPodsManager.state { return s.variant }
+        return AirPodsModelVariant(rawValue: Defaults[.airPodsDebugVariant]) ?? .airPodsPro
     }
 
     private var pomodoroRingActive: Bool {
@@ -576,7 +578,7 @@ struct ContentView: View {
                         .onAppear { coordinator.currentView = .home }
                 }
             case .airpods:
-                if Defaults[.enableAirPodsWidget] {
+                if AirPodsModule.visible && Defaults[.enableAirPodsWidget] {
                     AirPodsDashboardView()
                 } else {
                     NotchHomeView(

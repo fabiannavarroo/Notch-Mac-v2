@@ -623,7 +623,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // One-shot migration of legacy global tuning keys → Pro variant slot.
         AirPodsTuningStore.migrateLegacyTuningIfNeeded()
 
-        if Defaults[.enableAirPodsWidget] {
+        if AirPodsModule.visible && Defaults[.enableAirPodsWidget] {
             AirPodsManager.shared.start()
         }
 

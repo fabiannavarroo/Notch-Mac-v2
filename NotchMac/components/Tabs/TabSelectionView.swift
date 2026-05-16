@@ -20,6 +20,7 @@ struct TabSelectionView: View {
     @Default(.boringShelf) private var showShelf
     @Default(.showTimerModule) private var showTimer
     @Default(.enableAirPodsWidget) private var showAirPods
+    @Default(.airPodsDebugAlwaysShow) private var airPodsDebugAlwaysShow
     @ObservedObject private var airPods = AirPodsManager.shared
     @Namespace var animation
     var body: some View {
@@ -57,7 +58,7 @@ struct TabSelectionView: View {
         if showTimer {
             base.append(TabModel(label: "Pomodoro", icon: "timer", view: .focus))
         }
-        if showAirPods && airPods.state != nil {
+        if AirPodsModule.visible && showAirPods && (airPods.state != nil || airPodsDebugAlwaysShow) {
             base.append(TabModel(label: "AirPods", icon: "airpods", view: .airpods))
         }
         return base
