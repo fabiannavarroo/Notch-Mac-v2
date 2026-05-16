@@ -442,7 +442,14 @@ struct ContentView: View {
                               .transition(.opacity.combined(with: .scale(scale: 0.92)))
                       } else if vm.notchState == .closed && !vm.hideOnClosed && Defaults[.enableAirPodsWidget] && airPodsManager.showSneakActivity && airPodsManager.state != nil {
                           AirPodsLiveActivity()
-                              .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                              .transition(
+                                  .asymmetric(
+                                      insertion: .scale(scale: 0.55, anchor: .center)
+                                          .combined(with: .opacity),
+                                      removal: .scale(scale: 0.85, anchor: .center)
+                                          .combined(with: .opacity)
+                                  )
+                              )
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && showMusicModule && !vm.hideOnClosed {
                           MusicLiveActivity()
                               .frame(alignment: .center)

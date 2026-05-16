@@ -21,15 +21,23 @@ struct AirPods3DView: View {
     var rotationSpeed: Double = 8 // seconds per full Y rotation
     /// When true, drops the charging case mesh so only the earbuds spin.
     var hideCase: Bool = false
+    /// Aggressive variant of `hideCase`: tighter Y threshold + filters out
+    /// nodes whose vertical extent dominates the model (the case body).
+    var tightCrop: Bool = false
 
     @ObservedObject private var loader = AirPodsAssetLoader.shared
 
     var body: some View {
         ZStack {
             if let url = loader.cachedURL(for: variant) {
-                AirPods3DSceneView(url: url, rotationSpeed: rotationSpeed, hideCase: hideCase)
-                    .frame(width: size, height: size)
-                    .allowsHitTesting(false)
+                AirPods3DSceneView(
+                    url: url,
+                    rotationSpeed: rotationSpeed,
+                    hideCase: hideCase,
+                    tightCrop: tightCrop
+                )
+                .frame(width: size, height: size)
+                .allowsHitTesting(false)
             } else {
                 fallback
             }
@@ -61,6 +69,7 @@ private struct AirPods3DSceneView: NSViewRepresentable {
     let url: URL
     let rotationSpeed: Double
     let hideCase: Bool
+    let tightCrop: Bool
 
     func makeNSView(context: Context) -> SCNView {
         let view = SCNView(frame: .zero)
@@ -74,7 +83,10 @@ private struct AirPods3DSceneView: NSViewRepresentable {
 
     func updateNSView(_ nsView: SCNView, context: Context) {
         // Swap the model if the URL or mode changes.
-        if context.coordinator.loadedURL != url || context.coordinator.hidCase != hideCase {
+        if context.coordinator.loadedURL != url
+            || context.coordinator.hidCase != hideCase
+            || context.coordinator.tight != tightCrop
+        {
             configureScene(nsView, context: context)
         }
     }
@@ -84,6 +96,7 @@ private struct AirPods3DSceneView: NSViewRepresentable {
     final class Coordinator {
         var loadedURL: URL?
         var hidCase: Bool = false
+        var tight: Bool = false
     }
 
     private func configureScene(_ view: SCNView, context: Context) {
@@ -104,7 +117,7 @@ private struct AirPods3DSceneView: NSViewRepresentable {
 
         // Optionally drop the charging-case mesh by Y position.
         if hideCase {
-            Self.hideCaseMeshes(in: pivot)
+            Self.hideCaseMeshes(in: pivot, tight: tightCrop)
         }
 
         // Re-measure bounding box after hiding so the buds frame nicely.
@@ -174,30 +187,57 @@ private struct AirPods3DSceneView: NSViewRepresentable {
 
         context.coordinator.loadedURL = url
         context.coordinator.hidCase = hideCase
+        context.coordinator.tight = tightCrop
     }
 
-    /// Walks the imported hierarchy and hides any geometry whose bbox center
-    /// sits in the bottom ~45 % of the model (the charging case). The buds
-    /// themselves are clustered in the upper half of Apple's AR USDZ files.
-    private static func hideCaseMeshes(in root: SCNNode) {
+    /// Walks the imported hierarchy and hides geometry that belongs to the
+    /// charging case. Two passes:
+    ///   1. Y-position: drop any mesh whose bbox center sits in the bottom
+    ///      portion of the model (45 % default, 62 % when `tight`).
+    ///   2. Y-extent: drop meshes whose vertical span exceeds ~35 % of the
+    ///      whole model — the case body + lid are tall, the buds are small.
+    /// Combined this guarantees only the earbud meshes survive for closed-
+    /// notch live activities, where any lid sliver looks awful at 22 pt.
+    private static func hideCaseMeshes(in root: SCNNode, tight: Bool) {
         let leaves = collectGeometryLeaves(root)
         guard !leaves.isEmpty else { return }
 
-        let centers: [(node: SCNNode, centerY: CGFloat)] = leaves.compactMap { node in
-            let (lo, hi) = node.boundingBox
-            // Transform local bbox center into the root's coordinate space so
-            // sibling meshes compare on the same axis.
-            let local = SCNVector3((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, (lo.z + hi.z) / 2)
-            let world = node.convertPosition(local, to: root)
-            return (node, CGFloat(world.y))
+        struct Entry {
+            let node: SCNNode
+            let centerY: CGFloat
+            let extentY: CGFloat
         }
 
-        let ys = centers.map { $0.centerY }
-        guard let minY = ys.min(), let maxY = ys.max(), maxY > minY else { return }
-        let threshold = minY + (maxY - minY) * 0.45
+        let entries: [Entry] = leaves.compactMap { node in
+            let (lo, hi) = node.boundingBox
+            let local = SCNVector3((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, (lo.z + hi.z) / 2)
+            let worldCenter = node.convertPosition(local, to: root)
+            // Approximate worldspace Y extent by transforming the bbox edges.
+            let bottomLocal = SCNVector3((lo.x + hi.x) / 2, lo.y, (lo.z + hi.z) / 2)
+            let topLocal    = SCNVector3((lo.x + hi.x) / 2, hi.y, (lo.z + hi.z) / 2)
+            let bottomWorld = node.convertPosition(bottomLocal, to: root)
+            let topWorld    = node.convertPosition(topLocal, to: root)
+            let extent = abs(CGFloat(topWorld.y) - CGFloat(bottomWorld.y))
+            return Entry(node: node, centerY: CGFloat(worldCenter.y), extentY: extent)
+        }
 
-        for (node, y) in centers where y < threshold {
-            node.isHidden = true
+        let ys = entries.map { $0.centerY }
+        guard let minY = ys.min(), let maxY = ys.max(), maxY > minY else { return }
+        let totalRange = maxY - minY
+        let positionCut = minY + totalRange * (tight ? 0.62 : 0.45)
+        let extentLimit = totalRange * (tight ? 0.30 : 0.45)
+
+        for entry in entries {
+            // Bottom-half meshes → case body.
+            if entry.centerY < positionCut {
+                entry.node.isHidden = true
+                continue
+            }
+            // Tall meshes (vertical span dominates) → case lid / hinge that
+            // extends from the case all the way up to bud height.
+            if entry.extentY > extentLimit {
+                entry.node.isHidden = true
+            }
         }
     }
 

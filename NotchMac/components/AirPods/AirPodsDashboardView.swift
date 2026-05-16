@@ -142,13 +142,18 @@ struct AirPodsLiveActivity: View {
     var body: some View {
         if let s = manager.state {
             HStack(spacing: 0) {
+                // Slightly oversize the SCNView and clip to a circle so any
+                // sliver of case lid that survived the geometry filter is
+                // visually clipped off too. The earbuds stay centered inside.
                 AirPods3DView(
                     variant: s.variant,
-                    size: artSize,
+                    size: artSize * 1.35,
                     rotationSpeed: 5,
-                    hideCase: true
+                    hideCase: true,
+                    tightCrop: true
                 )
                 .frame(width: artSize, height: artSize)
+                .clipShape(Circle())
 
                 // Black filler that maps to the physical notch — same trick
                 // the music live activity uses to avoid drawing behind the

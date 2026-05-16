@@ -23,6 +23,7 @@ import Combine
 import CoreAudio
 import Defaults
 import Foundation
+import SwiftUI
 import UserNotifications
 
 struct AirPodsState: Equatable {
@@ -136,7 +137,9 @@ final class AirPodsManager: ObservableObject {
         } else if previous != nil {
             // Disconnected.
             didShowConnectActivity = false
-            showSneakActivity = false
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showSneakActivity = false
+            }
             sneakTask?.cancel()
             sneakTask = nil
             firedThresholds.removeAll()
@@ -146,13 +149,19 @@ final class AirPodsManager: ObservableObject {
 
     private func triggerSneakActivity() {
         guard Defaults[.airPodsShowConnectActivity] else { return }
-        showSneakActivity = true
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.78, blendDuration: 0)) {
+            showSneakActivity = true
+        }
         sneakTask?.cancel()
         sneakTask = Task { [weak self] in
             guard let self else { return }
             try? await Task.sleep(for: .seconds(self.sneakDuration))
             guard !Task.isCancelled else { return }
-            await MainActor.run { self.showSneakActivity = false }
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    self.showSneakActivity = false
+                }
+            }
         }
     }
 
