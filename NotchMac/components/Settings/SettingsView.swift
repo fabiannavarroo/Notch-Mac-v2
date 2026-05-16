@@ -2209,7 +2209,21 @@ private struct NMAirPodsDebugCard: View {
     @Default(.airPodsRingSidePadding)     private var ringSidePad
     @Default(.airPodsRingTextScale)       private var ringTextScale
 
+    // 3D render tuning
+    @Default(.airPodsShowFullModel)       private var showFullModel
+    @Default(.airPodsModelTiltX)          private var tiltX
+    @Default(.airPodsModelYShift)         private var yShift
+    @Default(.airPodsCameraZ)             private var cameraZ
+    @Default(.airPodsCameraY)             private var cameraY
+    @Default(.airPodsCameraFOV)           private var cameraFOV
+    @Default(.airPodsRotationSeconds)     private var rotSeconds
+    @Default(.airPodsRotationReversed)    private var rotReversed
+    @Default(.airPodsFilterPositionCut)   private var filterPosCut
+    @Default(.airPodsFilterAreaCut)       private var filterAreaCut
+
     @State private var previewVM = BoringViewModel()
+    @State private var expanded3D: Bool = true
+    @State private var expandedAdvanced: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -2236,12 +2250,54 @@ private struct NMAirPodsDebugCard: View {
             Divider().background(.white.opacity(0.08))
 
             Group {
-                sectionTitle("Modelo 3D")
-                slider("Ancho del tile (× alto)",       $artWidthMul,  range: 1.0...3.5, step: 0.05, format: "%.2f")
-                slider("Padding lateral del 3D",        $artSidePad,   range: 0...40,    step: 1,    format: "%.0f pt")
-                slider("Desplazamiento horizontal",     $artLeftShift, range: -60...30,  step: 1,    format: "%.0f pt")
-                slider("Zoom modelo",                   $modelZoom,    range: 0.3...2.0, step: 0.02, format: "%.2f")
+                sectionTitle("Layout del tile 3D")
+                slider("Ancho del tile (× alto)",   $artWidthMul,  range: 1.0...3.5, step: 0.05, format: "%.2f")
+                slider("Padding lateral del 3D",    $artSidePad,   range: 0...40,    step: 1,    format: "%.0f pt")
+                slider("Desplazamiento horizontal", $artLeftShift, range: -60...30,  step: 1,    format: "%.0f pt")
             }
+
+            Divider().background(.white.opacity(0.08))
+
+            Group {
+                sectionTitle("Modelo 3D — render")
+                Toggle(isOn: $showFullModel) {
+                    debugLabel("Mostrar modelo completo",
+                               "Desactiva el filtro de caja y muestra los AirPods enteros (caja incluida).")
+                }
+                .toggleStyle(.switch)
+                Toggle(isOn: $rotReversed) {
+                    debugLabel("Rotación invertida",
+                               "Cambia el sentido de giro del modelo.")
+                }
+                .toggleStyle(.switch)
+                slider("Zoom modelo",            $modelZoom,   range: 0.3...2.5, step: 0.02, format: "%.2f")
+                slider("Inclinación X (°)",      $tiltX,       range: -45...45,  step: 1,    format: "%.0f°")
+                slider("Desplazamiento vertical", $yShift,     range: -0.4...0.4, step: 0.01, format: "%.2f")
+                slider("Segundos por vuelta",    $rotSeconds,  range: 1.0...20,  step: 0.5,  format: "%.1f s")
+            }
+
+            DisclosureGroup(isExpanded: $expandedAdvanced) {
+                VStack(alignment: .leading, spacing: 12) {
+                    sectionTitle("Cámara")
+                    slider("Campo de visión (FOV)", $cameraFOV,    range: 10...60,   step: 1,    format: "%.0f°")
+                    slider("Distancia cámara (Z)",  $cameraZ,      range: 1.5...6.0, step: 0.05, format: "%.2f")
+                    slider("Altura cámara (Y)",     $cameraY,      range: -0.5...0.5, step: 0.01, format: "%.2f")
+
+                    Divider().background(.white.opacity(0.08))
+
+                    sectionTitle("Filtro de caja")
+                    slider("Línea de corte (Y)",    $filterPosCut, range: 0.0...1.0, step: 0.01, format: "%.2f")
+                    slider("Umbral de área",        $filterAreaCut, range: 0.1...0.9, step: 0.01, format: "%.2f")
+                    Text("La caja se elimina si la malla está bajo la línea Y *y* su huella horizontal supera el umbral. Sube el umbral si el palo (stem) desaparece.")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .padding(.top, 8)
+            } label: {
+                debugLabel("Avanzado (cámara + filtro)",
+                           "Controles finos para casos raros. Si no los necesitas, déjalos colapsados.")
+            }
+            .tint(.mint)
 
             Divider().background(.white.opacity(0.08))
 
@@ -2346,5 +2402,15 @@ private struct NMAirPodsDebugCard: View {
         Defaults[.airPodsRingStrokeWidth]    = 3.0
         Defaults[.airPodsRingSidePadding]    = 14.0
         Defaults[.airPodsRingTextScale]      = 0.42
+        Defaults[.airPodsShowFullModel]      = false
+        Defaults[.airPodsModelTiltX]         = 0.0
+        Defaults[.airPodsModelYShift]        = 0.0
+        Defaults[.airPodsCameraZ]            = 3.2
+        Defaults[.airPodsCameraY]            = 0.05
+        Defaults[.airPodsCameraFOV]          = 28.0
+        Defaults[.airPodsRotationSeconds]    = 5.0
+        Defaults[.airPodsRotationReversed]   = false
+        Defaults[.airPodsFilterPositionCut]  = 0.50
+        Defaults[.airPodsFilterAreaCut]      = 0.30
     }
 }

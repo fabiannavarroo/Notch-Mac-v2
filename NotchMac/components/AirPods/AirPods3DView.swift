@@ -6,50 +6,107 @@
 //  Renders nothing while the asset is still downloading and falls back to
 //  the matching SF Symbol if the download permanently fails.
 //
-//  `hideCase` filters out leaf meshes whose worldspace center lies in the
-//  bottom portion of the model — works because Apple's AR USDZ for AirPods
-//  and AirPods Pro stacks the charging case underneath the buds. Has no
-//  visible effect on AirPods Max (no case mesh exists).
+//  Every render-tuning value is exposed through `RenderConfig` so the
+//  debug settings panel can drive it from sliders in real time.
 //
 
+import Defaults
 import SceneKit
 import SwiftUI
+
+struct AirPodsRenderConfig: Equatable {
+    var rotationSeconds: Double = 5
+    var rotationReversed: Bool = false
+    var hideCase: Bool = false
+    var tightCrop: Bool = false
+    var showFullModel: Bool = false
+    var zoom: CGFloat = 1.0
+    var tiltX: CGFloat = 0
+    var yShift: CGFloat = 0
+    var cameraZ: CGFloat = 3.2
+    var cameraY: CGFloat = 0.05
+    var cameraFOV: CGFloat = 28
+    var filterPositionCut: CGFloat = 0.5
+    var filterAreaCut: CGFloat = 0.3
+
+    static let `default` = AirPodsRenderConfig()
+
+    /// Builds a config from the live @Default values for the closed-notch
+    /// mini view. Settings sliders write to these defaults → this method
+    /// returns fresh values every render.
+    static func liveTuned(
+        hideCase: Bool,
+        tightCrop: Bool,
+        rotationSpeed: Double? = nil
+    ) -> AirPodsRenderConfig {
+        AirPodsRenderConfig(
+            rotationSeconds: rotationSpeed ?? Defaults[.airPodsRotationSeconds],
+            rotationReversed: Defaults[.airPodsRotationReversed],
+            hideCase: hideCase,
+            tightCrop: tightCrop,
+            showFullModel: Defaults[.airPodsShowFullModel],
+            zoom: CGFloat(Defaults[.airPodsModelZoom]),
+            tiltX: CGFloat(Defaults[.airPodsModelTiltX]),
+            yShift: CGFloat(Defaults[.airPodsModelYShift]),
+            cameraZ: CGFloat(Defaults[.airPodsCameraZ]),
+            cameraY: CGFloat(Defaults[.airPodsCameraY]),
+            cameraFOV: CGFloat(Defaults[.airPodsCameraFOV]),
+            filterPositionCut: CGFloat(Defaults[.airPodsFilterPositionCut]),
+            filterAreaCut: CGFloat(Defaults[.airPodsFilterAreaCut])
+        )
+    }
+}
 
 struct AirPods3DView: View {
     let variant: AirPodsModelVariant
     var size: CGFloat = 88
-    var rotationSpeed: Double = 8 // seconds per full Y rotation
-    /// When true, drops the charging case mesh so only the earbuds spin.
+    /// Optional explicit config. When nil the view reads live @Default values.
+    var config: AirPodsRenderConfig? = nil
+
+    // Convenience legacy params — only used when `config` is nil.
+    var rotationSpeed: Double = 5
     var hideCase: Bool = false
-    /// Aggressive variant of `hideCase`: tighter Y threshold + filters out
-    /// nodes whose vertical extent dominates the model (the case body).
     var tightCrop: Bool = false
-    /// Optional zoom override. If nil, the view picks a default based on
-    /// `hideCase` / `tightCrop`. Values < 1 zoom out, > 1 zoom in. Pass a
-    /// number when you want to fine-tune sizing from the parent view.
     var zoomOverride: CGFloat? = nil
 
     @ObservedObject private var loader = AirPodsAssetLoader.shared
 
+    // Observe individual @Default keys so SwiftUI re-runs body on slider
+    // changes. The values themselves are read inside `resolvedConfig`.
+    @Default(.airPodsModelZoom)          private var _modelZoom
+    @Default(.airPodsModelTiltX)         private var _tiltX
+    @Default(.airPodsModelYShift)        private var _yShift
+    @Default(.airPodsCameraZ)            private var _camZ
+    @Default(.airPodsCameraY)            private var _camY
+    @Default(.airPodsCameraFOV)          private var _camFOV
+    @Default(.airPodsRotationSeconds)    private var _rotSec
+    @Default(.airPodsRotationReversed)   private var _rotRev
+    @Default(.airPodsShowFullModel)      private var _showFull
+    @Default(.airPodsFilterPositionCut)  private var _posCut
+    @Default(.airPodsFilterAreaCut)      private var _areaCut
+
+    private var resolvedConfig: AirPodsRenderConfig {
+        if let c = config { return c }
+        var c = AirPodsRenderConfig.liveTuned(
+            hideCase: hideCase,
+            tightCrop: tightCrop,
+            rotationSpeed: rotationSpeed
+        )
+        if let z = zoomOverride { c.zoom = z }
+        return c
+    }
+
     var body: some View {
         ZStack {
             if let url = loader.cachedURL(for: variant) {
-                AirPods3DSceneView(
-                    url: url,
-                    rotationSpeed: rotationSpeed,
-                    hideCase: hideCase,
-                    tightCrop: tightCrop,
-                    zoomOverride: zoomOverride
-                )
-                .frame(width: size, height: size)
-                .allowsHitTesting(false)
+                AirPods3DSceneView(url: url, config: resolvedConfig)
+                    .frame(width: size, height: size)
+                    .allowsHitTesting(false)
             } else {
                 fallback
             }
         }
-        .onAppear {
-            loader.prefetch(variant)
-        }
+        .onAppear { loader.prefetch(variant) }
     }
 
     private var fallback: some View {
@@ -72,10 +129,7 @@ extension AirPodsModelVariant {
 
 private struct AirPods3DSceneView: NSViewRepresentable {
     let url: URL
-    let rotationSpeed: Double
-    let hideCase: Bool
-    let tightCrop: Bool
-    let zoomOverride: CGFloat?
+    let config: AirPodsRenderConfig
 
     func makeNSView(context: Context) -> SCNView {
         let view = SCNView(frame: .zero)
@@ -88,11 +142,9 @@ private struct AirPods3DSceneView: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: SCNView, context: Context) {
-        // Swap the model if the URL or mode changes.
-        if context.coordinator.loadedURL != url
-            || context.coordinator.hidCase != hideCase
-            || context.coordinator.tight != tightCrop
-        {
+        // Any config tweak reconfigures the scene so the user sees changes
+        // live as they drag sliders. URL changes also trigger reconfigure.
+        if context.coordinator.loadedURL != url || context.coordinator.config != config {
             configureScene(nsView, context: context)
         }
     }
@@ -101,8 +153,7 @@ private struct AirPods3DSceneView: NSViewRepresentable {
 
     final class Coordinator {
         var loadedURL: URL?
-        var hidCase: Bool = false
-        var tight: Bool = false
+        var config: AirPodsRenderConfig = .default
     }
 
     private func configureScene(_ view: SCNView, context: Context) {
@@ -113,27 +164,31 @@ private struct AirPods3DSceneView: NSViewRepresentable {
             return
         }
 
-        // Container that we will spin instead of the imported root (USDZ
-        // hierarchies often have a non-zero pivot that makes direct
-        // rotation wobble).
         let pivot = SCNNode()
         for child in scene.rootNode.childNodes {
             pivot.addChildNode(child)
         }
 
-        // Optionally drop the charging-case mesh by Y position.
-        if hideCase {
-            Self.hideCaseMeshes(in: pivot, tight: tightCrop)
+        // Apply forward/backward tilt. SCNNode.eulerAngles uses
+        // platform-native CGFloat; the conversion below keeps it portable.
+        pivot.eulerAngles.x = CGFloat(config.tiltX) * .pi / 180
+
+        // Filter case meshes unless `showFullModel` is on.
+        if config.hideCase && !config.showFullModel {
+            Self.hideCaseMeshes(
+                in: pivot,
+                tight: config.tightCrop,
+                positionCutFrac: config.filterPositionCut,
+                areaCutFrac: config.filterAreaCut
+            )
         }
 
-        // Re-measure bounding box after hiding so the buds frame nicely.
+        // Re-measure bbox after removal so framing is correct.
         let (minVec, maxVec) = pivot.boundingBox
-        let center = SCNVector3(
-            (minVec.x + maxVec.x) / 2,
-            (minVec.y + maxVec.y) / 2,
-            (minVec.z + maxVec.z) / 2
-        )
-        pivot.pivot = SCNMatrix4MakeTranslation(center.x, center.y, center.z)
+        let centerX = (minVec.x + maxVec.x) / 2
+        let centerY = (minVec.y + maxVec.y) / 2 - CGFloat(config.yShift)
+        let centerZ = (minVec.z + maxVec.z) / 2
+        pivot.pivot = SCNMatrix4MakeTranslation(centerX, centerY, centerZ)
 
         let working = SCNScene()
         working.rootNode.addChildNode(pivot)
@@ -145,23 +200,20 @@ private struct AirPods3DSceneView: NSViewRepresentable {
         )
         let largest = max(extents.x, max(extents.y, extents.z))
         if largest > 0 {
-            // Conservative zoom in tightCrop (closed-notch sneak) so the
-            // buds never clip on the wide rotation cycles. Other modes can
-            // zoom further because they live inside the open notch.
-            let defaultTarget: CGFloat = tightCrop ? 0.85 : (hideCase ? 1.55 : 1.35)
-            let target = zoomOverride ?? defaultTarget
-            let scale = target / CGFloat(largest)
+            // Base sizing target — multiplied by config.zoom so the user's
+            // slider takes effect.
+            let baseTarget: CGFloat = config.tightCrop ? 1.0 : (config.hideCase ? 1.55 : 1.35)
+            let scale = (baseTarget * config.zoom) / CGFloat(largest)
             pivot.scale = SCNVector3(scale, scale, scale)
         }
 
-        // Camera — pulled further back in full-case mode so the lid arc
-        // doesn't clip when the model rotates.
+        // Camera
         let camNode = SCNNode()
         let cam = SCNCamera()
         cam.usesOrthographicProjection = false
-        cam.fieldOfView = 28
+        cam.fieldOfView = config.cameraFOV
         camNode.camera = cam
-        camNode.position = SCNVector3(0, 0.05, hideCase ? 3.2 : 3.6)
+        camNode.position = SCNVector3(0, Float(config.cameraY), Float(config.cameraZ))
         working.rootNode.addChildNode(camNode)
 
         // Lighting — soft three-point so the glossy plastic reads well.
@@ -188,43 +240,43 @@ private struct AirPods3DSceneView: NSViewRepresentable {
         ambient.light?.color = NSColor(calibratedWhite: 1, alpha: 1)
         working.rootNode.addChildNode(ambient)
 
-        // Rotation animation (clockwise from above, matches iOS connect popup).
-        let spin = SCNAction.rotateBy(x: 0, y: -CGFloat.pi * 2, z: 0, duration: rotationSpeed)
+        // Rotation animation.
+        let sign: CGFloat = config.rotationReversed ? 1 : -1
+        let spin = SCNAction.rotateBy(
+            x: 0,
+            y: sign * CGFloat.pi * 2,
+            z: 0,
+            duration: max(0.5, config.rotationSeconds)
+        )
         pivot.runAction(SCNAction.repeatForever(spin))
 
         view.scene = working
         view.pointOfView = camNode
 
         context.coordinator.loadedURL = url
-        context.coordinator.hidCase = hideCase
-        context.coordinator.tight = tightCrop
+        context.coordinator.config = config
     }
 
-    /// Removes the charging-case meshes while keeping every bud-and-stem
-    /// mesh intact. Apple's AR USDZ encodes AirPods Pro stems as a single
-    /// tall narrow mesh per bud — so the previous Y-extent filter dropped
-    /// the stem along with the case, which is what the user kept seeing.
-    ///
-    /// New strategy: rank meshes by *horizontal volume* (extentX × extentZ).
-    /// The case body is the only chunky cuboid in the model; buds and stems
-    /// are narrow regardless of how tall they are. Drop the meshes whose
-    /// horizontal footprint exceeds a fraction of the largest leaf's
-    /// footprint. Falls back gracefully if the model is single-mesh.
-    private static func hideCaseMeshes(in root: SCNNode, tight: Bool) {
+    /// Removes the charging-case meshes by horizontal footprint, keeping
+    /// the bud-and-stem mesh intact. See AirPods3DView documentation for
+    /// the full rationale.
+    private static func hideCaseMeshes(
+        in root: SCNNode,
+        tight: Bool,
+        positionCutFrac: CGFloat,
+        areaCutFrac: CGFloat
+    ) {
         let leaves = collectGeometryLeaves(root)
         guard leaves.count > 1 else { return }
 
         struct Entry {
             let node: SCNNode
-            /// X × Z extent in root coordinates. Buds + stems are tall but
-            /// narrow → small horizontal footprint. Case body is bulky.
             let horizontalArea: CGFloat
             let centerY: CGFloat
         }
 
         let entries: [Entry] = leaves.compactMap { node in
             let (lo, hi) = node.boundingBox
-            // Worldspace bbox corners.
             let pMin = node.convertPosition(lo, to: root)
             let pMax = node.convertPosition(hi, to: root)
             let extX = abs(CGFloat(pMax.x) - CGFloat(pMin.x))
@@ -233,29 +285,18 @@ private struct AirPods3DSceneView: NSViewRepresentable {
             return Entry(node: node, horizontalArea: extX * extZ, centerY: centerY)
         }
 
-        // The biggest horizontal footprint sets the baseline. Anything
-        // close to it is the case.
         guard let maxArea = entries.map(\.horizontalArea).max(), maxArea > 0 else { return }
-        // tight mode is more aggressive in case Apple ships an asset that
-        // splits the case body into smaller chunks.
-        let areaCut: CGFloat = tight ? 0.30 : 0.45
-
-        // Also keep the legacy position cut as a fallback for assets that
-        // don't separate case + buds horizontally (e.g. AirPods Max).
         let ys = entries.map(\.centerY)
         let minY = ys.min() ?? 0
         let maxY = ys.max() ?? 0
         let yRange = maxY - minY
         let positionCut = yRange > 0
-            ? minY + yRange * (tight ? 0.50 : 0.25)
+            ? minY + yRange * positionCutFrac
             : -CGFloat.greatestFiniteMagnitude
 
         for entry in entries {
-            let bulky = entry.horizontalArea >= maxArea * areaCut
+            let bulky = entry.horizontalArea >= maxArea * areaCutFrac
             let bottomHeavy = entry.centerY < positionCut
-            // Drop only meshes that are *both* bulky horizontally *and*
-            // sit in the lower half. Tall-narrow stems are bulky in Y but
-            // narrow in X×Z, so they survive.
             if bulky && bottomHeavy {
                 entry.node.removeFromParentNode()
             }

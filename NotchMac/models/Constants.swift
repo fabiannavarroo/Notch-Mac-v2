@@ -220,6 +220,31 @@ extension Defaults.Keys {
     static let airPodsRingSidePadding = Key<Double>("nm.airpods.tune.ringSidePad", default: 14.0)
     static let airPodsRingTextScale = Key<Double>("nm.airpods.tune.ringTextScale", default: 0.42)
 
+    // 3D render tuning — applies to the closed-notch mini view (tightCrop).
+    /// Forward/backward tilt of the model in degrees. 0 = upright.
+    static let airPodsModelTiltX = Key<Double>("nm.airpods.tune.tiltX", default: 0.0)
+    /// Vertical offset applied to the pivot inside the SCNView (scene units).
+    static let airPodsModelYShift = Key<Double>("nm.airpods.tune.yShift", default: 0.0)
+    /// Camera distance along Z. Higher = model appears smaller.
+    static let airPodsCameraZ = Key<Double>("nm.airpods.tune.cameraZ", default: 3.2)
+    /// Camera vertical position. Higher = looks down at the model.
+    static let airPodsCameraY = Key<Double>("nm.airpods.tune.cameraY", default: 0.05)
+    /// Camera field of view (degrees). Lower = telephoto, higher = wide.
+    static let airPodsCameraFOV = Key<Double>("nm.airpods.tune.cameraFOV", default: 28.0)
+    /// Seconds per full rotation. Lower = spins faster.
+    static let airPodsRotationSeconds = Key<Double>("nm.airpods.tune.rotSeconds", default: 5.0)
+    /// Reverse rotation direction (counter-clockwise when viewed from above).
+    static let airPodsRotationReversed = Key<Bool>("nm.airpods.tune.rotReversed", default: false)
+    /// Disable the case filter entirely → renders the whole imported model.
+    static let airPodsShowFullModel = Key<Bool>("nm.airpods.tune.showFullModel", default: false)
+    /// Lower Y cut for the case filter (0…1 of bbox height). Geometry below
+    /// this line is treated as case-territory.
+    static let airPodsFilterPositionCut = Key<Double>("nm.airpods.tune.filterPosCut", default: 0.50)
+    /// Horizontal footprint fraction above which a mesh is treated as case.
+    static let airPodsFilterAreaCut = Key<Double>("nm.airpods.tune.filterAreaCut", default: 0.30)
+    /// Multiplier applied to the chin height for the 3D tile.
+    static let airPodsTileHeightMul = Key<Double>("nm.airpods.tune.tileHeightMul", default: 1.0)
+
     // MARK: Battery
     static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: true)
     static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: true)
