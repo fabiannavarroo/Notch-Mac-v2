@@ -40,7 +40,7 @@ struct AirPodsDashboardView: View {
             Spacer(minLength: 0)
 
             HStack(spacing: 16) {
-                AirPods3DView(variant: s.variant, size: 96, rotationSpeed: 7, hideCase: true)
+                AirPods3DView(variant: s.variant, size: 96, rotationSpeed: 7, hideCase: false)
                     .frame(width: 96, height: 96)
 
                 VStack(alignment: .leading, spacing: 6) {
@@ -84,7 +84,9 @@ struct BatteryRing: View {
     let level: Int?
     var isCase: Bool = false
 
-    private var fraction: Double {
+    @State private var animatedFraction: Double = 0
+
+    private var targetFraction: Double {
         Double(level ?? 0) / 100.0
     }
 
@@ -101,14 +103,13 @@ struct BatteryRing: View {
                 Circle()
                     .stroke(.white.opacity(0.12), lineWidth: 4)
                 Circle()
-                    .trim(from: 0, to: max(0.001, fraction))
+                    .trim(from: 0, to: max(0.001, animatedFraction))
                     .stroke(
                         AngularGradient(colors: [color.opacity(0.7), color, color.opacity(0.7)], center: .center),
                         style: StrokeStyle(lineWidth: 4, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
                     .shadow(color: color.opacity(0.35), radius: 3)
-                    .animation(.easeInOut(duration: 0.4), value: fraction)
                 Image(systemName: isCase ? "briefcase.fill" : "earbuds")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.white.opacity(0.7))
@@ -124,6 +125,17 @@ struct BatteryRing: View {
                 .foregroundStyle(.white.opacity(0.5))
         }
         .frame(width: 44)
+        .onAppear {
+            animatedFraction = 0
+            withAnimation(.easeOut(duration: 0.9).delay(0.05)) {
+                animatedFraction = targetFraction
+            }
+        }
+        .onChange(of: targetFraction) { _, newValue in
+            withAnimation(.easeInOut(duration: 0.5)) {
+                animatedFraction = newValue
+            }
+        }
     }
 }
 
@@ -142,21 +154,21 @@ struct AirPodsLiveActivity: View {
     var body: some View {
         if let s = manager.state {
             HStack(spacing: 0) {
-                // Slightly oversize the SCNView and clip to a circle so any
-                // sliver of case lid that survived the geometry filter is
-                // visually clipped off too. The earbuds stay centered inside.
+                // Same footprint as the music live activity's album art so
+                // the chin geometry stays identical and the model isn't
+                // visually clipped. tightCrop hides the case + lid + hinge
+                // entirely so we don't need to crop with SwiftUI on top.
                 AirPods3DView(
                     variant: s.variant,
-                    size: artSize * 1.35,
+                    size: artSize,
                     rotationSpeed: 5,
                     hideCase: true,
                     tightCrop: true
                 )
                 .frame(width: artSize, height: artSize)
-                .clipShape(Circle())
 
-                // Black filler that maps to the physical notch — same trick
-                // the music live activity uses to avoid drawing behind the
+                // Black filler matching the physical notch — same trick the
+                // music live activity uses to avoid drawing behind the
                 // hardware notch on real MacBooks.
                 Rectangle()
                     .fill(.black)
@@ -173,7 +185,10 @@ struct AirPodsLiveActivity: View {
 private struct AirPodsMiniBatteryRing: View {
     let level: Int?
 
-    private var fraction: Double {
+    @State private var animatedFraction: Double = 0
+    @State private var animatedLevel: Int = 0
+
+    private var targetFraction: Double {
         Double(level ?? 0) / 100.0
     }
 
@@ -189,21 +204,35 @@ private struct AirPodsMiniBatteryRing: View {
             Circle()
                 .stroke(.white.opacity(0.18), lineWidth: 2.2)
             Circle()
-                .trim(from: 0, to: max(0.001, fraction))
+                .trim(from: 0, to: max(0.001, animatedFraction))
                 .stroke(
                     AngularGradient(colors: [color.opacity(0.7), color, color.opacity(0.7)], center: .center),
                     style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
                 .shadow(color: color.opacity(0.45), radius: 2)
-                .animation(.easeInOut(duration: 0.4), value: fraction)
-            if let level {
-                Text("\(level)")
+            if level != nil {
+                Text("\(animatedLevel)")
                     .font(.system(size: 8, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .monospacedDigit()
+                    .contentTransition(.numericText())
             }
         }
         .padding(2)
+        .onAppear {
+            animatedFraction = 0
+            animatedLevel = 0
+            withAnimation(.easeOut(duration: 0.9).delay(0.1)) {
+                animatedFraction = targetFraction
+                animatedLevel = level ?? 0
+            }
+        }
+        .onChange(of: targetFraction) { _, newValue in
+            withAnimation(.easeInOut(duration: 0.5)) {
+                animatedFraction = newValue
+                animatedLevel = level ?? 0
+            }
+        }
     }
 }

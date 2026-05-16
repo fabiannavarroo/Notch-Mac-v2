@@ -139,8 +139,8 @@ private struct AirPods3DSceneView: NSViewRepresentable {
         )
         let largest = max(extents.x, max(extents.y, extents.z))
         if largest > 0 {
-            // Slightly tighter when the case is hidden so the buds read big.
-            let target: CGFloat = hideCase ? 1.55 : 1.7
+            // Once the case is hidden the model is tiny, so zoom hard.
+            let target: CGFloat = tightCrop ? 1.85 : (hideCase ? 1.55 : 1.7)
             let scale = target / CGFloat(largest)
             pivot.scale = SCNVector3(scale, scale, scale)
         }
@@ -224,8 +224,11 @@ private struct AirPods3DSceneView: NSViewRepresentable {
         let ys = entries.map { $0.centerY }
         guard let minY = ys.min(), let maxY = ys.max(), maxY > minY else { return }
         let totalRange = maxY - minY
-        let positionCut = minY + totalRange * (tight ? 0.62 : 0.45)
-        let extentLimit = totalRange * (tight ? 0.30 : 0.45)
+        // Closed-notch (tight) drops the bottom 70 % outright and limits any
+        // surviving mesh to ≤ 22 % vertical span — buds are tiny, case body
+        // + lid + hinge all sit above that.
+        let positionCut = minY + totalRange * (tight ? 0.70 : 0.45)
+        let extentLimit = totalRange * (tight ? 0.22 : 0.45)
 
         for entry in entries {
             // Bottom-half meshes → case body.
