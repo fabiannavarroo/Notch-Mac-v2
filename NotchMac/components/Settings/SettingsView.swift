@@ -1239,7 +1239,7 @@ struct NotchUtilitySettingsView: View {
                             case .modules:
                                 NMModulesCard()
                                 NMPomodoroSettingsCard()
-                                if AirPodsModule.visible {
+                                if AirPodsModule.tuningPanelVisible {
                                     NMAirPodsDebugCard()
                                 }
                                 NMAlbumArtCard()

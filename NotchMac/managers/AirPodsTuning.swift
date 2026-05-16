@@ -14,13 +14,14 @@ import Combine
 import Defaults
 import Foundation
 
-/// Master switch for the AirPods module. Flip to `true` to expose the
-/// closed-notch live activity, open-notch dashboard tab, Settings cards
-/// and battery polling. Code paths and Defaults keys remain intact while
-/// this is `false`, so a future debug-only page can re-enable everything
-/// without restoring deleted code.
+/// Master switch for the AirPods module surfaces. Public surfaces (tab,
+/// sneak peek, sidebar, modules row) live behind `visible`. The internal
+/// 3D-tuning settings card lives behind `tuningPanelVisible` so we can
+/// hide just the developer-facing sliders while keeping the user-facing
+/// AirPods experience live.
 enum AirPodsModule {
-    static let visible: Bool = false
+    static let visible: Bool = true
+    static let tuningPanelVisible: Bool = false
 }
 
 struct AirPodsTuning: Codable, Equatable, Defaults.Serializable {
