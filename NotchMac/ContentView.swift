@@ -25,6 +25,7 @@ struct ContentView: View {
     @ObservedObject var volumeManager = VolumeManager.shared
     @ObservedObject var capsLockManager = CapsLockManager.shared
     @ObservedObject var airPodsManager = AirPodsManager.shared
+    @ObservedObject var airPodsTuning = AirPodsTuningCenter.shared
     @State private var hoverTask: Task<Void, Never>?
     @State private var isHovering: Bool = false
     @State private var anyDropDebounceTask: Task<Void, Never>?
@@ -135,8 +136,9 @@ struct ContentView: View {
         {
             // AirPods activity geometry pulls from the *currently rendered*
             // variant's tuning so chin width matches what AirPodsLiveActivity
-            // draws inside.
-            let t = AirPodsTuningStore.tuning(for: currentAirPodsVariant)
+            // draws inside. We go through the observable center so slider
+            // drags in Settings recompute the chin live without a remount.
+            let t = airPodsTuning.tuning(for: currentAirPodsVariant)
             let slot: CGFloat = max(0, vm.effectiveClosedNotchHeight - 4)
             let artWidth: CGFloat = slot * CGFloat(t.artWidthMultiplier) + CGFloat(t.artSidePadding) * 2
             let ringWidth: CGFloat = CGFloat(t.ringDiameter) + CGFloat(t.ringSidePadding) * 2

@@ -17,12 +17,7 @@ struct AirPodsDashboardView: View {
     var override: AirPodsState? = nil
 
     @ObservedObject private var manager = AirPodsManager.shared
-
-    // Observe per-variant tuning so dashboard sliders apply live.
-    @Default(.airPodsTuningRegular) private var tuningRegular
-    @Default(.airPodsTuningANC)     private var tuningANC
-    @Default(.airPodsTuningPro)     private var tuningPro
-    @Default(.airPodsTuningMax)     private var tuningMax
+    @ObservedObject private var tuningCenter = AirPodsTuningCenter.shared
 
     /// Real device state wins; otherwise we synthesise a mock so the
     /// "Forzar visible siempre" flag also drives the open-notch dashboard
@@ -39,12 +34,7 @@ struct AirPodsDashboardView: View {
     }
 
     private func tuning(for variant: AirPodsModelVariant) -> AirPodsTuning {
-        switch variant {
-        case .airPods:    return tuningRegular
-        case .airPodsANC: return tuningANC
-        case .airPodsPro: return tuningPro
-        case .airPodsMax: return tuningMax
-        }
+        tuningCenter.tuning(for: variant)
     }
 
     var body: some View {
@@ -191,23 +181,11 @@ struct AirPodsLiveActivity: View {
     var heightOverride: CGFloat? = nil
 
     @ObservedObject private var manager = AirPodsManager.shared
+    @ObservedObject private var tuningCenter = AirPodsTuningCenter.shared
     @EnvironmentObject var vm: BoringViewModel
 
-    // Observe every variant's tuning so SwiftUI re-runs body when sliders
-    // change anywhere. `tuning` then picks the struct for the active
-    // variant.
-    @Default(.airPodsTuningRegular) private var tuningRegular
-    @Default(.airPodsTuningANC)     private var tuningANC
-    @Default(.airPodsTuningPro)     private var tuningPro
-    @Default(.airPodsTuningMax)     private var tuningMax
-
     private func tuning(for variant: AirPodsModelVariant) -> AirPodsTuning {
-        switch variant {
-        case .airPods:    return tuningRegular
-        case .airPodsANC: return tuningANC
-        case .airPodsPro: return tuningPro
-        case .airPodsMax: return tuningMax
-        }
+        tuningCenter.tuning(for: variant)
     }
 
     // MARK: Layout

@@ -99,21 +99,10 @@ struct AirPods3DView: View {
     var zoomOverride: CGFloat? = nil
 
     @ObservedObject private var loader = AirPodsAssetLoader.shared
-
-    // Observe every variant's tuning so SwiftUI re-runs body when sliders
-    // change anywhere. `resolvedConfig` then picks the right struct.
-    @Default(.airPodsTuningRegular) private var tuningRegular
-    @Default(.airPodsTuningANC)     private var tuningANC
-    @Default(.airPodsTuningPro)     private var tuningPro
-    @Default(.airPodsTuningMax)     private var tuningMax
+    @ObservedObject private var tuning = AirPodsTuningCenter.shared
 
     private var currentTuning: AirPodsTuning {
-        switch variant {
-        case .airPods:    return tuningRegular
-        case .airPodsANC: return tuningANC
-        case .airPodsPro: return tuningPro
-        case .airPodsMax: return tuningMax
-        }
+        tuning.tuning(for: variant)
     }
 
     private var resolvedConfig: AirPodsRenderConfig {

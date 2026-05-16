@@ -10,6 +10,7 @@
 //  variant actually connected.
 //
 
+import Combine
 import Defaults
 import Foundation
 
@@ -51,6 +52,88 @@ struct AirPodsTuning: Codable, Equatable, Defaults.Serializable {
     var dashboardCameraFOV:       Double = 28.0
     var dashboardRotationSeconds: Double = 7.0
     var dashboardShowFullModel:   Bool   = true
+}
+
+/// Central observable wrapper around the four per-variant Defaults keys.
+///
+/// We use this instead of relying on `@Default` directly because the slider
+/// Bindings write into Codable structs many times per second, and the
+/// default property wrapper occasionally fails to re-publish struct
+/// rewrites to nested SwiftUI views (the symptom: visual updates only
+/// arrive after re-mounting the view via a tab switch). This singleton
+/// republishes every write synchronously through @Published properties,
+/// so any view that observes it redraws within the same run-loop tick.
+@MainActor
+final class AirPodsTuningCenter: ObservableObject {
+    static let shared = AirPodsTuningCenter()
+
+    @Published var regular: AirPodsTuning
+    @Published var anc:     AirPodsTuning
+    @Published var pro:     AirPodsTuning
+    @Published var max_:    AirPodsTuning
+
+    private var cancellables: Set<AnyCancellable> = []
+
+    private init() {
+        self.regular = Defaults[.airPodsTuningRegular]
+        self.anc     = Defaults[.airPodsTuningANC]
+        self.pro     = Defaults[.airPodsTuningPro]
+        self.max_    = Defaults[.airPodsTuningMax]
+
+        // Mirror external Defaults writes (e.g. import/reset) back into the
+        // @Published mirrors so observers stay in sync regardless of who
+        // updated the storage.
+        Defaults.publisher(.airPodsTuningRegular)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] change in
+                guard let self else { return }
+                if self.regular != change.newValue { self.regular = change.newValue }
+            }
+            .store(in: &cancellables)
+        Defaults.publisher(.airPodsTuningANC)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] change in
+                guard let self else { return }
+                if self.anc != change.newValue { self.anc = change.newValue }
+            }
+            .store(in: &cancellables)
+        Defaults.publisher(.airPodsTuningPro)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] change in
+                guard let self else { return }
+                if self.pro != change.newValue { self.pro = change.newValue }
+            }
+            .store(in: &cancellables)
+        Defaults.publisher(.airPodsTuningMax)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] change in
+                guard let self else { return }
+                if self.max_ != change.newValue { self.max_ = change.newValue }
+            }
+            .store(in: &cancellables)
+    }
+
+    func tuning(for variant: AirPodsModelVariant) -> AirPodsTuning {
+        switch variant {
+        case .airPods:    return regular
+        case .airPodsANC: return anc
+        case .airPodsPro: return pro
+        case .airPodsMax: return max_
+        }
+    }
+
+    func write(_ tuning: AirPodsTuning, for variant: AirPodsModelVariant) {
+        switch variant {
+        case .airPods:    regular = tuning; Defaults[.airPodsTuningRegular] = tuning
+        case .airPodsANC: anc     = tuning; Defaults[.airPodsTuningANC]     = tuning
+        case .airPodsPro: pro     = tuning; Defaults[.airPodsTuningPro]     = tuning
+        case .airPodsMax: max_    = tuning; Defaults[.airPodsTuningMax]     = tuning
+        }
+    }
+
+    func reset(_ variant: AirPodsModelVariant) {
+        write(AirPodsTuning(), for: variant)
+    }
 }
 
 enum AirPodsTuningStore {

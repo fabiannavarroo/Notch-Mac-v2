@@ -2202,48 +2202,73 @@ private struct NMAirPodsDebugCard: View {
     @Default(.airPodsShowConnectActivity) private var showOnConnect
     @Default(.airPodsDebugVariant)        private var debugVariantRaw
 
-    // Per-variant tuning. We observe all four so the body re-evaluates
-    // whenever any slider in any variant changes; the active variant's
-    // struct is chosen by `currentTuning`.
-    @Default(.airPodsTuningRegular)       private var tuningRegular
-    @Default(.airPodsTuningANC)           private var tuningANC
-    @Default(.airPodsTuningPro)           private var tuningPro
-    @Default(.airPodsTuningMax)           private var tuningMax
+    @ObservedObject private var tuningCenter = AirPodsTuningCenter.shared
 
     @State private var previewVM = BoringViewModel()
     @State private var expandedAdvanced: Bool = false
     @State private var expandedDashboard: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
             NMCardHeader(
                 title: "AirPods (debug)",
-                subtitle: "Vista previa en vivo y ajustes finos del notch reducido. Mueve los sliders y la animación se actualiza al instante."
+                subtitle: "Vista previa en vivo y ajustes finos. Mueve los sliders y la animación se actualiza al instante."
             )
+            .padding(.bottom, 12)
 
-            preview
-                .padding(.vertical, 6)
-
-            variantPicker
-
-            Toggle(isOn: $alwaysShow) {
-                debugLabel("Forzar visible siempre",
-                           "Muestra la live activity aunque no haya AirPods conectados (con valores de prueba).")
+            // Sticky header — preview + variant picker + global toggles
+            // stay pinned while the slider list scrolls below.
+            VStack(alignment: .leading, spacing: 12) {
+                preview
+                variantPicker
+                HStack(spacing: 14) {
+                    compactToggle($alwaysShow, label: "Forzar visible")
+                    compactToggle($showOnConnect, label: "Mostrar al conectar")
+                }
+                Text("Ajustes para: \(variantDisplayName(selectedVariant))")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.mint)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .toggleStyle(.switch)
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(.black.opacity(0.35))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(.white.opacity(0.08), lineWidth: 0.6)
+                    )
+            )
+            .padding(.bottom, 12)
 
-            Toggle(isOn: $showOnConnect) {
-                debugLabel("Mostrar al conectar",
-                           "Activa la animación de 5 segundos cuando detecta unos AirPods.")
+            // Scrolling slider area
+            ScrollView(showsIndicators: true) {
+                VStack(alignment: .leading, spacing: 16) {
+                    slidersContent
+                }
+                .padding(.horizontal, 2)
+                .padding(.vertical, 4)
             }
-            .toggleStyle(.switch)
+            .frame(maxHeight: 360)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
 
-            Divider().background(.white.opacity(0.08))
-
-            Text("Ajustes para: \(variantDisplayName(selectedVariant))")
+    private func compactToggle(_ binding: Binding<Bool>, label: String) -> some View {
+        Toggle(isOn: binding) {
+            Text(label)
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.mint)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .foregroundStyle(.white.opacity(0.85))
+        }
+        .toggleStyle(.switch)
+        .controlSize(.mini)
+    }
+
+    @ViewBuilder
+    private var slidersContent: some View {
+        Group {
 
             Group {
                 sectionTitle("Layout del tile 3D")
@@ -2347,9 +2372,6 @@ private struct NMAirPodsDebugCard: View {
                 .controlSize(.small)
             }
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(NMCardBG())
     }
 
     // Two previews stacked: the closed-notch mini and the expanded
@@ -2502,21 +2524,11 @@ private struct NMAirPodsDebugCard: View {
     // MARK: Bindings into the active variant's tuning struct
 
     private var currentTuning: AirPodsTuning {
-        switch selectedVariant {
-        case .airPods:    return tuningRegular
-        case .airPodsANC: return tuningANC
-        case .airPodsPro: return tuningPro
-        case .airPodsMax: return tuningMax
-        }
+        tuningCenter.tuning(for: selectedVariant)
     }
 
     private func writeCurrentTuning(_ new: AirPodsTuning) {
-        switch selectedVariant {
-        case .airPods:    tuningRegular = new
-        case .airPodsANC: tuningANC     = new
-        case .airPodsPro: tuningPro     = new
-        case .airPodsMax: tuningMax     = new
-        }
+        tuningCenter.write(new, for: selectedVariant)
     }
 
     private func tuneBinding(_ keyPath: WritableKeyPath<AirPodsTuning, Double>) -> Binding<Double> {
