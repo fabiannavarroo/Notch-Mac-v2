@@ -663,7 +663,7 @@ struct ContentView: View {
                         .matchedGeometryEffect(id: "spectrum", in: albumArtNamespace)
                         .mask {
                             AudioSpectrumView(isPlaying: $musicManager.isPlaying)
-                                .frame(width: 16, height: 12)
+                                .frame(width: 18, height: 14)
                         }
                 } else {
                     LottieAnimationContainer()

@@ -521,6 +521,11 @@ struct Media: View {
 
     @Default(.enableLyrics) var enableLyrics
 
+    private var realtimeAudioWaveformSupported: Bool {
+        if #available(macOS 14.2, *) { return true }
+        return false
+    }
+
     var body: some View {
         Form {
             Section {
@@ -640,6 +645,30 @@ struct Media: View {
                 Text("Media controls")
             }  footer: {
                 Text("Customize which controls appear in the music player. Volume expands when active.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Defaults.Toggle(key: .realtimeAudioWaveform) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Real-time audio waveform")
+                        Group {
+                            if realtimeAudioWaveformSupported {
+                                Text("Uses Accelerate FFT on the playing app's audio. Requires audio capture permission and uses slightly more CPU.")
+                            } else {
+                                Text("Requires macOS 14.2 or later. Update macOS to enable real-time audio waveform.")
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+                .disabled(!realtimeAudioWaveformSupported)
+            } header: {
+                Text("Visualizer")
+            } footer: {
+                Text("When disabled, the visualizer animates randomly. The FFT mode reacts to the system audio of the currently playing app — no external audio driver required.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
