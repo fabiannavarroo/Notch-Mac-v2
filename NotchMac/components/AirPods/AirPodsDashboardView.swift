@@ -162,6 +162,9 @@ struct AirPodsLiveActivity: View {
     private let ringSidePadding: CGFloat = 14
     /// Extra horizontal padding around the 3D tile (pt). Same idea.
     private let artSidePadding: CGFloat = 10
+    /// Visual shift applied to the 3D buds. Negative = move further left,
+    /// away from the physical MacBook notch that sits at the centre.
+    private let artLeftShift: CGFloat = -14
 
     // MARK: Layout
 
@@ -184,6 +187,7 @@ struct AirPodsLiveActivity: View {
                     tightCrop: true
                 )
                 .frame(width: artTileWidth, height: slotHeight)
+                .offset(x: artLeftShift)
 
                 // Black filler matching the physical notch — same trick the
                 // music live activity uses to avoid drawing behind the

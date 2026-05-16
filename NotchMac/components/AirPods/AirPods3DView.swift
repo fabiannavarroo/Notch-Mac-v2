@@ -139,11 +139,10 @@ private struct AirPods3DSceneView: NSViewRepresentable {
         )
         let largest = max(extents.x, max(extents.y, extents.z))
         if largest > 0 {
-            // Full-case mode keeps generous margin so the lid + buds never
-            // clip when the case spins past 90°. Bud-only modes zoom in,
-            // but `tightCrop` (the closed-notch sneak) leaves headroom so
-            // the buds don't kiss the top/bottom of the chin.
-            let target: CGFloat = tightCrop ? 1.45 : (hideCase ? 1.55 : 1.35)
+            // Conservative zoom in tightCrop (closed-notch sneak) so the
+            // buds never clip on the wide rotation cycles. Other modes can
+            // zoom further because they live inside the open notch.
+            let target: CGFloat = tightCrop ? 1.15 : (hideCase ? 1.55 : 1.35)
             let scale = target / CGFloat(largest)
             pivot.scale = SCNVector3(scale, scale, scale)
         }
@@ -194,14 +193,17 @@ private struct AirPods3DSceneView: NSViewRepresentable {
         context.coordinator.tight = tightCrop
     }
 
-    /// Walks the imported hierarchy and hides geometry that belongs to the
-    /// charging case. Two passes:
+    /// Walks the imported hierarchy and *removes* geometry that belongs to
+    /// the charging case. Two passes:
     ///   1. Y-position: drop any mesh whose bbox center sits in the bottom
-    ///      portion of the model (45 % default, 62 % when `tight`).
-    ///   2. Y-extent: drop meshes whose vertical span exceeds ~35 % of the
-    ///      whole model — the case body + lid are tall, the buds are small.
-    /// Combined this guarantees only the earbud meshes survive for closed-
-    /// notch live activities, where any lid sliver looks awful at 22 pt.
+    ///      portion of the model (45 % default, 70 % when `tight`).
+    ///   2. Y-extent: drop meshes whose vertical span dominates the model
+    ///      (≤ 22 % when tight, ≤ 45 % default) — case body + lid + hinge.
+    ///
+    /// Removal (not `isHidden = true`) is critical: `SCNNode.boundingBox`
+    /// still includes hidden subtrees, so without removal the post-filter
+    /// bbox would match the original and the buds would render off-centre
+    /// and tiny inside the SCNView.
     private static func hideCaseMeshes(in root: SCNNode, tight: Bool) {
         let leaves = collectGeometryLeaves(root)
         guard !leaves.isEmpty else { return }
@@ -216,7 +218,6 @@ private struct AirPods3DSceneView: NSViewRepresentable {
             let (lo, hi) = node.boundingBox
             let local = SCNVector3((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, (lo.z + hi.z) / 2)
             let worldCenter = node.convertPosition(local, to: root)
-            // Approximate worldspace Y extent by transforming the bbox edges.
             let bottomLocal = SCNVector3((lo.x + hi.x) / 2, lo.y, (lo.z + hi.z) / 2)
             let topLocal    = SCNVector3((lo.x + hi.x) / 2, hi.y, (lo.z + hi.z) / 2)
             let bottomWorld = node.convertPosition(bottomLocal, to: root)
@@ -228,22 +229,12 @@ private struct AirPods3DSceneView: NSViewRepresentable {
         let ys = entries.map { $0.centerY }
         guard let minY = ys.min(), let maxY = ys.max(), maxY > minY else { return }
         let totalRange = maxY - minY
-        // Closed-notch (tight) drops the bottom 70 % outright and limits any
-        // surviving mesh to ≤ 22 % vertical span — buds are tiny, case body
-        // + lid + hinge all sit above that.
         let positionCut = minY + totalRange * (tight ? 0.70 : 0.45)
         let extentLimit = totalRange * (tight ? 0.22 : 0.45)
 
         for entry in entries {
-            // Bottom-half meshes → case body.
-            if entry.centerY < positionCut {
-                entry.node.isHidden = true
-                continue
-            }
-            // Tall meshes (vertical span dominates) → case lid / hinge that
-            // extends from the case all the way up to bud height.
-            if entry.extentY > extentLimit {
-                entry.node.isHidden = true
+            if entry.centerY < positionCut || entry.extentY > extentLimit {
+                entry.node.removeFromParentNode()
             }
         }
     }
