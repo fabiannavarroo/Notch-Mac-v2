@@ -19,6 +19,8 @@ struct TabSelectionView: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.boringShelf) private var showShelf
     @Default(.showTimerModule) private var showTimer
+    @Default(.enableAirPodsWidget) private var showAirPods
+    @ObservedObject private var airPods = AirPodsManager.shared
     @Namespace var animation
     var body: some View {
         HStack(spacing: 0) {
@@ -54,6 +56,9 @@ struct TabSelectionView: View {
         }
         if showTimer {
             base.append(TabModel(label: "Pomodoro", icon: "timer", view: .focus))
+        }
+        if showAirPods && airPods.state != nil {
+            base.append(TabModel(label: "AirPods", icon: "airpods", view: .airpods))
         }
         return base
     }

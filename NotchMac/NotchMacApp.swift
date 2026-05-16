@@ -615,6 +615,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         previousScreens = NSScreen.screens
+
+        // AirPods detection + battery polling. Lazy-starts even when the
+        // widget toggle is off, because the manager itself is cheap (no work
+        // until a Bluetooth route change happens) and the toggle is checked
+        // before any UI is shown.
+        if Defaults[.enableAirPodsWidget] {
+            AirPodsManager.shared.start()
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: .airPodsConnected, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard Defaults[.enableAirPodsWidget],
+                      Defaults[.airPodsShowConnectActivity] else { return }
+                self?.presentAirPodsConnectActivity()
+            }
+        }
+    }
+
+    @MainActor
+    private func presentAirPodsConnectActivity() {
+        coordinator.currentView = .airpods
+        vm.open()
+        closeNotchTask?.cancel()
+        closeNotchTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(4))
+            await MainActor.run {
+                self?.vm.close()
+            }
+        }
     }
 
     func playWelcomeSound() {

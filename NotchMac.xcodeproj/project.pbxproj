@@ -154,6 +154,10 @@
 		B1FEB4992C7686630066EBBC /* PanGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1FEB4982C7686630066EBBC /* PanGesture.swift */; };
 		F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */; };
 		CAFE1AE000000000000B0001 /* CaffeinateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAFE1AE000000000000F0001 /* CaffeinateManager.swift */; };
+		ED3CE16BE6E3437E9D653987 /* AirPodsAssetLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80CA1CB236EA4EF6911774E3 /* AirPodsAssetLoader.swift */; };
+		7A1436C3FBBB409DA3D6E4D1 /* AirPodsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2D13F28E5804A3CBD3E84EE /* AirPodsManager.swift */; };
+		3AF7FA9DD8834152ACC1465D /* AirPods3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE7E265753314DFBA5899E55 /* AirPods3DView.swift */; };
+		F7ED575A68C943B68957D6FB /* AirPodsDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB50306BE714622B1CA2E0E /* AirPodsDashboardView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -331,6 +335,10 @@
 		B1FEB4982C7686630066EBBC /* PanGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanGesture.swift; sourceTree = "<group>"; };
 		F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryActivityManager.swift; sourceTree = "<group>"; };
 		CAFE1AE000000000000F0001 /* CaffeinateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeinateManager.swift; sourceTree = "<group>"; };
+		80CA1CB236EA4EF6911774E3 /* AirPodsAssetLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPodsAssetLoader.swift; sourceTree = "<group>"; };
+		D2D13F28E5804A3CBD3E84EE /* AirPodsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPodsManager.swift; sourceTree = "<group>"; };
+		CE7E265753314DFBA5899E55 /* AirPods3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPods3DView.swift; sourceTree = "<group>"; };
+		DBB50306BE714622B1CA2E0E /* AirPodsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPodsDashboardView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -506,9 +514,19 @@
 			path = sizing;
 			sourceTree = "<group>";
 		};
+		8950AF3A3557499293759B24 /* AirPods */ = {
+			isa = PBXGroup;
+			children = (
+				CE7E265753314DFBA5899E55 /* AirPods3DView.swift */,
+				DBB50306BE714622B1CA2E0E /* AirPodsDashboardView.swift */,
+			);
+			path = AirPods;
+			sourceTree = "<group>";
+		};
 		1471639B2C5D362F0068B555 /* components */ = {
 			isa = PBXGroup;
 			children = (
+				8950AF3A3557499293759B24 /* AirPods */,
 				B141C23B2CA5F50900AC8CC8 /* Onboarding */,
 				B1C448992C97375A001F0858 /* Tips */,
 				14C08BB72C8DE49E000F8AA0 /* Calendar */,
@@ -546,6 +564,8 @@
 				B1F0A0012E60000100000001 /* BrightnessManager.swift */,
 				59D8C23B2E589FAA00147B33 /* VolumeManager.swift */,
 				CA751A002FB21CAF0061EA48 /* CapsLockManager.swift */,
+				80CA1CB236EA4EF6911774E3 /* AirPodsAssetLoader.swift */,
+				D2D13F28E5804A3CBD3E84EE /* AirPodsManager.swift */,
 			);
 			path = managers;
 			sourceTree = "<group>";
@@ -954,6 +974,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED3CE16BE6E3437E9D653987 /* AirPodsAssetLoader.swift in Sources */,
+				7A1436C3FBBB409DA3D6E4D1 /* AirPodsManager.swift in Sources */,
+				3AF7FA9DD8834152ACC1465D /* AirPods3DView.swift in Sources */,
+				F7ED575A68C943B68957D6FB /* AirPodsDashboardView.swift in Sources */,
 				DD20E7C5D4814AE79EA431CF /* AudioOutputPicker.swift in Sources */,
 				678BE9E11ADF44CC884AA98F /* AudioOutputManager.swift in Sources */,
 				ADD6DBCEF0834590ABFD9750 /* HiddenHoverDetector.swift in Sources */,

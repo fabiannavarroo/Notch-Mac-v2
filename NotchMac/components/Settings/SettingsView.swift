@@ -1281,6 +1281,7 @@ struct NotchUtilitySettingsView: View {
                 NMSidebarToggle(title: "Calendar", systemImage: "calendar", key: .showCalendar, pair: .showMusicModule)
                 NMSidebarToggle(title: "Battery", systemImage: "battery.100", key: .showBatteryIndicator)
                 NMSidebarToggle(title: "Timer / Pomodoro", systemImage: "timer", key: .showTimerModule)
+                NMSidebarToggle(title: "AirPods", systemImage: "airpods", key: .enableAirPodsWidget)
             }
             .padding(.horizontal, 14)
             .padding(.bottom, 18)
@@ -1645,6 +1646,7 @@ private struct NMModulesCard: View {
                 NMModuleRow(title: "Calendar", subtitle: "Upcoming events and agenda", systemImage: "calendar", tint: .red, key: .showCalendar)
                 NMModuleRow(title: "Battery", subtitle: "Show battery status and charging", systemImage: "battery.100", tint: .green, key: .showBatteryIndicator)
                 NMModuleRow(title: "Timer / Pomodoro", subtitle: "Countdown timer and focus sessions", systemImage: "timer", tint: .orange, key: .showTimerModule)
+                NMModuleRow(title: "AirPods", subtitle: "Live activity 3D + battery alerts", systemImage: "airpods", tint: .mint, key: .enableAirPodsWidget)
             }
         }
         .padding(20)

@@ -197,6 +197,14 @@ extension Defaults.Keys {
     static let nmIslandHidden = Key<Bool>("nm.island.hidden", default: false)
     static let nmAutoHideAppBundleIDs = Key<[String]>("nm.island.autoHideApps", default: [])
 
+    // MARK: AirPods
+    static let enableAirPodsWidget = Key<Bool>("nm.airpods.enabled", default: true)
+    static let airPodsBatteryNotifications = Key<Bool>("nm.airpods.notifications", default: true)
+    static let airPodsThresholdHigh = Key<Int>("nm.airpods.threshold.high", default: 50)
+    static let airPodsThresholdLow = Key<Int>("nm.airpods.threshold.low", default: 20)
+    static let airPodsThresholdCritical = Key<Int>("nm.airpods.threshold.critical", default: 10)
+    static let airPodsShowConnectActivity = Key<Bool>("nm.airpods.connectActivity", default: true)
+
     // MARK: Battery
     static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: true)
     static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: true)

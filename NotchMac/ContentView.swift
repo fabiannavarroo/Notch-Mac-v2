@@ -535,6 +535,17 @@ struct ContentView: View {
                 )
                         .onAppear { coordinator.currentView = .home }
                 }
+            case .airpods:
+                if Defaults[.enableAirPodsWidget] {
+                    AirPodsDashboardView()
+                } else {
+                    NotchHomeView(
+                        albumArtNamespace: albumArtNamespace,
+                        horizontalMediaGestureFeedback: horizontalMediaGestureFeedback,
+                        isHoveringMusicArea: $isHoveringMusicArea
+                    )
+                    .onAppear { coordinator.currentView = .home }
+                }
             }
         }
         .transition(

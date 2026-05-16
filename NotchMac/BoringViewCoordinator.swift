@@ -349,6 +349,21 @@ class BoringViewCoordinator: ObservableObject {
                 }
             }
             .store(in: &moduleMutexCancellables)
+
+        Defaults.publisher(.enableAirPodsWidget)
+            .removeDuplicates(by: { $0.newValue == $1.newValue })
+            .sink { [weak self] change in
+                guard let self else { return }
+                if change.newValue {
+                    AirPodsManager.shared.start()
+                } else {
+                    AirPodsManager.shared.stop()
+                    if self.currentView == .airpods {
+                        DispatchQueue.main.async { self.currentView = .home }
+                    }
+                }
+            }
+            .store(in: &moduleMutexCancellables)
     }
 
     private enum HomeModulePreference { case music, calendar }
