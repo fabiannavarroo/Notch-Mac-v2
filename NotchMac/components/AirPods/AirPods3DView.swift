@@ -139,19 +139,21 @@ private struct AirPods3DSceneView: NSViewRepresentable {
         )
         let largest = max(extents.x, max(extents.y, extents.z))
         if largest > 0 {
-            // Once the case is hidden the model is tiny, so zoom hard.
-            let target: CGFloat = tightCrop ? 1.85 : (hideCase ? 1.55 : 1.7)
+            // Full-case mode keeps generous margin so the lid + buds never
+            // clip when the case spins past 90°. Bud-only modes zoom in.
+            let target: CGFloat = tightCrop ? 1.85 : (hideCase ? 1.55 : 1.35)
             let scale = target / CGFloat(largest)
             pivot.scale = SCNVector3(scale, scale, scale)
         }
 
-        // Camera
+        // Camera — pulled further back in full-case mode so the lid arc
+        // doesn't clip when the model rotates.
         let camNode = SCNNode()
         let cam = SCNCamera()
         cam.usesOrthographicProjection = false
         cam.fieldOfView = 28
         camNode.camera = cam
-        camNode.position = SCNVector3(0, 0.05, 3.2)
+        camNode.position = SCNVector3(0, 0.05, hideCase ? 3.2 : 3.6)
         working.rootNode.addChildNode(camNode)
 
         // Lighting — soft three-point so the glossy plastic reads well.

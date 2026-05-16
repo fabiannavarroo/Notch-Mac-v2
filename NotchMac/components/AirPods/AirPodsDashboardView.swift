@@ -39,9 +39,9 @@ struct AirPodsDashboardView: View {
         HStack(spacing: 0) {
             Spacer(minLength: 0)
 
-            HStack(spacing: 16) {
-                AirPods3DView(variant: s.variant, size: 96, rotationSpeed: 7, hideCase: false)
-                    .frame(width: 96, height: 96)
+            HStack(spacing: 18) {
+                AirPods3DView(variant: s.variant, size: 118, rotationSpeed: 7, hideCase: false)
+                    .frame(width: 118, height: 118)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(s.name)
@@ -147,25 +147,26 @@ struct AirPodsLiveActivity: View {
     @ObservedObject private var manager = AirPodsManager.shared
     @EnvironmentObject var vm: BoringViewModel
 
-    private var artSize: CGFloat {
-        max(0, vm.effectiveClosedNotchHeight - 12)
+    /// Slot height matches the music live activity, but the slot width is
+    /// roughly 2× because the buds need horizontal room to read.
+    private var slotHeight: CGFloat {
+        max(0, vm.effectiveClosedNotchHeight - 4)
     }
+
+    private var artWidth: CGFloat { slotHeight * 1.4 }
+    private var ringSize: CGFloat { slotHeight - 4 }
 
     var body: some View {
         if let s = manager.state {
             HStack(spacing: 0) {
-                // Same footprint as the music live activity's album art so
-                // the chin geometry stays identical and the model isn't
-                // visually clipped. tightCrop hides the case + lid + hinge
-                // entirely so we don't need to crop with SwiftUI on top.
                 AirPods3DView(
                     variant: s.variant,
-                    size: artSize,
+                    size: artWidth,
                     rotationSpeed: 5,
                     hideCase: true,
                     tightCrop: true
                 )
-                .frame(width: artSize, height: artSize)
+                .frame(width: artWidth, height: slotHeight)
 
                 // Black filler matching the physical notch — same trick the
                 // music live activity uses to avoid drawing behind the
@@ -175,7 +176,7 @@ struct AirPodsLiveActivity: View {
                     .frame(width: vm.closedNotchSize.width - 20)
 
                 AirPodsMiniBatteryRing(level: s.averagePodLevel)
-                    .frame(width: artSize, height: artSize)
+                    .frame(width: ringSize + 12, height: slotHeight)
             }
             .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
         }
