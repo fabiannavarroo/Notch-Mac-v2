@@ -11,11 +11,45 @@ import Defaults
 import SwiftUI
 
 struct AirPodsDashboardView: View {
+    /// Optional override state used by the Settings preview to force a
+    /// specific variant. When nil the view reads the live manager + the
+    /// debug always-show fallback.
+    var override: AirPodsState? = nil
+
     @ObservedObject private var manager = AirPodsManager.shared
+
+    // Observe per-variant tuning so dashboard sliders apply live.
+    @Default(.airPodsTuningRegular) private var tuningRegular
+    @Default(.airPodsTuningANC)     private var tuningANC
+    @Default(.airPodsTuningPro)     private var tuningPro
+    @Default(.airPodsTuningMax)     private var tuningMax
+
+    /// Real device state wins; otherwise we synthesise a mock so the
+    /// "Forzar visible siempre" flag also drives the open-notch dashboard
+    /// (matches what the user sees when AirPods are connected for real).
+    private var resolvedState: AirPodsState? {
+        if let o = override { return o }
+        if let s = manager.state { return s }
+        if Defaults[.airPodsDebugAlwaysShow] {
+            let raw = Defaults[.airPodsDebugVariant]
+            let variant = AirPodsModelVariant(rawValue: raw) ?? .airPodsPro
+            return AirPodsLiveActivity.mockState(for: variant)
+        }
+        return nil
+    }
+
+    private func tuning(for variant: AirPodsModelVariant) -> AirPodsTuning {
+        switch variant {
+        case .airPods:    return tuningRegular
+        case .airPodsANC: return tuningANC
+        case .airPodsPro: return tuningPro
+        case .airPodsMax: return tuningMax
+        }
+    }
 
     var body: some View {
         Group {
-            if let s = manager.state {
+            if let s = resolvedState {
                 content(for: s)
             } else {
                 empty
@@ -36,12 +70,18 @@ struct AirPodsDashboardView: View {
     }
 
     private func content(for s: AirPodsState) -> some View {
-        HStack(spacing: 0) {
+        let t = tuning(for: s.variant)
+        let tileSize = CGFloat(t.dashboardTileSize)
+        return HStack(spacing: 0) {
             Spacer(minLength: 0)
 
             HStack(spacing: 18) {
-                AirPods3DView(variant: s.variant, size: 118, rotationSpeed: 7, hideCase: false)
-                    .frame(width: 118, height: 118)
+                AirPods3DView(
+                    variant: s.variant,
+                    size: tileSize,
+                    config: AirPodsRenderConfig.dashboard(t)
+                )
+                .frame(width: tileSize, height: tileSize)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(s.name)

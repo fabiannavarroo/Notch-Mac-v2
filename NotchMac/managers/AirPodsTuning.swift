@@ -40,6 +40,17 @@ struct AirPodsTuning: Codable, Equatable, Defaults.Serializable {
     var filterPositionCut:  Double = 0.50
     var filterAreaCut:      Double = 0.30
     var filterStrict:       Bool   = true
+
+    // Dashboard (expanded, open-notch) tuning — independent from the
+    // closed-notch mini so each surface can be dialled in separately.
+    var dashboardTileSize:        Double = 118.0
+    var dashboardModelZoom:       Double = 1.35
+    var dashboardModelTiltX:      Double = 0.0
+    var dashboardCameraZ:         Double = 3.6
+    var dashboardCameraY:         Double = 0.05
+    var dashboardCameraFOV:       Double = 28.0
+    var dashboardRotationSeconds: Double = 7.0
+    var dashboardShowFullModel:   Bool   = true
 }
 
 enum AirPodsTuningStore {

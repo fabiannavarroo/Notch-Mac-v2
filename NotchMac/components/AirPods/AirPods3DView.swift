@@ -60,6 +60,30 @@ struct AirPodsRenderConfig: Equatable {
             filterStrict: tuning.filterStrict
         )
     }
+
+    /// Same idea but reads the dashboard-specific tuning fields. The
+    /// expanded view shows the full case so `hideCase` defaults to false
+    /// (unless the user toggles `dashboardShowFullModel` off, in which
+    /// case the case filter applies with the variant's mini settings).
+    static func dashboard(_ tuning: AirPodsTuning) -> AirPodsRenderConfig {
+        let hideCase = !tuning.dashboardShowFullModel
+        return AirPodsRenderConfig(
+            rotationSeconds: tuning.dashboardRotationSeconds,
+            rotationReversed: tuning.rotationReversed,
+            hideCase: hideCase,
+            tightCrop: false,
+            showFullModel: tuning.dashboardShowFullModel,
+            zoom: CGFloat(tuning.dashboardModelZoom),
+            tiltX: CGFloat(tuning.dashboardModelTiltX),
+            yShift: CGFloat(tuning.modelYShift),
+            cameraZ: CGFloat(tuning.dashboardCameraZ),
+            cameraY: CGFloat(tuning.dashboardCameraY),
+            cameraFOV: CGFloat(tuning.dashboardCameraFOV),
+            filterPositionCut: CGFloat(tuning.filterPositionCut),
+            filterAreaCut: CGFloat(tuning.filterAreaCut),
+            filterStrict: tuning.filterStrict
+        )
+    }
 }
 
 struct AirPods3DView: View {

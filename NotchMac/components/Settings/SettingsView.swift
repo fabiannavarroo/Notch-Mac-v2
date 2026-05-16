@@ -2212,6 +2212,7 @@ private struct NMAirPodsDebugCard: View {
 
     @State private var previewVM = BoringViewModel()
     @State private var expandedAdvanced: Bool = false
+    @State private var expandedDashboard: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -2309,6 +2310,29 @@ private struct NMAirPodsDebugCard: View {
                 slider("Tamaño del %",    tuneBinding(\.ringTextScale),   range: 0.2...0.7, step: 0.01, format: "%.2f")
             }
 
+            DisclosureGroup(isExpanded: $expandedDashboard) {
+                VStack(alignment: .leading, spacing: 12) {
+                    sectionTitle("Modelo 3D — expandido")
+                    Toggle(isOn: tuneBindingBool(\.dashboardShowFullModel)) {
+                        debugLabel("Mostrar caja en expandido",
+                                   "ON: rota AirPods + caja completa. OFF: aplica el filtro de caja del mini.")
+                    }
+                    .toggleStyle(.switch)
+                    slider("Tamaño tile",         tuneBinding(\.dashboardTileSize),       range: 60...180, step: 1,    format: "%.0f pt")
+                    slider("Zoom modelo",         tuneBinding(\.dashboardModelZoom),      range: 0.3...2.5, step: 0.02, format: "%.2f")
+                    slider("Inclinación X (°)",   tuneBinding(\.dashboardModelTiltX),     range: -45...45,  step: 1,    format: "%.0f°")
+                    slider("Distancia cámara Z",  tuneBinding(\.dashboardCameraZ),        range: 1.5...6.0, step: 0.05, format: "%.2f")
+                    slider("Altura cámara Y",     tuneBinding(\.dashboardCameraY),        range: -0.5...0.5, step: 0.01, format: "%.2f")
+                    slider("Campo visión (FOV)",  tuneBinding(\.dashboardCameraFOV),      range: 10...60,   step: 1,    format: "%.0f°")
+                    slider("Segundos por vuelta", tuneBinding(\.dashboardRotationSeconds), range: 1.0...20,  step: 0.5,  format: "%.1f s")
+                }
+                .padding(.top, 8)
+            } label: {
+                debugLabel("Expandido (notch abierto)",
+                           "Ajustes independientes para la vista grande con caja y batería L/R/Case.")
+            }
+            .tint(.mint)
+
             Divider().background(.white.opacity(0.08))
 
             HStack {
@@ -2328,26 +2352,50 @@ private struct NMAirPodsDebugCard: View {
         .background(NMCardBG())
     }
 
-    // Preview shows the actual closed-notch activity at the real chin
-    // geometry so the user sees exactly what will render.
+    // Two previews stacked: the closed-notch mini and the expanded
+    // dashboard. Each shows the actual rendered view with the user's
+    // current per-variant tuning so what you see in Settings matches
+    // what shows up on the real notch.
     private var preview: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            previewBlock(title: "MINI (NOTCH CERRADO)") {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.black)
+                    AirPodsLiveActivity(
+                        override: AirPodsLiveActivity.mockState(for: selectedVariant),
+                        heightOverride: 32
+                    )
+                    .environmentObject(previewVM)
+                }
+                .frame(height: 56)
+                .frame(maxWidth: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+
+            previewBlock(title: "EXPANDIDO (NOTCH ABIERTO)") {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.black)
+                    AirPodsDashboardPreviewWrapper(
+                        variant: selectedVariant
+                    )
+                    .environmentObject(previewVM)
+                }
+                .frame(height: 150)
+                .frame(maxWidth: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+        }
+    }
+
+    private func previewBlock<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("PREVIEW")
+            Text(title)
                 .font(.system(size: 9, weight: .bold))
                 .tracking(1.2)
                 .foregroundStyle(.white.opacity(0.45))
-            ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.black)
-                AirPodsLiveActivity(
-                    override: AirPodsLiveActivity.mockState(for: selectedVariant),
-                    heightOverride: 32
-                )
-                .environmentObject(previewVM)
-            }
-            .frame(height: 56)
-            .frame(maxWidth: .infinity)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            content()
         }
     }
 
@@ -2474,5 +2522,16 @@ private struct NMAirPodsDebugCard: View {
         case .airPodsPro: return "AirPods Pro"
         case .airPodsMax: return "AirPods Max"
         }
+    }
+}
+
+/// Thin wrapper so the Settings preview can show the expanded dashboard
+/// with a forced variant + mock state regardless of what's connected.
+private struct AirPodsDashboardPreviewWrapper: View {
+    let variant: AirPodsModelVariant
+    var body: some View {
+        AirPodsDashboardView(
+            override: AirPodsLiveActivity.mockState(for: variant)
+        )
     }
 }
