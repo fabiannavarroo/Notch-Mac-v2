@@ -1270,6 +1270,7 @@ struct NotchUtilitySettingsView: View {
                                     NMAirPodsDebugCard()
                                 }
                                 NMAlbumArtCard()
+                                NMMusicEffectsCard()
                             case .about:
                                 NMAboutPanel(updaterController: updaterController)
                             }
@@ -1682,6 +1683,40 @@ private struct NMModulesCard: View {
                     NMModuleRow(title: "AirPods", subtitle: "Live activity 3D + battery alerts", systemImage: "airpods", tint: .mint, key: .enableAirPodsWidget)
                 }
             }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMMusicEffectsCard: View {
+    @Default(.enableParallaxAlbumArt) private var enableParallax
+    @Default(.enableAlbumArtFlip) private var enableFlip
+    @Default(.enableWavyProgressBar) private var enableWavy
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(
+                title: NSLocalizedString("music_effects_title", comment: "Music effects card title"),
+                subtitle: NSLocalizedString("music_effects_subtitle", comment: "Music effects card subtitle")
+            )
+
+            NMSwitchRow(
+                title: NSLocalizedString("music_effects_parallax_title", comment: "Parallax tilt toggle title"),
+                subtitle: NSLocalizedString("music_effects_parallax_subtitle", comment: "Parallax tilt toggle subtitle"),
+                isOn: $enableParallax
+            )
+            NMSwitchRow(
+                title: NSLocalizedString("music_effects_flip_title", comment: "Album art flip toggle title"),
+                subtitle: NSLocalizedString("music_effects_flip_subtitle", comment: "Album art flip toggle subtitle"),
+                isOn: $enableFlip
+            )
+            NMSwitchRow(
+                title: NSLocalizedString("music_effects_wavy_title", comment: "Wavy progress bar toggle title"),
+                subtitle: NSLocalizedString("music_effects_wavy_subtitle", comment: "Wavy progress bar toggle subtitle"),
+                isOn: $enableWavy
+            )
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)

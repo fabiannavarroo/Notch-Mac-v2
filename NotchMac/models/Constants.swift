@@ -154,6 +154,10 @@ extension Defaults.Keys {
     static let waitInterval = Key<Double>("waitInterval", default: 3)
     static let showShuffleAndRepeat = Key<Bool>("showShuffleAndRepeat", default: false)
     static let enableLyrics = Key<Bool>("enableLyrics", default: false)
+    // MARK: Music player effects (opt-in, port of upstream PR #1136)
+    static let enableParallaxAlbumArt = Key<Bool>("nm.music.fx.parallaxAlbumArt", default: false)
+    static let enableAlbumArtFlip = Key<Bool>("nm.music.fx.albumArtFlip", default: false)
+    static let enableWavyProgressBar = Key<Bool>("nm.music.fx.wavyProgressBar", default: false)
     static let musicControlSlots = Key<[MusicControlButton]>(
         "musicControlSlots",
         default: MusicControlButton.defaultLayout

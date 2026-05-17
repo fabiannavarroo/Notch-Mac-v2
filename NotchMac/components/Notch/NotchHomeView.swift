@@ -40,12 +40,34 @@ struct AlbumArtView: View {
     @ObservedObject var vm: BoringViewModel
     let albumArtNamespace: Namespace.ID
 
+    @Default(.enableParallaxAlbumArt) private var enableParallax
+    @Default(.enableAlbumArtFlip) private var enableFlip
+    @State private var flipRotation: Double = 0
+
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             if Defaults[.lightingEffect] {
                 albumArtBackground
             }
             albumArtButton
+                .rotation3DEffect(
+                    .degrees(enableFlip ? flipRotation : 0),
+                    axis: (x: 0, y: 1, z: 0),
+                    perspective: 0.5
+                )
+                .parallaxTilt(enabled: enableParallax)
+        }
+        .onChange(of: musicManager.songTitle) { _, _ in
+            guard enableFlip else { return }
+            withAnimation(.easeIn(duration: 0.18)) {
+                flipRotation = 90
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                flipRotation = -90
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                    flipRotation = 0
+                }
+            }
         }
     }
 
@@ -544,20 +566,44 @@ struct MusicSliderView: View {
     let isPlaying: Bool
     var onValueChange: (Double) -> Void
 
+    @Default(.enableWavyProgressBar) private var enableWavySlider
+
+    private var resolvedColor: Color {
+        switch Defaults[.sliderColor] {
+        case .albumArt:
+            return Color(nsColor: color).ensureMinimumBrightness(factor: 0.8)
+        case .accent:
+            return .effectiveAccent
+        case .white:
+            return .white
+        }
+    }
 
     var body: some View {
         VStack {
-            CustomSlider(
-                value: $sliderValue,
-                range: 0...duration,
-                color: Defaults[.sliderColor] == SliderColorEnum.albumArt
-                    ? Color(nsColor: color).ensureMinimumBrightness(factor: 0.8)
-                    : Defaults[.sliderColor] == SliderColorEnum.accent ? .effectiveAccent : .white,
-                dragging: $dragging,
-                lastDragged: $lastDragged,
-                onValueChange: onValueChange
-            )
-            .frame(height: 10, alignment: .center)
+            Group {
+                if enableWavySlider {
+                    WavySlider(
+                        value: $sliderValue,
+                        range: 0...duration,
+                        isPlaying: isPlaying,
+                        color: resolvedColor,
+                        dragging: $dragging,
+                        lastDragged: $lastDragged,
+                        onValueChange: onValueChange
+                    )
+                } else {
+                    CustomSlider(
+                        value: $sliderValue,
+                        range: 0...duration,
+                        color: resolvedColor,
+                        dragging: $dragging,
+                        lastDragged: $lastDragged,
+                        onValueChange: onValueChange
+                    )
+                }
+            }
+            .frame(height: enableWavySlider ? 14 : 10, alignment: .center)
 
             HStack {
                 Text(timeString(from: sliderValue))

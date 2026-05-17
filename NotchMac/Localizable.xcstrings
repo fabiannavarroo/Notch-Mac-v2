@@ -2266,6 +2266,62 @@
         }
       }
     },
+    "music_effects_title" : {
+      "comment" : "Music effects card title",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Music Player Effects" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Efectos del reproductor" } }
+      }
+    },
+    "music_effects_subtitle" : {
+      "comment" : "Music effects card subtitle",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Opt-in visual effects for the music module." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Efectos visuales opcionales para el módulo de música." } }
+      }
+    },
+    "music_effects_parallax_title" : {
+      "comment" : "Parallax tilt toggle title",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "3D Parallax Album Art" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Carátula con paralaje 3D" } }
+      }
+    },
+    "music_effects_parallax_subtitle" : {
+      "comment" : "Parallax tilt toggle subtitle",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tilt the album art toward the cursor on hover." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Inclina la carátula siguiendo el cursor al pasar por encima." } }
+      }
+    },
+    "music_effects_flip_title" : {
+      "comment" : "Album art flip toggle title",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Flip on Track Change" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Voltear al cambiar de canción" } }
+      }
+    },
+    "music_effects_flip_subtitle" : {
+      "comment" : "Album art flip toggle subtitle",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rotate the artwork on the Y axis when the track changes." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Gira la carátula sobre el eje Y al cambiar de pista." } }
+      }
+    },
+    "music_effects_wavy_title" : {
+      "comment" : "Wavy progress bar toggle title",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Wavy Progress Bar" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Barra de progreso ondulada" } }
+      }
+    },
+    "music_effects_wavy_subtitle" : {
+      "comment" : "Wavy progress bar toggle subtitle",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Animated sine-wave progress; flattens when paused." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Onda sinusoidal animada; se aplana al pausar." } }
+      }
+    },
     "album_art_always" : {
       "comment" : "Album art display: Always show",
       "localizations" : {
