@@ -39,6 +39,8 @@ struct ContentView: View {
 
     @State private var albumArtOpacity: Double = 1.0
     @State private var albumArtFadeTask: Task<Void, Never>?
+    @State private var liveActivityFlipRotation: Double = 0
+    @Default(.enableAlbumArtFlip) private var enableAlbumArtFlip
 
     @State private var capsLockHUDVisible: Bool = false
     @State private var capsLockHUDDismissTask: Task<Void, Never>?
@@ -653,6 +655,11 @@ struct ContentView: View {
                     y: liveActivityAlbumArtShadow ? 2 : 0
                 )
                 .opacity(albumArtDisplayMode == .fade ? albumArtOpacity : 1.0)
+                .rotation3DEffect(
+                    .degrees(enableAlbumArtFlip ? liveActivityFlipRotation : 0),
+                    axis: (x: 0, y: 1, z: 0),
+                    perspective: 0.5
+                )
 
             Rectangle()
                 .fill(.black)
@@ -764,10 +771,26 @@ struct ContentView: View {
             alignment: .center
         )
         .onAppear { refreshAlbumArtFade() }
-        .onChange(of: musicManager.songTitle) { _, _ in refreshAlbumArtFade() }
+        .onChange(of: musicManager.songTitle) { _, _ in
+            refreshAlbumArtFade()
+            triggerLiveActivityFlip()
+        }
         .onChange(of: vm.notchState) { _, _ in refreshAlbumArtFade() }
         .onChange(of: isHovering) { _, _ in refreshAlbumArtFade() }
         .onChange(of: albumArtDisplayMode) { _, _ in refreshAlbumArtFade() }
+    }
+
+    private func triggerLiveActivityFlip() {
+        guard enableAlbumArtFlip else { return }
+        withAnimation(.easeIn(duration: 0.18)) {
+            liveActivityFlipRotation = 90
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+            liveActivityFlipRotation = -90
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                liveActivityFlipRotation = 0
+            }
+        }
     }
 
     private var currentAlbumArtImage: Image {
