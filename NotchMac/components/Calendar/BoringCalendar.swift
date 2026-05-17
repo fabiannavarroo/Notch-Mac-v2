@@ -182,6 +182,8 @@ struct CalendarView: View {
     @EnvironmentObject var vm: BoringViewModel
     @ObservedObject private var calendarManager = CalendarManager.shared
     @State private var selectedDate = Date()
+    @Default(.hideCompletedReminders) private var hideCompletedReminders
+    @Default(.hideAllDayEvents) private var hideAllDayEvents
 
     var body: some View {
         VStack(spacing: 0) {
@@ -270,6 +272,8 @@ struct EventListView: View {
     let events: [EventModel]
     @Default(.autoScrollToNextEvent) private var autoScrollToNextEvent
     @Default(.showFullEventTitles) private var showFullEventTitles
+    @Default(.hideCompletedReminders) private var hideCompletedReminders
+    @Default(.hideAllDayEvents) private var hideAllDayEvents
 
 
     static func filteredEvents(events: [EventModel]) -> [EventModel] {
@@ -292,6 +296,7 @@ struct EventListView: View {
     }
 
     private func scrollToRelevantEvent(proxy: ScrollViewProxy) {
+        guard autoScrollToNextEvent else { return }
         let now = Date()
         // Determine a single target using preferred search order:
         // 1) first non-all-day upcoming/in-progress event
