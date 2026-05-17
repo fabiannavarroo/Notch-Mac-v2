@@ -59,7 +59,10 @@ struct ContentView: View {
     @Default(.boringShelf) var showShelfModule
     @Default(.showCalendar) var showCalendarModule
     @Default(.showBatteryIndicator) var showBatteryModule
+    @Default(.enableAirPodsWidget) var enableAirPodsWidget
     @Default(.pomodoroIndicatorStyle) var pomodoroIndicatorStyle
+    @Default(.showCaffeinateButton) private var showCaffeinateButton
+    @Default(.hideTitleBar) private var hideTitleBar
     @ObservedObject private var focusSession = FocusSessionModel.shared
     @State private var moduleRenderID = UUID()
 
@@ -133,7 +136,7 @@ struct ContentView: View {
         {
             chinWidth = 640
         } else if vm.notchState == .closed && !vm.hideOnClosed
-            && Defaults[.enableAirPodsWidget]
+            && enableAirPodsWidget
             && airPodsClosedActivityActive
         {
             // AirPods activity geometry pulls from the *currently rendered*
@@ -399,6 +402,18 @@ struct ContentView: View {
         .onChange(of: showBatteryModule) {
             refreshModuleLayout()
         }
+        .onChange(of: enableAirPodsWidget) { _, enabled in
+            if !enabled && coordinator.currentView == .airpods {
+                coordinator.currentView = .home
+            }
+            refreshModuleLayout()
+        }
+        .onChange(of: showCaffeinateButton) {
+            refreshModuleLayout()
+        }
+        .onChange(of: hideTitleBar) {
+            refreshModuleLayout()
+        }
         .onReceive(capsLockManager.pulse) { _ in
             showCapsLockHUD()
         }
@@ -467,7 +482,7 @@ struct ContentView: View {
                       } else if capsLockHUDVisible && Defaults[.showCapsLockHUD] && vm.notchState == .closed && !coordinator.sneakPeek.show && !vm.hideOnClosed {
                           CapsLockIndicatorView(isOn: capsLockManager.isOn)
                               .transition(.opacity.combined(with: .scale(scale: 0.92)))
-                      } else if vm.notchState == .closed && !vm.hideOnClosed && Defaults[.enableAirPodsWidget] && airPodsClosedActivityActive {
+                      } else if vm.notchState == .closed && !vm.hideOnClosed && enableAirPodsWidget && airPodsClosedActivityActive {
                           AirPodsLiveActivity()
                               .transition(
                                   .asymmetric(
@@ -580,7 +595,7 @@ struct ContentView: View {
                         .onAppear { coordinator.currentView = .home }
                 }
             case .airpods:
-                if AirPodsModule.visible && Defaults[.enableAirPodsWidget] {
+                if AirPodsModule.visible && enableAirPodsWidget {
                     AirPodsDashboardView()
                 } else {
                     NotchHomeView(
@@ -733,8 +748,6 @@ struct ContentView: View {
                             .animation(.linear(duration: 0.18), value: focusSession.remainingFraction)
                     }
                     .padding(2)
-                } else if pomodoroRingActive {
-                    Color.clear
                 } else if useMusicVisualizer {
                     Rectangle()
                         .fill(
