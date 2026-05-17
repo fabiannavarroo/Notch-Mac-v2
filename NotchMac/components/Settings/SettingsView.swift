@@ -1271,6 +1271,7 @@ struct NotchUtilitySettingsView: View {
                                 }
                                 NMAlbumArtCard()
                                 NMMusicEffectsCard()
+                                NMAppleIntelligenceCard()
                             case .about:
                                 NMAboutPanel(updaterController: updaterController)
                             }
@@ -1691,10 +1692,6 @@ private struct NMModulesCard: View {
 }
 
 private struct NMMusicEffectsCard: View {
-    @Default(.enableParallaxAlbumArt) private var enableParallax
-    @Default(.enableAlbumArtFlip) private var enableFlip
-    @Default(.enableWavyProgressBar) private var enableWavy
-
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             NMCardHeader(
@@ -1702,25 +1699,50 @@ private struct NMMusicEffectsCard: View {
                 subtitle: NSLocalizedString("music_effects_subtitle", comment: "Music effects card subtitle")
             )
 
-            NMSwitchRow(
+            NMDefaultsSwitchRow(
                 title: NSLocalizedString("music_effects_parallax_title", comment: "Parallax tilt toggle title"),
                 subtitle: NSLocalizedString("music_effects_parallax_subtitle", comment: "Parallax tilt toggle subtitle"),
-                isOn: $enableParallax
+                key: .enableParallaxAlbumArt
             )
-            NMSwitchRow(
+            NMDefaultsSwitchRow(
                 title: NSLocalizedString("music_effects_flip_title", comment: "Album art flip toggle title"),
                 subtitle: NSLocalizedString("music_effects_flip_subtitle", comment: "Album art flip toggle subtitle"),
-                isOn: $enableFlip
+                key: .enableAlbumArtFlip
             )
-            NMSwitchRow(
+            NMDefaultsSwitchRow(
                 title: NSLocalizedString("music_effects_wavy_title", comment: "Wavy progress bar toggle title"),
                 subtitle: NSLocalizedString("music_effects_wavy_subtitle", comment: "Wavy progress bar toggle subtitle"),
-                isOn: $enableWavy
+                key: .enableWavyProgressBar
             )
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(NMCardBG())
+    }
+}
+
+private struct NMDefaultsSwitchRow: View {
+    let title: String
+    let subtitle: String
+    let key: Defaults.Key<Bool>
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            Spacer()
+            Defaults.Toggle("", key: key)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .tint(.green)
+        }
     }
 }
 
