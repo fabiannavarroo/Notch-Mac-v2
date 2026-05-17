@@ -588,6 +588,8 @@ struct ContentView: View {
                     )
                     .onAppear { coordinator.currentView = .home }
                 }
+            case .summary:
+                AppleIntelligencePDFSummaryOverlay()
             }
         }
         .transition(

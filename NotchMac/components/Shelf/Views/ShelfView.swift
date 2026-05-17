@@ -7,12 +7,14 @@
 
 import SwiftUI
 import AppKit
+import Defaults
 
 struct ShelfView: View {
     @EnvironmentObject var vm: BoringViewModel
     @StateObject var tvm = ShelfStateViewModel.shared
     @StateObject var selection = ShelfSelectionModel.shared
     @StateObject private var quickLookService = QuickLookService()
+    @Default(.enableAppleIntelligenceShelf) private var enableAIShelf
     private let spacing: CGFloat = 8
 
     var body: some View {
@@ -98,14 +100,14 @@ struct ShelfView: View {
 
     var content: some View {
         Group {
-            if tvm.isEmpty {
+            if tvm.isEmpty && !enableAIShelf {
                 VStack(spacing: 10) {
                     Image(systemName: "tray.and.arrow.down")
                         .symbolVariant(.fill)
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(.white, .gray)
                         .imageScale(.large)
-                    
+
                     Text("Drop files here")
                         .foregroundStyle(.gray)
                         .font(.system(.title3, design: .rounded))
@@ -118,6 +120,9 @@ struct ShelfView: View {
                         alignment: .center,
                         spacing: spacing
                     ) {
+                        if enableAIShelf {
+                            AppleIntelligencePDFDropView()
+                        }
                         ForEach(tvm.items) { item in
                             ShelfItemView(item: item)
                                 .environmentObject(quickLookService)

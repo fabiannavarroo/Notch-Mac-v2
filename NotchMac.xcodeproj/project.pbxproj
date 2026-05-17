@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FA11360A02F00136A0010001 /* ParallaxTiltModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA11360A01F00136A0010001 /* ParallaxTiltModifier.swift */; };
+		FA11360A02F00136A0010002 /* WavySlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA11360A01F00136A0010002 /* WavySlider.swift */; };
 		DD20E7C5D4814AE79EA431CF /* AudioOutputPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F057CFDCEE024378B6FFB41F /* AudioOutputPicker.swift */; };
 		678BE9E11ADF44CC884AA98F /* AudioOutputManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6555FA7B9C149AC84DE28E9 /* AudioOutputManager.swift */; };
 		ADD6DBCEF0834590ABFD9750 /* HiddenHoverDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A0A929BA004BD5929689C2 /* HiddenHoverDetector.swift */; };
@@ -159,6 +161,9 @@
 		3AF7FA9DD8834152ACC1465D /* AirPods3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE7E265753314DFBA5899E55 /* AirPods3DView.swift */; };
 		F7ED575A68C943B68957D6FB /* AirPodsDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB50306BE714622B1CA2E0E /* AirPodsDashboardView.swift */; };
 		82A7511EE96F4128989E63BD /* AirPodsTuning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 696E2B47C2CA4F60B285E2A7 /* AirPodsTuning.swift */; };
+		AB100000000000000A100011 /* AppleIntelligenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB100000000000000A100001 /* AppleIntelligenceManager.swift */; };
+		AB100000000000000A100012 /* AppleIntelligencePDFDropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB100000000000000A100002 /* AppleIntelligencePDFDropView.swift */; };
+		AB100000000000000A100013 /* AppleIntelligencePDFSummaryOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB100000000000000A100003 /* AppleIntelligencePDFSummaryOverlay.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -197,6 +202,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		FA11360A01F00136A0010001 /* ParallaxTiltModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParallaxTiltModifier.swift; sourceTree = "<group>"; };
+		FA11360A01F00136A0010002 /* WavySlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WavySlider.swift; sourceTree = "<group>"; };
 		F057CFDCEE024378B6FFB41F /* AudioOutputPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioOutputPicker.swift; sourceTree = "<group>"; };
 		C6555FA7B9C149AC84DE28E9 /* AudioOutputManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioOutputManager.swift; sourceTree = "<group>"; };
 		51A0A929BA004BD5929689C2 /* HiddenHoverDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiddenHoverDetector.swift; sourceTree = "<group>"; };
@@ -341,6 +348,9 @@
 		CE7E265753314DFBA5899E55 /* AirPods3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPods3DView.swift; sourceTree = "<group>"; };
 		DBB50306BE714622B1CA2E0E /* AirPodsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPodsDashboardView.swift; sourceTree = "<group>"; };
 		696E2B47C2CA4F60B285E2A7 /* AirPodsTuning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPodsTuning.swift; sourceTree = "<group>"; };
+		AB100000000000000A100001 /* AppleIntelligenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleIntelligenceManager.swift; sourceTree = "<group>"; };
+		AB100000000000000A100002 /* AppleIntelligencePDFDropView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleIntelligencePDFDropView.swift; sourceTree = "<group>"; };
+		AB100000000000000A100003 /* AppleIntelligencePDFSummaryOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleIntelligencePDFSummaryOverlay.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -431,6 +441,8 @@
 				110029292E8691B400035A57 /* FileShareView.swift */,
 				1113ABC32E80E27000EC13B2 /* ShelfItemView.swift */,
 				9A987A032C73CA66005CA465 /* ShelfView.swift */,
+				AB100000000000000A100002 /* AppleIntelligencePDFDropView.swift */,
+				AB100000000000000A100003 /* AppleIntelligencePDFSummaryOverlay.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -569,6 +581,7 @@
 				80CA1CB236EA4EF6911774E3 /* AirPodsAssetLoader.swift */,
 				D2D13F28E5804A3CBD3E84EE /* AirPodsManager.swift */,
 				696E2B47C2CA4F60B285E2A7 /* AirPodsTuning.swift */,
+				AB100000000000000A100001 /* AppleIntelligenceManager.swift */,
 			);
 			path = managers;
 			sourceTree = "<group>";
@@ -750,6 +763,8 @@
 				F057CFDCEE024378B6FFB41F /* AudioOutputPicker.swift */,
 				B19424082CD0FEFE003E5DC2 /* LottieAnimationView.swift */,
 				147163972C5D35B70068B555 /* MusicVisualizer.swift */,
+				FA11360A01F00136A0010001 /* ParallaxTiltModifier.swift */,
+				FA11360A01F00136A0010002 /* WavySlider.swift */,
 			);
 			path = Music;
 			sourceTree = "<group>";
@@ -983,6 +998,8 @@
 				3AF7FA9DD8834152ACC1465D /* AirPods3DView.swift in Sources */,
 				F7ED575A68C943B68957D6FB /* AirPodsDashboardView.swift in Sources */,
 				DD20E7C5D4814AE79EA431CF /* AudioOutputPicker.swift in Sources */,
+				FA11360A02F00136A0010001 /* ParallaxTiltModifier.swift in Sources */,
+				FA11360A02F00136A0010002 /* WavySlider.swift in Sources */,
 				678BE9E11ADF44CC884AA98F /* AudioOutputManager.swift in Sources */,
 				ADD6DBCEF0834590ABFD9750 /* HiddenHoverDetector.swift in Sources */,
 				115C12EC2ED3D003009754CA /* OpenNotchHUD.swift in Sources */,
@@ -1080,6 +1097,9 @@
 				14CEF4162C5CAED300855D72 /* NotchMacApp.swift in Sources */,
 				B17266DF2C64DFA00031BA0D /* BundleInfos.swift in Sources */,
 				118EBE3B2E9720C500D54B5A /* ShelfStateViewModel.swift in Sources */,
+				AB100000000000000A100011 /* AppleIntelligenceManager.swift in Sources */,
+				AB100000000000000A100012 /* AppleIntelligencePDFDropView.swift in Sources */,
+				AB100000000000000A100013 /* AppleIntelligencePDFSummaryOverlay.swift in Sources */,
 				11F747CE2EC75CEA00F841DB /* DragPreviewView.swift in Sources */,
 				F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */,
 				CAFE1AE000000000000B0001 /* CaffeinateManager.swift in Sources */,

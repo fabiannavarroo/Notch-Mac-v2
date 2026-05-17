@@ -29,6 +29,7 @@ public enum NotchViews {
     case shelf
     case focus
     case airpods
+    case summary
 }
 
 enum SettingsEnum {
