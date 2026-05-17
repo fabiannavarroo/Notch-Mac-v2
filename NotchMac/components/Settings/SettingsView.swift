@@ -992,9 +992,36 @@ struct Shelf: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
+
+            Section {
+                Defaults.Toggle(key: .enableAppleIntelligenceShelf) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Show Apple Intelligence PDF tile")
+                        Text(appleIntelligenceStatus)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            } header: {
+                HStack {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(LinearGradient(colors: [.purple, .pink, .cyan], startPoint: .leading, endPoint: .trailing))
+                    Text("Apple Intelligence")
+                }
+            } footer: {
+                Text("Drop a PDF on the tile to get an on-device summary and chat about the document. Requires macOS 26+ with Apple Intelligence enabled. 100% on-device — no network calls.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Shelf")
+    }
+
+    private var appleIntelligenceStatus: String {
+        AppleIntelligenceManager.shared.isAvailable
+            ? "Available on this Mac"
+            : "Unavailable — needs macOS 26 + Apple Intelligence"
     }
 }
 
