@@ -1721,6 +1721,52 @@ private struct NMMusicEffectsCard: View {
     }
 }
 
+private struct NMAppleIntelligenceCard: View {
+    @Default(.enableAppleIntelligenceShelf) private var enabled
+
+    private var available: Bool { AppleIntelligenceManager.shared.isAvailable }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(LinearGradient(colors: [.purple, .pink, .cyan], startPoint: .leading, endPoint: .trailing))
+                    .font(.system(size: 14, weight: .semibold))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Apple Intelligence")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text("On-device PDF summary and chat, shown as a tile in the shelf.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.55))
+                }
+                Spacer()
+            }
+
+            NMSwitchRow(
+                title: "Show PDF tile in shelf",
+                subtitle: available
+                    ? "Drop a PDF on the tile to summarize and chat about it."
+                    : "Requires macOS 26 with Apple Intelligence enabled.",
+                isOn: $enabled
+            )
+
+            HStack(spacing: 6) {
+                Image(systemName: available ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                    .font(.system(size: 11))
+                    .foregroundStyle(available ? Color.green : Color.orange)
+                Text(available ? "Available on this Mac" : "Unavailable on this Mac")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+            .padding(.top, 2)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
 private struct NMDefaultsSwitchRow: View {
     let title: String
     let subtitle: String
