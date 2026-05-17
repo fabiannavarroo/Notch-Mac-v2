@@ -11,6 +11,8 @@ struct BatteryView: View {
     var batteryWidth: CGFloat = 26
     var isForNotification: Bool
 
+    @Default(.showPowerStatusIcons) private var showPowerStatusIcons
+
     var icon: String = "battery.0"
 
     /// Determines the icon to display when charging.
@@ -59,7 +61,7 @@ struct BatteryView: View {
                 )
                 .padding(.leading, 2)
 
-            if iconStatus != "" && (isForNotification || Defaults[.showPowerStatusIcons]) {
+            if iconStatus != "" && (isForNotification || showPowerStatusIcons) {
                 ZStack {
                     Image(iconStatus)
                         .resizable()
@@ -184,6 +186,8 @@ struct BoringBatteryView: View {
     @State private var isHoveringPopover: Bool = false
     @State private var hideTask: Task<Void, Never>? = nil
 
+    @Default(.showBatteryPercentage) private var showBatteryPercentage
+
     @EnvironmentObject var vm: BoringViewModel
 
     var body: some View {
@@ -193,7 +197,7 @@ struct BoringBatteryView: View {
             }
         }) {
             HStack {
-                if Defaults[.showBatteryPercentage] {
+                if showBatteryPercentage {
                     Text("\(Int32(levelBattery))%")
                         .font(.callout)
                         .foregroundStyle(.white)

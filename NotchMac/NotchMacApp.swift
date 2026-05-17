@@ -57,6 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var dragDetectors: [String: DragDetector] = [:] // UUID -> DragDetector
     private var hiddenHoverDetector: HiddenHoverDetector?
     private var notchStateCancellable: AnyCancellable?
+    private var defaultsCancellables: Set<AnyCancellable> = []
     private var hideAnimationTask: Task<Void, Never>?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -65,6 +66,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         NotificationCenter.default.removeObserver(self)
+        defaultsCancellables.forEach { $0.cancel() }
+        defaultsCancellables.removeAll()
         if let observer = screenLockedObserver {
             DistributedNotificationCenter.default().removeObserver(observer)
             screenLockedObserver = nil
@@ -204,6 +207,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func stopHiddenHoverDetector() {
         hiddenHoverDetector?.stop()
         hiddenHoverDetector = nil
+    }
+
+    @MainActor
+    private func applyMenuBarIconVisibility(_ visible: Bool) {
+        if visible {
+            if statusMenu == nil {
+                statusMenu = BoringStatusMenu()
+            }
+        } else if let menu = statusMenu {
+            NSStatusBar.system.removeStatusItem(menu.statusItem)
+            statusMenu = nil
+        }
     }
 
     func switchTab(_ view: NotchViews) {
@@ -409,9 +424,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NotchAppIcon.applyToApplication()
 
-        if Defaults[.menubarIcon] {
-            statusMenu = BoringStatusMenu()
-        }
+        applyMenuBarIconVisibility(Defaults[.menubarIcon])
+
+        Defaults.publisher(.menubarIcon)
+            .map(\.newValue)
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] visible in
+                Task { @MainActor in
+                    self?.applyMenuBarIconVisibility(visible)
+                }
+            }
+            .store(in: &defaultsCancellables)
+
+        Defaults.publisher(.showOnLockScreen)
+            .map(\.newValue)
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] showOnLockScreen in
+                Task { @MainActor in
+                    guard let self else { return }
+                    guard self.isScreenLocked else { return }
+
+                    if showOnLockScreen {
+                        self.adjustWindowPosition(changeAlpha: true)
+                        self.enableSkyLightOnAllWindows()
+                    } else {
+                        self.cleanupWindows()
+                    }
+                }
+            }
+            .store(in: &defaultsCancellables)
 
         NotificationCenter.default.addObserver(
             forName: .nmToggleNotchFromMenu, object: nil, queue: .main

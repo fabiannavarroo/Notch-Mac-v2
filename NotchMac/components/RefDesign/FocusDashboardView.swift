@@ -60,6 +60,20 @@ final class FocusSessionModel: ObservableObject {
         configure(isBreak: true)
     }
 
+    func applyConfiguredDurationToCurrentTimer(resetRemaining: Bool = false) {
+        let wasRunning = isRunning
+        let fraction = remainingFraction
+        let minutes = isBreak ? Defaults[.pomodoroBreakMinutes] : Defaults[.pomodoroFocusMinutes]
+        let seconds = Self.seconds(for: minutes)
+
+        total = seconds
+        remaining = resetRemaining ? seconds : max(0, min(seconds, seconds * fraction))
+
+        if wasRunning && !isRunning {
+            start()
+        }
+    }
+
     private func configure(isBreak: Bool) {
         pause()
         self.isBreak = isBreak

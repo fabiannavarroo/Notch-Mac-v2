@@ -16,6 +16,8 @@ struct BoringHeader: View {
     @StateObject var tvm = ShelfStateViewModel.shared
     @Default(.boringShelf) private var showShelf
     @Default(.showTimerModule) private var showTimer
+    @Default(.showCaffeinateButton) private var showCaffeinateButton
+    @Default(.showBatteryIndicator) private var showBatteryIndicator
     var body: some View {
         HStack(spacing: 0) {
             HStack {
@@ -81,7 +83,7 @@ struct BoringHeader: View {
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
-                        if Defaults[.showCaffeinateButton] {
+                        if showCaffeinateButton {
                             if caffeine.isActive {
                                 Button(action: {
                                     caffeine.disable()
@@ -108,7 +110,7 @@ struct BoringHeader: View {
                                 .help("Caffeinate: off")
                             }
                         }
-                        if Defaults[.showBatteryIndicator] {
+                        if showBatteryIndicator {
                             BoringBatteryView(
                                 batteryWidth: 30,
                                 isCharging: batteryModel.isCharging,
