@@ -1687,26 +1687,87 @@ private struct NMWindowPrivacyCard: View {
 }
 
 private struct NMAppStatusCard: View {
+    @State private var isActive: Bool = NSApp.isActive
+
     private var version: String {
-        appVersion.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Unavailable" : appVersion
+        let v = appVersion.trimmingCharacters(in: .whitespacesAndNewlines)
+        return v.isEmpty ? "Unavailable" : v
     }
+
+    private var build: String {
+        (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? ""
+    }
+
+    private var statusText: String { isActive ? "Running — Active" : "Running — Background" }
 
     var body: some View {
         NMSettingsCard(title: "App") {
-            HStack(spacing: 12) {
-                NMInfoPill(title: "Version", value: version)
-                NMInfoPill(title: "Execution", value: NSApp.isActive ? "Running - Active" : "Running - Background")
-                Spacer(minLength: 24)
-                Button(role: .destructive) {
-                    NSApp.terminate(nil)
-                } label: {
-                    Text("Quit App")
-                        .font(.system(size: 12, weight: .semibold))
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 10) {
+                    NMInfoPill(title: "Version", value: build.isEmpty ? version : "\(version) (\(build))")
+                    NMStatusPill(title: "Execution", value: statusText, active: isActive)
+                    Spacer(minLength: 0)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+
+                Rectangle()
+                    .fill(.white.opacity(0.06))
+                    .frame(height: 1)
+                    .padding(.vertical, 14)
+
+                HStack {
+                    Text("Terminates all notch windows and background helpers.")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.42))
+                    Spacer(minLength: 12)
+                    Button(role: .destructive) {
+                        NSApp.terminate(nil)
+                    } label: {
+                        Text("Quit App")
+                            .font(.system(size: 11, weight: .semibold))
+                            .padding(.horizontal, 4)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .tint(.red.opacity(0.85))
+                }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            isActive = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
+            isActive = false
+        }
+    }
+}
+
+private struct NMStatusPill: View {
+    let title: String
+    let value: String
+    let active: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(.white.opacity(0.42))
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(active ? Color.green : Color.yellow.opacity(0.85))
+                    .frame(width: 6, height: 6)
+                    .shadow(color: (active ? Color.green : Color.yellow).opacity(0.55), radius: 3)
+                Text(value)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.88))
+                    .lineLimit(1)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(.white.opacity(0.045))
+        )
     }
 }
 
