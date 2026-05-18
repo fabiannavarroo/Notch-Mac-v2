@@ -2799,8 +2799,6 @@ private struct NMPomodoroIndicatorCard: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-
-            NMPomodoroNotchPreview(isOpen: false)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
