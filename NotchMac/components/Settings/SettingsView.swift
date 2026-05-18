@@ -1560,20 +1560,24 @@ func warningBadge(_ text: String, _ description: String) -> some View {
 
 struct NotchUtilitySettingsView: View {
     enum SidebarItem: String, Hashable {
+        case general
         case notch
+        case modules
         case music
         case shelf
         case calendar
         case battery
         case airPods
+        case pomodoro
         case hud
         case shortcuts
         case updates
+        case about
     }
 
     let updaterController: SPUStandardUpdaterController?
 
-    @State private var selectedItem: SidebarItem = .notch
+    @State private var selectedItem: SidebarItem = .general
 
     var body: some View {
         HStack(spacing: 0) {
@@ -1618,21 +1622,35 @@ struct NotchUtilitySettingsView: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            NMSidebarItem(
-                title: "General",
-                systemImage: "gearshape.fill",
-                isSelected: selectedItem == .notch,
-                action: { selectedItem = .notch }
-            )
+            VStack(spacing: 2) {
+                NMSidebarItem(
+                    title: "General",
+                    systemImage: "gearshape.fill",
+                    isSelected: selectedItem == .general,
+                    action: { selectedItem = .general }
+                )
+                NMSidebarItem(
+                    title: "Notch",
+                    systemImage: "rectangle.topthird.inset.filled",
+                    isSelected: selectedItem == .notch,
+                    action: { selectedItem = .notch }
+                )
+            }
             .padding(.horizontal, 14)
             .padding(.top, 22)
-            .padding(.bottom, 18)
+            .padding(.bottom, 14)
 
             NMSidebarSection(title: "MODULES")
                 .padding(.horizontal, 18)
-                .padding(.bottom, 8)
+                .padding(.bottom, 6)
 
             VStack(spacing: 2) {
+                NMSidebarItem(
+                    title: "Modules",
+                    systemImage: "square.grid.2x2.fill",
+                    isSelected: selectedItem == .modules,
+                    action: { selectedItem = .modules }
+                )
                 NMSidebarToggle(
                     title: "Music",
                     systemImage: "music.note",
@@ -1663,7 +1681,6 @@ struct NotchUtilitySettingsView: View {
                     isSelected: selectedItem == .battery,
                     action: { selectedItem = .battery }
                 )
-                NMSidebarToggle(title: "Timer / Pomodoro", systemImage: "timer", key: .showTimerModule)
                 if AirPodsModule.visible {
                     NMSidebarToggle(
                         title: "AirPods",
@@ -1673,9 +1690,16 @@ struct NotchUtilitySettingsView: View {
                         action: { selectedItem = .airPods }
                     )
                 }
+                NMSidebarToggle(
+                    title: "Pomodoro",
+                    systemImage: "timer",
+                    key: .showTimerModule,
+                    isSelected: selectedItem == .pomodoro,
+                    action: { selectedItem = .pomodoro }
+                )
             }
             .padding(.horizontal, 14)
-            .padding(.bottom, 18)
+            .padding(.bottom, 14)
 
             NMSidebarSection(title: "SYSTEM")
                 .padding(.horizontal, 18)
@@ -1699,6 +1723,12 @@ struct NotchUtilitySettingsView: View {
                     systemImage: "arrow.triangle.2.circlepath",
                     isSelected: selectedItem == .updates,
                     action: { selectedItem = .updates }
+                )
+                NMSidebarItem(
+                    title: "About",
+                    systemImage: "info.circle.fill",
+                    isSelected: selectedItem == .about,
+                    action: { selectedItem = .about }
                 )
             }
             .padding(.horizontal, 14)
@@ -1732,29 +1762,37 @@ struct NotchUtilitySettingsView: View {
 
     private var headerTitle: String {
         switch selectedItem {
-        case .notch: return "General"
+        case .general: return "General"
+        case .notch: return "Notch"
+        case .modules: return "Modules"
         case .music: return "Music"
         case .shelf: return "Shelf"
         case .calendar: return "Calendar"
         case .battery: return "Battery"
         case .airPods: return "AirPods"
+        case .pomodoro: return "Pomodoro"
         case .hud: return "HUD"
         case .shortcuts: return "Shortcuts"
         case .updates: return "Updates"
+        case .about: return "About"
         }
     }
 
     private var headerSubtitle: String {
         switch selectedItem {
-        case .notch: return "App-wide system preferences and display behavior."
+        case .general: return "System preferences, display routing, and window privacy."
+        case .notch: return "Sizing, hover behavior, gestures, and auto-hide apps."
+        case .modules: return "Toggle modules live and preview the closed and open notch."
         case .music: return "Playback source, live activity, sneak peek, artwork, and controls."
         case .shelf: return "Collect, drag, and share files from the notch."
         case .calendar: return "Events, reminders, and agenda shown in the notch."
         case .battery: return "Battery level, charging state, and power notifications."
         case .airPods: return "3D live activity, battery rings, and connection alerts."
+        case .pomodoro: return "Focus sessions, breaks, and timer indicators in the notch."
         case .hud: return "Replace macOS volume, brightness, keyboard, and Caps Lock indicators."
         case .shortcuts: return "Keyboard shortcuts for fast notch controls."
         case .updates: return "Keep NotchMac current with automatic releases."
+        case .about: return "Version, credits, license, and project links."
         }
     }
 
@@ -1763,12 +1801,20 @@ struct NotchUtilitySettingsView: View {
     private var settingsContent: some View {
         VStack(spacing: 16) {
             switch selectedItem {
-            case .notch:
+            case .general:
                 LazyVGrid(columns: twoColumnGrid, spacing: 16) {
                     NMGeneralSystemCard()
                     NMWindowPrivacyCard()
                 }
                 NMAppStatusCard()
+            case .notch:
+                NMBehaviorCard()
+                NMSizingCard()
+                NMGesturesCard()
+                NMAutoHideAppsCard()
+            case .modules:
+                NMModulesCard()
+                NMLivePreviewCard()
             case .music:
                 Media()
             case .shelf:
@@ -1781,12 +1827,16 @@ struct NotchUtilitySettingsView: View {
                 if AirPodsModule.visible {
                     NMAirPodsPanel()
                 }
+            case .pomodoro:
+                NMPomodoroSettingsCard()
             case .hud:
                 NMHUDPanel()
             case .shortcuts:
                 NMShortcutsPanel()
             case .updates:
                 NMUpdatesPanel(updater: updaterController?.updater)
+            case .about:
+                NMAboutPanel(updaterController: updaterController)
             }
         }
     }
@@ -2569,68 +2619,436 @@ private struct NMDefaultsSwitchRow: View {
     }
 }
 
-private struct NMPomodoroSettingsCard: View {
-    @Default(.pomodoroFocusMinutes) private var focusMinutes
-    @Default(.pomodoroBreakMinutes) private var breakMinutes
-    @Default(.pomodoroIndicatorStyle) private var indicatorStyle
+// MARK: - Pomodoro panel
+
+private struct NMPomodoroPanel: View {
+    @Default(.showTimerModule) private var enabled
     @ObservedObject private var session = FocusSessionModel.shared
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            NMCardHeader(title: "Pomodoro", subtitle: "Configure the timer shown in the notch.")
+        VStack(spacing: 16) {
+            if session.isRunning && !enabled {
+                NMPomodoroHiddenBanner()
+            }
+            NMPomodoroTimerModuleCard()
+            NMPomodoroCurrentTimerCard()
+            LazyVGrid(
+                columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)],
+                spacing: 16
+            ) {
+                NMPomodoroDurationsCard()
+                NMPomodoroIndicatorCard()
+            }
+            NMPomodoroBehaviorCard()
+        }
+    }
+}
+
+private struct NMPomodoroHiddenBanner: View {
+    @Default(.showTimerModule) private var enabled
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.yellow)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Timer is running but hidden from the notch.")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text("Enable the Timer module to bring it back to the notch.")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.6))
+            }
+            Spacer()
+            Button("Show Timer Module") { enabled = true }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .tint(.yellow)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color.yellow.opacity(0.10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color.yellow.opacity(0.32), lineWidth: 0.8)
+                )
+        )
+    }
+}
+
+private struct NMPomodoroTimerModuleCard: View {
+    @Default(.showTimerModule) private var enabled
+    @ObservedObject private var session = FocusSessionModel.shared
+
+    private var statusText: String {
+        if !enabled { return "Disabled" }
+        if session.isRunning { return "Running" }
+        if session.hasStarted && session.remaining > 0 && session.remaining < session.total { return "Paused" }
+        return "Enabled"
+    }
+
+    private var statusColor: Color {
+        switch statusText {
+        case "Running": return .green
+        case "Paused":  return .yellow
+        case "Disabled": return .white.opacity(0.45)
+        default: return .orange
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                NMCardHeader(title: "Timer Module", subtitle: "Show or hide the Pomodoro plate in the notch.")
+                Spacer()
+                statusPill
+            }
+
+            NMPreferenceRow(
+                title: "Enable Timer / Pomodoro",
+                subtitle: "Plate, indicator, and live activity in the notch."
+            ) {
+                Toggle("", isOn: $enabled)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .tint(.green)
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("PREVIEW")
+                    .font(.system(size: 9, weight: .heavy))
+                    .tracking(0.6)
+                    .foregroundStyle(.white.opacity(0.45))
+                HStack(alignment: .top, spacing: 12) {
+                    NMPomodoroNotchPreview(isOpen: false)
+                    NMPomodoroNotchPreview(isOpen: true)
+                }
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+
+    private var statusPill: some View {
+        Text(statusText.uppercased())
+            .font(.system(size: 9, weight: .heavy))
+            .tracking(0.6)
+            .foregroundStyle(statusColor)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(statusColor.opacity(0.15))
+                    .overlay(Capsule().stroke(statusColor.opacity(0.35), lineWidth: 0.6))
+            )
+    }
+}
+
+private struct NMPomodoroNotchPreview: View {
+    let isOpen: Bool
+    @Default(.showTimerModule) private var enabled
+    @Default(.pomodoroIndicatorStyle) private var indicatorStyle
+    @ObservedObject private var session = FocusSessionModel.shared
+
+    private var ringActive: Bool { enabled && indicatorStyle == .ring && session.isRunning }
+    private var dotActive: Bool { enabled && indicatorStyle == .dot && session.isRunning }
+    private var sessionTint: Color { session.isBreak ? .green : .orange }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(isOpen ? "Open" : "Closed")
+                .font(.system(size: 9, weight: .heavy))
+                .tracking(0.6)
+                .foregroundStyle(.white.opacity(0.4))
+
+            ZStack {
+                RoundedRectangle(cornerRadius: isOpen ? 18 : 12, style: .continuous)
+                    .fill(Color.black)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: isOpen ? 18 : 12, style: .continuous)
+                            .stroke(
+                                ringActive ? sessionTint.opacity(0.9) : .white.opacity(0.10),
+                                lineWidth: ringActive ? 2 : 0.8
+                            )
+                    )
+                    .shadow(color: .black.opacity(0.5), radius: 10, y: 6)
+
+                HStack(spacing: isOpen ? 8 : 6) {
+                    if enabled {
+                        timerChip
+                    } else {
+                        Text("Hidden")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.35))
+                    }
+                    if dotActive {
+                        Circle()
+                            .fill(sessionTint)
+                            .frame(width: 6, height: 6)
+                    }
+                }
+                .padding(.horizontal, isOpen ? 16 : 10)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: isOpen ? 78 : 36)
+        }
+    }
+
+    private var timerChip: some View {
+        HStack(spacing: 6) {
+            ZStack {
+                Circle().stroke(.white.opacity(0.15), lineWidth: 2)
+                Circle()
+                    .trim(from: 0, to: CGFloat(session.remainingFraction))
+                    .stroke(sessionTint, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            }
+            .frame(width: isOpen ? 26 : 18, height: isOpen ? 26 : 18)
+            Text(session.timeString)
+                .font(.system(size: isOpen ? 13 : 11, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .monospacedDigit()
+            if isOpen {
+                Text(session.hasStarted ? session.sessionLabel : "Idle")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(sessionTint)
+            }
+        }
+    }
+}
+
+private struct NMPomodoroDurationsCard: View {
+    @Default(.pomodoroFocusMinutes) private var focusMinutes
+    @Default(.pomodoroBreakMinutes) private var breakMinutes
+    @ObservedObject private var session = FocusSessionModel.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Durations", subtitle: "Focus and break length in minutes.")
 
             NMStepperRow(
                 title: "Focus Session",
-                subtitle: "Main countdown duration",
+                subtitle: "1 – 180 min",
                 value: $focusMinutes,
                 range: 1...180,
                 suffix: "min"
             )
             NMStepperRow(
                 title: "Break",
-                subtitle: "Short reset duration",
+                subtitle: "1 – 60 min",
                 value: $breakMinutes,
                 range: 1...60,
                 suffix: "min"
             )
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Notch Indicator")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
-                Text("Choose how an active session appears on the closed notch.")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.5))
-                Picker("", selection: $indicatorStyle) {
-                    ForEach(PomodoroIndicatorStyle.allCases, id: \.self) { style in
-                        Text(style.rawValue).tag(style)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-            }
-
             Button {
-                session.applyConfiguredDurationToCurrentTimer(resetRemaining: true)
+                focusMinutes = 25
+                breakMinutes = 5
+                if !session.isRunning {
+                    session.applyConfiguredDurationToCurrentTimer(resetRemaining: true)
+                }
             } label: {
-                Label("Apply to Current Timer", systemImage: "arrow.clockwise")
+                Label("Reset to defaults (25 / 5)", systemImage: "arrow.uturn.backward")
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
-
-            NMPomodoroMiniPreview()
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(NMCardBG())
         .onChange(of: focusMinutes) { _, _ in
-            guard !session.isBreak else { return }
-            session.applyConfiguredDurationToCurrentTimer()
+            guard !session.isRunning, !session.isBreak else { return }
+            session.applyConfiguredDurationToCurrentTimer(resetRemaining: true)
         }
         .onChange(of: breakMinutes) { _, _ in
-            guard session.isBreak else { return }
-            session.applyConfiguredDurationToCurrentTimer()
+            guard !session.isRunning, session.isBreak else { return }
+            session.applyConfiguredDurationToCurrentTimer(resetRemaining: true)
         }
+    }
+}
+
+private struct NMPomodoroIndicatorCard: View {
+    @Default(.pomodoroIndicatorStyle) private var indicatorStyle
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Notch Indicator", subtitle: "Shown while a Pomodoro session is active.")
+
+            Picker("", selection: $indicatorStyle) {
+                Text("Off").tag(PomodoroIndicatorStyle.off)
+                Text("Dot").tag(PomodoroIndicatorStyle.dot)
+                Text("Ring").tag(PomodoroIndicatorStyle.ring)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+
+            NMPomodoroNotchPreview(isOpen: false)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMPomodoroCurrentTimerCard: View {
+    @Default(.pomodoroFocusMinutes) private var focusMinutes
+    @Default(.pomodoroBreakMinutes) private var breakMinutes
+    @ObservedObject private var session = FocusSessionModel.shared
+
+    private var stateLabel: String {
+        if !session.hasStarted { return "Idle" }
+        return session.isBreak ? "Break" : "Focus"
+    }
+
+    private var stateTint: Color {
+        if !session.hasStarted { return .white.opacity(0.55) }
+        return session.isBreak ? .green : .orange
+    }
+
+    private var needsApply: Bool {
+        guard session.hasStarted else { return false }
+        let configured = session.isBreak ? breakMinutes : focusMinutes
+        return Int(session.total) != configured * 60
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Current Timer", subtitle: "Control the live Pomodoro session.")
+
+            HStack(spacing: 18) {
+                ringDisplay
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Circle().fill(stateTint).frame(width: 7, height: 7)
+                        Text(stateLabel.uppercased())
+                            .font(.system(size: 10, weight: .heavy))
+                            .tracking(0.6)
+                            .foregroundStyle(stateTint)
+                    }
+                    Text(session.timeString)
+                        .font(.system(size: 34, weight: .light, design: .rounded))
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+                    Text("of \(session.totalString)")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .monospacedDigit()
+                }
+                Spacer()
+            }
+
+            buttonsRow
+
+            if needsApply {
+                Button {
+                    session.applyConfiguredDurationToCurrentTimer(resetRemaining: false)
+                } label: {
+                    Label("Apply Settings to Current Timer", systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .tint(.orange)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+
+    private var ringDisplay: some View {
+        ZStack {
+            Circle().stroke(.white.opacity(0.10), lineWidth: 6)
+            Circle()
+                .trim(from: 0, to: CGFloat(session.remainingFraction))
+                .stroke(
+                    AngularGradient(colors: [stateTint, stateTint.opacity(0.55), stateTint], center: .center),
+                    style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .animation(.linear(duration: 0.25), value: session.remainingFraction)
+        }
+        .frame(width: 78, height: 78)
+    }
+
+    private var buttonsRow: some View {
+        HStack(spacing: 8) {
+            Button {
+                session.startFocus()
+            } label: {
+                Label("Start Focus", systemImage: "play.fill")
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .tint(.orange)
+
+            Button {
+                session.startBreak()
+            } label: {
+                Label("Start Break", systemImage: "cup.and.saucer.fill")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+
+            Button {
+                session.toggle()
+            } label: {
+                Label(session.isRunning ? "Pause" : "Resume",
+                      systemImage: session.isRunning ? "pause.fill" : "play.fill")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .disabled(!session.hasStarted)
+
+            Button {
+                session.reset()
+            } label: {
+                Label("Reset", systemImage: "arrow.counterclockwise")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+
+            Spacer()
+        }
+    }
+}
+
+private struct NMPomodoroBehaviorCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            NMCardHeader(title: "Behavior", subtitle: "How sessions chain and notify when they end.")
+                .padding(.bottom, 8)
+
+            NMDefaultsSwitchRow(
+                title: "Auto-start break after focus",
+                subtitle: "Start the break countdown the moment focus ends.",
+                key: .pomodoroAutoStartBreak
+            )
+            Divider().background(Color.white.opacity(0.05))
+            NMDefaultsSwitchRow(
+                title: "Auto-start next focus after break",
+                subtitle: "Roll straight into the next focus block.",
+                key: .pomodoroAutoStartFocus
+            )
+            Divider().background(Color.white.opacity(0.05))
+            NMDefaultsSwitchRow(
+                title: "Play sound when session ends",
+                subtitle: "macOS Glass alert on completion.",
+                key: .pomodoroPlaySoundOnEnd
+            )
+            Divider().background(Color.white.opacity(0.05))
+            NMDefaultsSwitchRow(
+                title: "Show completion notification",
+                subtitle: "Banner via macOS Notification Center.",
+                key: .pomodoroShowCompletionNotification
+            )
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
     }
 }
 
@@ -3336,30 +3754,344 @@ private struct NMSwitchRow: View {
 private struct NMAboutPanel: View {
     let updaterController: SPUStandardUpdaterController?
 
+    @Default(.releaseName) private var releaseName: String
+    @State private var diagnosticsCopied: Bool = false
+    @State private var onboardingReset: Bool = false
+
+    private var versionString: String {
+        Bundle.main.releaseVersionNumber ?? "—"
+    }
+
+    private var buildString: String {
+        Bundle.main.buildVersionNumber ?? "—"
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            NMCardHeader(title: "About NotchMac", subtitle: "Personal fork of boring.notch (GPL-3.0).")
-            Text("Original by TheBoredTeam. Rebrand y personalizaciones por @fabiannavarrofonte.")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white.opacity(0.75))
-            Text("Version \(appVersion)")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.white.opacity(0.55))
+        VStack(spacing: 16) {
+            aboutCard
+            HStack(alignment: .top, spacing: 16) {
+                creditsCard
+                linksCard
+            }
+            diagnosticsCard
+        }
+    }
 
-            if let updater = updaterController?.updater {
-                NMUpdateRow(updater: updater)
+    // MARK: About card
+
+    private var aboutCard: some View {
+        HStack(alignment: .center, spacing: 18) {
+            appIcon
+                .frame(width: 72, height: 72)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(.white.opacity(0.06), lineWidth: 0.6)
+                )
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("NotchMac")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.white)
+                Text("Personal fork of boring.notch")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+
+                HStack(spacing: 8) {
+                    NMAboutTag(label: "Version", value: versionString)
+                    NMAboutTag(label: "Build", value: buildString)
+                    NMAboutTag(label: "Release", value: releaseName)
+                }
+                .padding(.top, 4)
             }
 
-            HStack {
-                Link("Original repo", destination: URL(string: "https://github.com/TheBoredTeam/boring.notch")!)
-                Spacer()
-                Link("This fork", destination: URL(string: "https://github.com/fabiannavarroo/Notch-Mac-v2")!)
-            }
-            .font(.system(size: 12, weight: .semibold))
+            Spacer(minLength: 0)
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(NMCardBG())
+    }
+
+    private var appIcon: some View {
+        Group {
+            if let icon = NSImage(named: NSImage.Name("AppIcon")) ?? NSApp.applicationIconImage {
+                Image(nsImage: icon)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+            } else {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.white.opacity(0.08))
+            }
+        }
+    }
+
+    // MARK: Credits card
+
+    private var creditsCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Credits", subtitle: "Project lineage and authors.")
+
+            VStack(spacing: 0) {
+                NMAboutCreditRow(
+                    title: "Original",
+                    value: "TheBoredTeam",
+                    url: URL(string: "https://github.com/TheBoredTeam")
+                )
+                NMUpdatesDivider()
+                NMAboutCreditRow(
+                    title: "Rebrand & customizations",
+                    value: "@fabiannavarrofonte",
+                    url: URL(string: "https://github.com/fabiannavarroo")
+                )
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+
+    // MARK: Links card
+
+    private var linksCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Links", subtitle: "Source, license, and releases.")
+
+            VStack(spacing: 0) {
+                NMAboutLinkRow(
+                    title: "Original repo",
+                    subtitle: "TheBoredTeam/boring.notch",
+                    systemImage: "chevron.left.forwardslash.chevron.right",
+                    url: URL(string: "https://github.com/TheBoredTeam/boring.notch")!
+                )
+                NMUpdatesDivider()
+                NMAboutLinkRow(
+                    title: "This fork",
+                    subtitle: "fabiannavarroo/Notch-Mac-v2",
+                    systemImage: "arrow.triangle.branch",
+                    url: URL(string: "https://github.com/fabiannavarroo/Notch-Mac-v2")!
+                )
+                NMUpdatesDivider()
+                NMAboutLinkRow(
+                    title: "License",
+                    subtitle: "GPL-3.0",
+                    systemImage: "doc.text",
+                    url: URL(string: "https://github.com/fabiannavarroo/Notch-Mac-v2/blob/main/LICENSE")!
+                )
+                NMUpdatesDivider()
+                NMAboutLinkRow(
+                    title: "Changelog / Releases",
+                    subtitle: "GitHub releases feed",
+                    systemImage: "tag",
+                    url: URL(string: "https://github.com/fabiannavarroo/Notch-Mac-v2/releases")!
+                )
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+
+    // MARK: Diagnostics card
+
+    private var diagnosticsCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Diagnostics", subtitle: "Helpful info when reporting a bug.")
+
+            HStack(spacing: 10) {
+                NMAboutActionButton(
+                    title: diagnosticsCopied ? "Copied" : "Copy Diagnostics",
+                    systemImage: diagnosticsCopied ? "checkmark" : "doc.on.clipboard",
+                    tint: .green
+                ) {
+                    copyDiagnostics()
+                }
+
+                NMAboutActionButton(
+                    title: "Open Logs",
+                    systemImage: "terminal",
+                    tint: .white.opacity(0.18)
+                ) {
+                    openLogs()
+                }
+
+                NMAboutActionButton(
+                    title: onboardingReset ? "Restarted" : "Reset Onboarding",
+                    systemImage: onboardingReset ? "checkmark" : "arrow.counterclockwise",
+                    tint: .white.opacity(0.18)
+                ) {
+                    resetOnboarding()
+                }
+
+                Spacer(minLength: 0)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+
+    // MARK: Actions
+
+    private func copyDiagnostics() {
+        let proc = ProcessInfo.processInfo
+        let os = proc.operatingSystemVersion
+        let osString = "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+        let lines: [String] = [
+            "NotchMac \(versionString) (\(buildString))",
+            "Release name: \(releaseName)",
+            "Bundle: \(Bundle.main.bundleIdentifier ?? "—")",
+            "macOS: \(osString)",
+            "Locale: \(Locale.current.identifier)",
+            "Screens: \(NSScreen.screens.count)"
+        ]
+        let payload = lines.joined(separator: "\n")
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(payload, forType: .string)
+
+        diagnosticsCopied = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            diagnosticsCopied = false
+        }
+    }
+
+    private func openLogs() {
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.fabiannavarrofonte.notchmac"
+        let consoleURL = URL(fileURLWithPath: "/System/Applications/Utilities/Console.app")
+        NSWorkspace.shared.open(consoleURL)
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(bundleID, forType: .string)
+    }
+
+    private func resetOnboarding() {
+        NotificationCenter.default.post(
+            name: .nmShowOnboarding,
+            object: nil,
+            userInfo: ["reset": true]
+        )
+        onboardingReset = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            onboardingReset = false
+        }
+    }
+}
+
+private struct NMAboutTag: View {
+    let label: String
+    let value: String
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(label.uppercased())
+                .font(.system(size: 9, weight: .heavy))
+                .foregroundStyle(.white.opacity(0.4))
+                .tracking(0.6)
+            Text(value)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.85))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill(.white.opacity(0.05))
+                .overlay(Capsule().stroke(.white.opacity(0.06), lineWidth: 0.5))
+        )
+    }
+}
+
+private struct NMAboutCreditRow: View {
+    let title: String
+    let value: String
+    let url: URL?
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+            Spacer()
+            if let url {
+                Button {
+                    NSWorkspace.shared.open(url)
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(value)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.85))
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+                .buttonStyle(.plain)
+            } else {
+                Text(value)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+        }
+        .padding(.vertical, 10)
+    }
+}
+
+private struct NMAboutLinkRow: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    let url: URL
+
+    var body: some View {
+        Button {
+            NSWorkspace.shared.open(url)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 18)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text(subtitle)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                Spacer()
+                Image(systemName: "arrow.up.right.square")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.45))
+            }
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct NMAboutActionButton: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: systemImage)
+                Text(title)
+            }
+            .font(.system(size: 12, weight: .semibold))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(tint.opacity(tint == .green ? 0.85 : 1))
+            )
+            .foregroundStyle(.white)
+        }
+        .buttonStyle(.plain)
     }
 }
 
