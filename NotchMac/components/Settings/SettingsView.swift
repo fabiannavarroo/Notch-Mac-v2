@@ -1651,49 +1651,41 @@ struct NotchUtilitySettingsView: View {
                     isSelected: selectedItem == .modules,
                     action: { selectedItem = .modules }
                 )
-                NMSidebarToggle(
+                NMSidebarItem(
                     title: "Music",
                     systemImage: "music.note",
-                    key: .showMusicModule,
-                    pair: .showCalendar,
                     isSelected: selectedItem == .music,
                     action: { selectedItem = .music }
                 )
-                NMSidebarToggle(
+                NMSidebarItem(
                     title: "Shelf",
                     systemImage: "tray.full.fill",
-                    key: .boringShelf,
                     isSelected: selectedItem == .shelf,
                     action: { selectedItem = .shelf }
                 )
-                NMSidebarToggle(
+                NMSidebarItem(
                     title: "Calendar",
                     systemImage: "calendar",
-                    key: .showCalendar,
-                    pair: .showMusicModule,
                     isSelected: selectedItem == .calendar,
                     action: { selectedItem = .calendar }
                 )
-                NMSidebarToggle(
+                NMSidebarItem(
                     title: "Battery",
                     systemImage: "battery.100",
-                    key: .showBatteryIndicator,
                     isSelected: selectedItem == .battery,
                     action: { selectedItem = .battery }
                 )
                 if AirPodsModule.visible {
-                    NMSidebarToggle(
+                    NMSidebarItem(
                         title: "AirPods",
                         systemImage: "airpods",
-                        key: .enableAirPodsWidget,
                         isSelected: selectedItem == .airPods,
                         action: { selectedItem = .airPods }
                     )
                 }
-                NMSidebarToggle(
+                NMSidebarItem(
                     title: "Pomodoro",
                     systemImage: "timer",
-                    key: .showTimerModule,
                     isSelected: selectedItem == .pomodoro,
                     action: { selectedItem = .pomodoro }
                 )
@@ -1802,10 +1794,8 @@ struct NotchUtilitySettingsView: View {
         VStack(spacing: 16) {
             switch selectedItem {
             case .general:
-                LazyVGrid(columns: twoColumnGrid, spacing: 16) {
-                    NMGeneralSystemCard()
-                    NMWindowPrivacyCard()
-                }
+                NMGeneralSystemCard()
+                NMWindowPrivacyCard()
                 NMAppStatusCard()
             case .notch:
                 NMBehaviorCard()
@@ -2236,61 +2226,6 @@ private struct NMSidebarItem: View {
             )
         }
         .buttonStyle(.plain)
-    }
-}
-
-private struct NMSidebarToggle: View {
-    let title: String
-    let systemImage: String
-    let key: Defaults.Key<Bool>
-    /// If set, turning this toggle OFF while the paired key is also OFF will auto-enable the pair
-    /// (mutual fallback). Used to guarantee at least one of music/calendar stays visible.
-    var pair: Defaults.Key<Bool>? = nil
-    var isSelected: Bool = false
-    var action: (() -> Void)? = nil
-    @Default(.showMusicModule) private var musicOn
-    @Default(.showCalendar) private var calendarOn
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: systemImage)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white.opacity(isSelected ? 1 : 0.7))
-                .frame(width: 18)
-            Text(title)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white.opacity(isSelected ? 1 : 0.85))
-            Spacer()
-            Toggle("", isOn: binding)
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.mini)
-                .tint(.green)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(.white.opacity(isSelected ? 0.10 : 0))
-        )
-        .contentShape(Rectangle())
-        .onTapGesture {
-            action?()
-        }
-    }
-
-    private var binding: Binding<Bool> {
-        Binding(
-            get: { Defaults[key] },
-            set: { newValue in
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
-                    Defaults[key] = newValue
-                    if let pair, newValue == false, Defaults[pair] == false {
-                        Defaults[pair] = true
-                    }
-                }
-            }
-        )
     }
 }
 
