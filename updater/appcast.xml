@@ -7,7 +7,7 @@
             <sparkle:version>192</sparkle:version>
             <sparkle:shortVersionString>1.7.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Auto-release 1.7.1 build 192.]]></description>
+            <description><![CDATA[<h3>NotchMac 1.7.1 — Español completo y pulido de Settings</h3><ul><li><b>Selector de idioma in-app:</b> Settings → General incluye picker <b>English / Español</b>. Cambia el idioma de toda la app al vuelo sin reiniciar.</li><li><b>Traducción al español:</b> 257+ cadenas localizadas — Pomodoro, Shortcuts, Updates, About, Modules, Music, Calendar, Battery, AirPods y onboarding incluidos.</li><li><b>Refactor i18n:</b> props <code>String</code> ahora se enrutan vía <code>LocalizedStringKey</code> al llegar a <code>Text</code>, así se traducen sin tocar cada vista.</li><li><b>Settings — General:</b> tarjetas apiladas en columna única para evitar cortes en notch estrecho.</li><li><b>Settings — Pomodoro:</b> "Durations" e "Indicator" apiladas verticalmente; preview de notch cerrado removido de la tarjeta Indicator (era redundante con el preview principal).</li><li><b>Settings — Updates / About:</b> apilados en columna; previews redundantes podados.</li></ul>]]></description>
             <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.7.1/NotchMac-1.7.1.zip" sparkle:edSignature="CK+Wv1yJduujD1iONTYZXrYmvwmJ8qpKX68TvfWeoyS09FANx35LsoRixzI4sGbPlqj+3h3TdPGEbPDsOFfgCQ==" length="10888385" type="application/octet-stream"/>
         </item>
 
