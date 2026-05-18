@@ -80,6 +80,31 @@ enum AlbumArtDisplayMode: String, CaseIterable, Identifiable, Defaults.Serializa
     }
 }
 
+// App-wide language override (independent of macOS system language)
+enum AppLanguage: String, CaseIterable, Identifiable, Defaults.Serializable {
+    case system
+    case english = "en"
+    case spanish = "es"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .system: return NSLocalizedString("System default", comment: "Language picker: follow macOS system language")
+        case .english: return "English"
+        case .spanish: return "Español"
+        }
+    }
+
+    var appleLanguagesValue: [String]? {
+        switch self {
+        case .system: return nil
+        case .english: return ["en"]
+        case .spanish: return ["es"]
+        }
+    }
+}
+
 // Action to perform when Option (⌥) is held while pressing media keys
 enum OptionKeyAction: String, CaseIterable, Identifiable, Defaults.Serializable {
     case openSettings = "Open System Settings"
@@ -95,6 +120,7 @@ extension Defaults.Keys {
     static let showOnAllDisplays = Key<Bool>("showOnAllDisplays", default: false)
     static let automaticallySwitchDisplay = Key<Bool>("automaticallySwitchDisplay", default: true)
     static let releaseName = Key<String>("releaseName", default: "Flying Rabbit 🐇🪽")
+    static let appLanguage = Key<AppLanguage>("appLanguage", default: .system)
     
     // MARK: Behavior
     static let minimumHoverDuration = Key<TimeInterval>("minimumHoverDuration", default: 0.3)

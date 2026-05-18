@@ -21,6 +21,10 @@ struct DynamicNotchApp: App {
     let updaterController: SPUStandardUpdaterController
 
     init() {
+        // Apply user-selected language override before any UI loads so Bundle.main
+        // resolves Localizable.xcstrings against the chosen locale.
+        LanguageManager.applySelectedLanguage()
+
         let statusModel = UpdatesStatusModel.shared
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true, updaterDelegate: statusModel, userDriverDelegate: nil)

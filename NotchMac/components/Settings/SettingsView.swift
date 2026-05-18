@@ -1787,6 +1787,7 @@ struct NotchUtilitySettingsView: View {
             switch selectedItem {
             case .general:
                 NMGeneralSystemCard()
+                NMLanguageCard()
                 NMWindowPrivacyCard()
                 NMAppStatusCard()
             case .notch:
@@ -1931,6 +1932,53 @@ private struct NMGeneralSystemCard: View {
         NSScreen.screens.compactMap { screen in
             guard let uuid = screen.displayUUID else { return nil }
             return (uuid, screen.localizedName)
+        }
+    }
+}
+
+private struct NMLanguageCard: View {
+    @Default(.appLanguage) private var appLanguage
+    @State private var initialLanguage: AppLanguage = Defaults[.appLanguage]
+    @State private var showRelaunchAlert = false
+
+    var body: some View {
+        NMSettingsCard(title: "Language") {
+            NMPreferenceRow(
+                title: "App language",
+                subtitle: "Override the macOS system language for NotchMac. A relaunch is required."
+            ) {
+                Picker("", selection: $appLanguage) {
+                    ForEach(AppLanguage.allCases) { lang in
+                        Text(lang.displayName).tag(lang)
+                    }
+                }
+                .labelsHidden()
+                .frame(width: 210)
+            }
+            .onChange(of: appLanguage) {
+                LanguageManager.applySelectedLanguage()
+                if appLanguage != initialLanguage {
+                    showRelaunchAlert = true
+                }
+            }
+
+            if appLanguage != initialLanguage {
+                NMPreferenceRow(
+                    title: "Relaunch required",
+                    subtitle: "Apply the language change by relaunching NotchMac now."
+                ) {
+                    Button("Relaunch") {
+                        LanguageManager.relaunchApp()
+                    }
+                    .controlSize(.small)
+                }
+            }
+        }
+        .alert("Relaunch NotchMac", isPresented: $showRelaunchAlert) {
+            Button("Relaunch now") { LanguageManager.relaunchApp() }
+            Button("Later", role: .cancel) {}
+        } message: {
+            Text("The language change will take effect after relaunching the app.")
         }
     }
 }
