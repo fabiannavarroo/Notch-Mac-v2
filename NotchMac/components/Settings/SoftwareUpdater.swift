@@ -8,6 +8,8 @@
 import Combine
 import SwiftUI
 import Sparkle
+import UserNotifications
+import AppKit
 
 final class CheckForUpdatesViewModel: ObservableObject {
     @Published var canCheckForUpdates = false
@@ -75,7 +77,13 @@ struct UpdaterSettingsView: View {
 /// and never lets it change. The panel mounts/unmounts as the user navigates,
 /// so the delegate has to outlive the view — hence `shared`, wired from
 /// `NotchMacApp.init`.
-final class UpdatesStatusModel: NSObject, ObservableObject, SPUUpdaterDelegate {
+/// `NSObject` + `SPUStandardUserDriverDelegate` together implement Sparkle's
+/// "gentle reminders" contract — required for LSUIElement apps so scheduled
+/// update alerts don't appear behind everything and get missed.
+/// https://sparkle-project.org/documentation/gentle-reminders/
+final class UpdatesStatusModel: NSObject, ObservableObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate, UNUserNotificationCenterDelegate {
+
+    private let notificationIdentifier = "com.fabiannavarrofonte.notchmac.sparkle.update"
 
     enum Status: Equatable {
         case idle
@@ -89,28 +97,57 @@ final class UpdatesStatusModel: NSObject, ObservableObject, SPUUpdaterDelegate {
 
     @Published private(set) var status: Status = .idle
     @Published var automaticallyChecksForUpdates: Bool = true {
-        didSet { updater?.automaticallyChecksForUpdates = automaticallyChecksForUpdates }
+        didSet {
+            guard !isSyncingFromUpdater, let updater else { return }
+            if updater.automaticallyChecksForUpdates != automaticallyChecksForUpdates {
+                updater.automaticallyChecksForUpdates = automaticallyChecksForUpdates
+                NSLog("[NotchMac][Updater] automaticallyChecksForUpdates -> \(automaticallyChecksForUpdates)")
+            }
+        }
     }
     @Published var automaticallyDownloadsUpdates: Bool = false {
-        didSet { updater?.automaticallyDownloadsUpdates = automaticallyDownloadsUpdates }
+        didSet {
+            guard !isSyncingFromUpdater, let updater else { return }
+            if updater.automaticallyDownloadsUpdates != automaticallyDownloadsUpdates {
+                updater.automaticallyDownloadsUpdates = automaticallyDownloadsUpdates
+                NSLog("[NotchMac][Updater] automaticallyDownloadsUpdates -> \(automaticallyDownloadsUpdates)")
+            }
+        }
     }
     @Published private(set) var canCheckForUpdates: Bool = false
     @Published private(set) var lastChecked: Date? = nil
     @Published private(set) var sessionInProgress: Bool = false
+    @Published private(set) var lastErrorMessage: String?
+    @Published private(set) var scheduledCheckInterval: TimeInterval = 3600
+
+    /// Computed at read time so the UI stays accurate without a timer.
+    var nextCheckDate: Date? {
+        guard automaticallyChecksForUpdates, let last = lastChecked else { return nil }
+        return last.addingTimeInterval(scheduledCheckInterval)
+    }
+
+    var feedURLString: String? {
+        updater?.feedURL?.absoluteString
+            ?? Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") as? String
+    }
 
     private weak var updater: SPUUpdater?
     private var cancellables = Set<AnyCancellable>()
+    private var isSyncingFromUpdater = false
 
     func attach(_ updater: SPUUpdater) {
         guard self.updater !== updater else { return }
         self.updater = updater
 
-        // Seed from Sparkle, then mirror back on user edits via didSet.
-        automaticallyChecksForUpdates = updater.automaticallyChecksForUpdates
-        automaticallyDownloadsUpdates = updater.automaticallyDownloadsUpdates
-        canCheckForUpdates = updater.canCheckForUpdates
-        lastChecked = updater.lastUpdateCheckDate
-        sessionInProgress = updater.sessionInProgress
+        // Seed published state from Sparkle without firing the didSet relay.
+        syncFromUpdater()
+
+        scheduledCheckInterval = updater.updateCheckInterval
+        if scheduledCheckInterval <= 0 {
+            scheduledCheckInterval =
+                (Bundle.main.object(forInfoDictionaryKey: "SUScheduledCheckInterval") as? NSNumber)?
+                .doubleValue ?? 3600
+        }
 
         updater.publisher(for: \.canCheckForUpdates)
             .receive(on: RunLoop.main)
@@ -132,6 +169,54 @@ final class UpdatesStatusModel: NSObject, ObservableObject, SPUUpdaterDelegate {
                 }
             }
             .store(in: &cancellables)
+
+        // Mirror Sparkle KVO back into our @Published toggles so external
+        // changes (e.g. the original `UpdaterSettingsView` form, defaults
+        // domain edits, scheduled scope updates) stay in sync with the UI.
+        updater.publisher(for: \.automaticallyChecksForUpdates)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] value in
+                guard let self else { return }
+                guard self.automaticallyChecksForUpdates != value else { return }
+                self.isSyncingFromUpdater = true
+                self.automaticallyChecksForUpdates = value
+                self.isSyncingFromUpdater = false
+            }
+            .store(in: &cancellables)
+
+        updater.publisher(for: \.automaticallyDownloadsUpdates)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] value in
+                guard let self else { return }
+                guard self.automaticallyDownloadsUpdates != value else { return }
+                self.isSyncingFromUpdater = true
+                self.automaticallyDownloadsUpdates = value
+                self.isSyncingFromUpdater = false
+            }
+            .store(in: &cancellables)
+
+        updater.publisher(for: \.updateCheckInterval)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] interval in
+                guard let self else { return }
+                self.scheduledCheckInterval = interval > 0 ? interval : 3600
+            }
+            .store(in: &cancellables)
+
+        NSLog("[NotchMac][Updater] attached automatic=\(updater.automaticallyChecksForUpdates) downloads=\(updater.automaticallyDownloadsUpdates) lastCheck=\(String(describing: updater.lastUpdateCheckDate)) interval=\(scheduledCheckInterval) feed=\(updater.feedURL?.absoluteString ?? "nil")")
+    }
+
+    /// Re-reads Sparkle state. Called when the Updates panel appears so the
+    /// switches reflect any drift that happened while the panel was unmounted.
+    func syncFromUpdater() {
+        guard let updater else { return }
+        isSyncingFromUpdater = true
+        automaticallyChecksForUpdates = updater.automaticallyChecksForUpdates
+        automaticallyDownloadsUpdates = updater.automaticallyDownloadsUpdates
+        canCheckForUpdates = updater.canCheckForUpdates
+        lastChecked = updater.lastUpdateCheckDate
+        sessionInProgress = updater.sessionInProgress
+        isSyncingFromUpdater = false
     }
 
     func checkForUpdates() {
@@ -150,19 +235,121 @@ final class UpdatesStatusModel: NSObject, ObservableObject, SPUUpdaterDelegate {
                 notes: item.itemDescription,
                 url: url
             )
+            self.lastErrorMessage = nil
         }
     }
 
     func updaterDidNotFindUpdate(_ updater: SPUUpdater) {
-        DispatchQueue.main.async { self.status = .upToDate }
+        DispatchQueue.main.async {
+            self.status = .upToDate
+            self.lastErrorMessage = nil
+        }
+    }
+
+    // MARK: SPUStandardUserDriverDelegate (gentle reminders for LSUIElement)
+
+    var supportsGentleScheduledUpdateReminders: Bool { true }
+
+    /// Sparkle is about to surface an update sheet. For background apps the
+    /// sheet alone is easy to miss, so we also fire a UNUserNotification and
+    /// activate the app so any window comes forward.
+    func standardUserDriverWillHandleShowingUpdate(
+        _ handleShowingUpdate: Bool,
+        forUpdate update: SUAppcastItem,
+        state: SPUUserUpdateState
+    ) {
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        if !state.userInitiated {
+            requestNotificationAuthorizationIfNeeded()
+            postUpdateNotification(for: update)
+        }
+        NSLog("[NotchMac][Updater] will show update version=\(update.displayVersionString) userInitiated=\(state.userInitiated)")
+    }
+
+    /// Sparkle is telling us the user engaged with its UI — clear any pending
+    /// notification so the user does not get nagged twice.
+    func standardUserDriverDidReceiveUserAttention(forUpdate update: SUAppcastItem) {
+        UNUserNotificationCenter.current()
+            .removeDeliveredNotifications(withIdentifiers: [notificationIdentifier])
+    }
+
+    func standardUserDriverWillFinishUpdateSession() {
+        // Return to background-only after the session finishes so we keep
+        // hiding the Dock icon when no update UI is on screen.
+        NSApp.setActivationPolicy(.accessory)
+    }
+
+    // MARK: UNUserNotificationCenterDelegate
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        if response.notification.request.identifier == notificationIdentifier {
+            // Re-trigger Sparkle so it brings the alert sheet to front.
+            DispatchQueue.main.async { [weak self] in
+                NSApp.setActivationPolicy(.regular)
+                NSApp.activate(ignoringOtherApps: true)
+                self?.updater?.checkForUpdates()
+            }
+        }
+        completionHandler()
+    }
+
+    // MARK: Notification helpers
+
+    private var notificationAuthorizationRequested = false
+
+    private func requestNotificationAuthorizationIfNeeded() {
+        guard !notificationAuthorizationRequested else { return }
+        notificationAuthorizationRequested = true
+        let center = UNUserNotificationCenter.current()
+        center.delegate = self
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error = error {
+                NSLog("[NotchMac][Updater] UN auth error: \(error)")
+            }
+            NSLog("[NotchMac][Updater] UN auth granted=\(granted)")
+        }
+    }
+
+    private func postUpdateNotification(for update: SUAppcastItem) {
+        let content = UNMutableNotificationContent()
+        content.title = "NotchMac update available"
+        content.body = "Version \(update.displayVersionString) is ready. Click to review."
+        content.sound = .default
+        let req = UNNotificationRequest(
+            identifier: notificationIdentifier, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(req) { error in
+            if let error = error {
+                NSLog("[NotchMac][Updater] UN post error: \(error)")
+            }
+        }
     }
 
     func updater(_ updater: SPUUpdater, didAbortWithError error: Error) {
         let ns = error as NSError
         // Sparkle reports user-cancelled checks as errors — treat them as idle.
         let cancelled = ns.domain == "SUSparkleErrorDomain" && ns.code == 4001
+        let msg = "\(ns.domain) \(ns.code): \(ns.localizedDescription)"
+        NSLog("[NotchMac][Updater] error: \(msg)")
         DispatchQueue.main.async {
-            self.status = cancelled ? .idle : .failed(ns.localizedDescription)
+            if cancelled {
+                self.status = .idle
+            } else {
+                self.status = .failed(ns.localizedDescription)
+                self.lastErrorMessage = msg
+            }
         }
     }
 }

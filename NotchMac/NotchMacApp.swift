@@ -26,8 +26,14 @@ struct DynamicNotchApp: App {
         LanguageManager.applySelectedLanguage()
 
         let statusModel = UpdatesStatusModel.shared
+        // Same object acts as both delegates. Sparkle requires the user-driver
+        // delegate for "gentle reminders" because the app is LSUIElement; the
+        // updater delegate handles appcast events. Both protocols are
+        // implemented on `UpdatesStatusModel`.
         updaterController = SPUStandardUpdaterController(
-            startingUpdater: true, updaterDelegate: statusModel, userDriverDelegate: nil)
+            startingUpdater: true,
+            updaterDelegate: statusModel,
+            userDriverDelegate: statusModel)
         statusModel.attach(updaterController.updater)
 
         // Initialize the settings window controller with the updater controller
@@ -429,6 +435,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NotchAppIcon.applyToApplication()
+
+        // Diagnostic snapshot — visible via Console.app filtered by "NotchMac".
+        // Why log on every launch: BTM can silently invalidate the SMAppService
+        // entry when the ad-hoc CDHash changes between builds, and Sparkle's
+        // scheduled timer only runs while the app process is alive — so seeing
+        // both states at boot is the fastest way to diagnose "did not auto-launch"
+        // and "did not auto-check" complaints.
+        let loginMgr = LaunchAtLoginManager.shared
+        let upd = UpdatesStatusModel.shared
+        NSLog("[NotchMac][Boot] bundlePath=\(Bundle.main.bundleURL.path)")
+        NSLog("[NotchMac][Boot] loginItemStatus=\(loginMgr.humanStatus) (raw=\(loginMgr.rawStatus.rawValue)) launchedAtLogin=\(loginMgr.launchedAsLoginItem)")
+        NSLog("[NotchMac][Boot] sparkle automatic=\(upd.automaticallyChecksForUpdates) downloads=\(upd.automaticallyDownloadsUpdates) lastCheck=\(upd.lastChecked.map { ISO8601DateFormatter().string(from: $0) } ?? "never") interval=\(upd.scheduledCheckInterval) feed=\(upd.feedURLString ?? "nil")")
+
+        // Diagnostic CLI flag — launching with `--nm-check-updates` triggers a
+        // user-initiated Sparkle check 2 s after launch. Used to verify the
+        // update pipeline without driving the Settings UI.
+        if ProcessInfo.processInfo.arguments.contains("--nm-check-updates") {
+            NSLog("[NotchMac][Boot] --nm-check-updates flag set, scheduling check")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                NSLog("[NotchMac][Boot] firing checkForUpdates() from CLI flag")
+                UpdatesStatusModel.shared.checkForUpdates()
+            }
+        }
 
         applyMenuBarIconVisibility(Defaults[.menubarIcon])
 

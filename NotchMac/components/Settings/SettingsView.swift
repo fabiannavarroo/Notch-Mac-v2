@@ -66,7 +66,14 @@ struct GeneralSettings: View {
                     Text("Show menu bar icon")
                 }
                 .tint(.effectiveAccent)
-                LaunchAtLogin.Toggle("Launch at login")
+                Toggle(
+                    "Launch at login",
+                    isOn: Binding(
+                        get: { LaunchAtLoginManager.shared.isEnabled },
+                        set: { LaunchAtLoginManager.shared.setEnabled($0) }
+                    )
+                )
+                .tint(.effectiveAccent)
                 Defaults.Toggle(key: .showOnAllDisplays) {
                     Text("Show on all displays")
                 }
@@ -1857,16 +1864,7 @@ private struct NMGeneralSystemCard: View {
                     .tint(.green)
             }
 
-            NMPreferenceRow(
-                title: "Launch at login",
-                subtitle: "Start NotchMac automatically when you sign in."
-            ) {
-                LaunchAtLogin.Toggle("")
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .tint(.green)
-            }
+            NMLaunchAtLoginRow()
 
             NMPreferenceRow(
                 title: "Show on all displays",
@@ -4105,6 +4103,7 @@ private struct NMUpdatesPanel: View {
             statusCard
             releaseNotesCard
         }
+        .onAppear { model.syncFromUpdater() }
     }
 
     // MARK: Software Updates
@@ -4172,7 +4171,21 @@ private struct NMUpdatesPanel: View {
                 NMUpdatesDivider()
                 NMUpdatesInfoRow(label: "Release name", value: Defaults[.releaseName])
                 NMUpdatesDivider()
+                NMUpdatesInfoRow(label: "Automatic checks", value: model.automaticallyChecksForUpdates ? "On" : "Off")
+                NMUpdatesDivider()
+                NMUpdatesInfoRow(label: "Automatic downloads", value: model.automaticallyDownloadsUpdates ? "On" : "Off")
+                NMUpdatesDivider()
+                NMUpdatesInfoRow(label: "Check interval", value: formattedInterval)
+                NMUpdatesDivider()
                 NMUpdatesInfoRow(label: "Last checked", value: formattedLastChecked)
+                NMUpdatesDivider()
+                NMUpdatesInfoRow(label: "Next check", value: formattedNextCheck)
+                NMUpdatesDivider()
+                NMUpdatesInfoRow(label: "Feed URL", value: model.feedURLString ?? "—")
+                if let err = model.lastErrorMessage {
+                    NMUpdatesDivider()
+                    NMUpdatesInfoRow(label: "Last error", value: err)
+                }
             }
         }
         .padding(20)
@@ -4186,6 +4199,25 @@ private struct NMUpdatesPanel: View {
         f.dateStyle = .medium
         f.timeStyle = .short
         return f.string(from: date)
+    }
+
+    private var formattedNextCheck: String {
+        guard let date = model.nextCheckDate else {
+            return model.automaticallyChecksForUpdates ? "Pending first check" : "Disabled"
+        }
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .short
+        let stamp = f.string(from: date)
+        if date < Date() { return "\(stamp) (due — will run shortly)" }
+        return stamp
+    }
+
+    private var formattedInterval: String {
+        let s = Int(model.scheduledCheckInterval)
+        if s >= 3600, s % 3600 == 0 { return "\(s / 3600) h" }
+        if s >= 60 { return "\(s / 60) min" }
+        return "\(s) s"
     }
 
     // MARK: Status
@@ -4323,6 +4355,125 @@ private struct NMUpdatesPanel: View {
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(NMCardBG())
+    }
+}
+
+// MARK: - Launch at login row (custom, with status + error visibility)
+
+private struct NMLaunchAtLoginRow: View {
+    @ObservedObject private var manager = LaunchAtLoginManager.shared
+    @State private var expanded: Bool = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            NMPreferenceRow(
+                title: "Launch at login",
+                subtitle: launchSubtitle
+            ) {
+                Toggle("", isOn: Binding(
+                    get: { manager.isEnabled },
+                    set: { manager.setEnabled($0) }
+                ))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .tint(.green)
+            }
+
+            if shouldShowDiagnostics {
+                VStack(alignment: .leading, spacing: 8) {
+                    diagnosticRow(label: "Status", value: manager.humanStatus, tint: statusTint)
+                    diagnosticRow(label: "Bundle path", value: manager.bundleLocation.path,
+                                  tint: manager.bundleIsInApplications ? .green : .orange)
+                    diagnosticRow(label: "Launched as login item",
+                                  value: manager.launchedAsLoginItem ? "Yes" : "No",
+                                  tint: .white.opacity(0.7))
+                    if let err = manager.lastError {
+                        diagnosticRow(label: "Last error", value: err, tint: .red)
+                    }
+                    HStack(spacing: 8) {
+                        if manager.status == .requiresApproval {
+                            Button {
+                                manager.openLoginItemsSettings()
+                            } label: {
+                                Label("Open Login Items in System Settings",
+                                      systemImage: "gearshape")
+                                    .font(.system(size: 11, weight: .semibold))
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+                        Button {
+                            manager.reRegister()
+                        } label: {
+                            Label("Re-register login item",
+                                  systemImage: "arrow.clockwise")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .help("Forces a fresh SMAppService unregister + register. Fixes BTM entries invalidated by ad-hoc CDHash changes between builds.")
+                    }
+                    if !manager.bundleIsInApplications {
+                        Text("Tip: For BTM to keep the entry across reboots, move NotchMac.app into /Applications. Ad-hoc-signed builds re-installed via Sparkle keep working if the path stays stable; running from the build folder will invalidate the entry on every rebuild.")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.orange.opacity(0.85))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(.white.opacity(0.03))
+                )
+                .padding(.top, 6)
+            }
+        }
+        .onAppear { manager.refresh() }
+    }
+
+    private var launchSubtitle: String {
+        switch manager.status {
+        case .enabled:
+            return "Approved · launches on sign in. Tap to disable."
+        case .requiresApproval:
+            return "Requires approval in System Settings → Login Items."
+        case .notRegistered:
+            return "Not registered. Toggle on to add to Login Items."
+        case .notFound:
+            return "BTM cannot locate this bundle. Move to /Applications."
+        case .unknown:
+            return "Status unknown. Toggle on/off to refresh."
+        }
+    }
+
+    private var shouldShowDiagnostics: Bool {
+        manager.status != .enabled || manager.lastError != nil || !manager.bundleIsInApplications
+    }
+
+    private var statusTint: Color {
+        switch manager.status {
+        case .enabled: return .green
+        case .requiresApproval: return .orange
+        case .notRegistered: return .white.opacity(0.6)
+        case .notFound, .unknown: return .red
+        }
+    }
+
+    private func diagnosticRow(label: String, value: String, tint: Color) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text(label)
+                .font(.system(size: 10, weight: .heavy))
+                .foregroundStyle(.white.opacity(0.45))
+                .tracking(0.4)
+                .frame(width: 130, alignment: .leading)
+            Text(value)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(tint)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }
 

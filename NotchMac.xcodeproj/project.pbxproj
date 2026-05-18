@@ -157,6 +157,7 @@
 		B1F747F92EC7E94000F841DB /* LottieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F747F82EC7E94000F841DB /* LottieView.swift */; };
 		B1FEB4992C7686630066EBBC /* PanGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1FEB4982C7686630066EBBC /* PanGesture.swift */; };
 		F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */; };
+		1A11C0DE10000001000A0002 /* LaunchAtLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A11C0DE10000001000A0001 /* LaunchAtLoginManager.swift */; };
 		CAFE1AE000000000000B0001 /* CaffeinateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAFE1AE000000000000F0001 /* CaffeinateManager.swift */; };
 		ED3CE16BE6E3437E9D653987 /* AirPodsAssetLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80CA1CB236EA4EF6911774E3 /* AirPodsAssetLoader.swift */; };
 		7A1436C3FBBB409DA3D6E4D1 /* AirPodsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2D13F28E5804A3CBD3E84EE /* AirPodsManager.swift */; };
@@ -346,6 +347,7 @@
 		B1F747F82EC7E94000F841DB /* LottieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottieView.swift; sourceTree = "<group>"; };
 		B1FEB4982C7686630066EBBC /* PanGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanGesture.swift; sourceTree = "<group>"; };
 		F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryActivityManager.swift; sourceTree = "<group>"; };
+		1A11C0DE10000001000A0001 /* LaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginManager.swift; sourceTree = "<group>"; };
 		CAFE1AE000000000000F0001 /* CaffeinateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeinateManager.swift; sourceTree = "<group>"; };
 		80CA1CB236EA4EF6911774E3 /* AirPodsAssetLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPodsAssetLoader.swift; sourceTree = "<group>"; };
 		D2D13F28E5804A3CBD3E84EE /* AirPodsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPodsManager.swift; sourceTree = "<group>"; };
@@ -574,6 +576,7 @@
 				C6555FA7B9C149AC84DE28E9 /* AudioOutputManager.swift */,
 				11D58EA12E760AE100FA8377 /* ImageService.swift */,
 				F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */,
+				1A11C0DE10000001000A0001 /* LaunchAtLoginManager.swift */,
 				CAFE1AE000000000000F0001 /* CaffeinateManager.swift */,
 				112FB7342CCF16F70015238C /* NotchSpaceManager.swift */,
 				147163992C5D35FF0068B555 /* MusicManager.swift */,
@@ -1109,6 +1112,7 @@
 				AB100000000000000A100013 /* AppleIntelligencePDFSummaryOverlay.swift in Sources */,
 				11F747CE2EC75CEA00F841DB /* DragPreviewView.swift in Sources */,
 				F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */,
+				1A11C0DE10000001000A0002 /* LaunchAtLoginManager.swift in Sources */,
 				CAFE1AE000000000000B0001 /* CaffeinateManager.swift in Sources */,
 				B10348D92C74E56000475897 /* ConditionalModifier.swift in Sources */,
 				118D1FD12E98FF5F00A2FF63 /* SharingStateManager.swift in Sources */,
