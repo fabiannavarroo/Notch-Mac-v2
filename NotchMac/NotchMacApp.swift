@@ -526,6 +526,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.refreshIslandVisibilityForActiveApp()
         }
 
+        NotificationCenter.default.addObserver(
+            forName: .nmShowOnboarding, object: nil, queue: .main
+        ) { [weak self] note in
+            Task { @MainActor in
+                guard let self else { return }
+                let resetFirstLaunch = (note.userInfo?["reset"] as? Bool) ?? false
+                if resetFirstLaunch {
+                    self.coordinator.firstLaunch = true
+                }
+                self.showOnboardingWindow()
+            }
+        }
+
         // Cuando el notch se cierra, si el frontmost está en la lista de auto-hide
         // re-ocultar la isla en vez de quedarnos en modo reducido.
         notchStateCancellable = vm.$notchState
@@ -849,6 +862,7 @@ extension Notification.Name {
     static let showOnAllDisplaysChanged = Notification.Name("showOnAllDisplaysChanged")
     static let automaticallySwitchDisplayChanged = Notification.Name("automaticallySwitchDisplayChanged")
     static let expandedDragDetectionChanged = Notification.Name("expandedDragDetectionChanged")
+    static let nmShowOnboarding = Notification.Name("nm.showOnboarding")
 }
 
 extension CGRect: @retroactive Hashable {
