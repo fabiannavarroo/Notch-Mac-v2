@@ -58,6 +58,11 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
     private var lastMusicItem:
         (title: String, artist: String, album: String, duration: TimeInterval, artworkData: Data?)?
 
+    // Cache of latest PlaybackState per bundle identifier, used by
+    // `MediaSourcePriority` to keep Apple Music / Spotify in front of
+    // browser sources (YouTube, etc.) when they are also active.
+    private var sourceStates: [String: PlaybackState] = [:]
+
     // MARK: - Media Remote Functions
     private let mediaRemoteBundle: CFBundle
     private let MRMediaRemoteSendCommandFunction: @convention(c) (Int, AnyObject?) -> Void
@@ -307,8 +312,28 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         newPlaybackState.audioCaptureBundleIdentifiers = captureBundleIdentifiers
 
         newPlaybackState.volume = payload.volume ?? (diff ? self.playbackState.volume : 0.5)
-        
-        self.playbackState = newPlaybackState
+
+        // Merge incoming update into the per-bundle cache, then let the
+        // priority arbiter decide which source the notch should display.
+        // Without this, a YouTube tab grabbing the system Now Playing
+        // session would visually replace Spotify/Apple Music even if
+        // they are still playing.
+        if !resolvedBundleIdentifier.isEmpty {
+            if diff, var existing = self.sourceStates[resolvedBundleIdentifier] {
+                existing = newPlaybackState
+                self.sourceStates[resolvedBundleIdentifier] = existing
+            } else {
+                self.sourceStates[resolvedBundleIdentifier] = newPlaybackState
+            }
+        }
+
+        let resolved = MediaSourcePriority.resolve(
+            from: self.sourceStates,
+            latestBundleID: resolvedBundleIdentifier,
+            currentDisplayed: self.playbackState
+        )
+
+        self.playbackState = resolved
         
         // Fetch favorite state for supported apps asynchronously
         // await fetchFavoriteStateIfSupported()
