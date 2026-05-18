@@ -28218,6 +28218,125 @@
           }
         }
       }
+    },
+    "Granted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Granted"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concedido"
+          }
+        }
+      }
+    },
+    "Required": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Required"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requerido"
+          }
+        }
+      }
+    },
+    "NotchMac intercepts the system HUD and draws inside the notch.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NotchMac intercepts the system HUD and draws inside the notch."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NotchMac intercepta el HUD del sistema y lo dibuja dentro del notch."
+          }
+        }
+      }
+    },
+    "Accessibility access is required before NotchMac can intercept HUDs.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accessibility access is required before NotchMac can intercept HUDs."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se requiere acceso de accesibilidad para que NotchMac pueda interceptar los HUD."
+          }
+        }
+      }
+    },
+    "Open System Settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir Ajustes del Sistema"
+          }
+        }
+      }
+    },
+    "Show HUD": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show HUD"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar HUD"
+          }
+        }
+      }
+    },
+    "No Action": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Action"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ninguna acción"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

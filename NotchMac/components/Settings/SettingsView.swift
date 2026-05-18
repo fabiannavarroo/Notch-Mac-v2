@@ -654,11 +654,14 @@ struct NMHUDPanel: View {
             LazyVGrid(columns: twoCol, spacing: 16) {
                 NMHUDBehaviorCard()
                 NMHUDAppearanceCard()
+            }
+
+            LazyVGrid(columns: twoCol, spacing: 16) {
                 NMHUDOpenNotchCard()
                 NMHUDClosedNotchCard()
             }
             .disabled(!hudReplacement)
-            .opacity(hudReplacement ? 1 : 0.45)
+            .opacity(hudReplacement ? 1 : 0.55)
 
             NMHUDCapsLockCard()
         }
