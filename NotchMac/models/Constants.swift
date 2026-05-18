@@ -194,6 +194,10 @@ extension Defaults.Keys {
     /// Visual style for an active Pomodoro session on the closed notch. Default `.dot` para que
     /// el indicador aparezca automáticamente junto a los tabs cuando hay una sesión activa.
     static let pomodoroIndicatorStyle = Key<PomodoroIndicatorStyle>("nm.pomodoro.indicatorStyle", default: .dot)
+    static let pomodoroAutoStartBreak = Key<Bool>("nm.pomodoro.autoStartBreak", default: false)
+    static let pomodoroAutoStartFocus = Key<Bool>("nm.pomodoro.autoStartFocus", default: false)
+    static let pomodoroPlaySoundOnEnd = Key<Bool>("nm.pomodoro.playSoundOnEnd", default: true)
+    static let pomodoroShowCompletionNotification = Key<Bool>("nm.pomodoro.showCompletionNotification", default: true)
 
     // MARK: Ref-design dashboard (mockup-style expanded view)
     static let nmDashboardRefDesign = Key<Bool>("nm.dashboard.refDesign", default: true)

@@ -5,8 +5,10 @@
 //  Pomodoro-only dashboard for the third notch screen.
 //
 
+import AppKit
 import Defaults
 import SwiftUI
+import UserNotifications
 
 @MainActor
 final class FocusSessionModel: ObservableObject {
@@ -16,6 +18,9 @@ final class FocusSessionModel: ObservableObject {
     @Published var total: TimeInterval
     @Published var isRunning: Bool = false
     @Published var isBreak: Bool = false
+    /// True when user has touched Start at least once on this session phase. Used to gate
+    /// the "Idle" label vs Focus/Break in UI.
+    @Published var hasStarted: Bool = false
 
     private var timer: Timer?
 
@@ -33,23 +38,90 @@ final class FocusSessionModel: ObservableObject {
 
     func start() {
         guard !isRunning else { return }
+        if remaining <= 0 {
+            let minutes = isBreak ? Defaults[.pomodoroBreakMinutes] : Defaults[.pomodoroFocusMinutes]
+            let seconds = Self.seconds(for: minutes)
+            total = seconds
+            remaining = seconds
+        }
         isRunning = true
+        hasStarted = true
         timer = Timer.scheduledTimer(withTimeInterval: Self.tickInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 guard let self else { return }
                 self.remaining = max(0, self.remaining - Self.tickInterval)
                 if self.remaining <= 0 {
                     self.remaining = 0
-                    self.pause()
+                    self.handleCompletion()
                 }
             }
         }
+    }
+
+    func startFocus() {
+        configure(isBreak: false)
+        start()
+    }
+
+    func startBreak() {
+        configure(isBreak: true)
+        start()
+    }
+
+    func reset() {
+        pause()
+        hasStarted = false
+        configure(isBreak: isBreak)
     }
 
     func pause() {
         isRunning = false
         timer?.invalidate()
         timer = nil
+    }
+
+    private func handleCompletion() {
+        pause()
+        let endedBreak = isBreak
+        if Defaults[.pomodoroPlaySoundOnEnd] {
+            NSSound(named: NSSound.Name("Glass"))?.play()
+        }
+        if Defaults[.pomodoroShowCompletionNotification] {
+            postCompletionNotification(endedBreak: endedBreak)
+        }
+        // Auto-chain
+        if !endedBreak && Defaults[.pomodoroAutoStartBreak] {
+            startBreak()
+        } else if endedBreak && Defaults[.pomodoroAutoStartFocus] {
+            startFocus()
+        }
+    }
+
+    private func postCompletionNotification(endedBreak: Bool) {
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            let deliver: () -> Void = {
+                let content = UNMutableNotificationContent()
+                content.title = endedBreak ? "Break finished" : "Focus finished"
+                content.body = endedBreak ? "Time to focus again." : "Time for a short break."
+                content.sound = nil
+                let req = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+                center.add(req)
+            }
+            switch settings.authorizationStatus {
+            case .authorized, .provisional, .ephemeral:
+                deliver()
+            case .notDetermined:
+                center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+                    if granted { deliver() }
+                }
+            default:
+                break
+            }
+        }
+        if !NSApp.isActive {
+            NSApp.requestUserAttention(.informationalRequest)
+        }
     }
 
     func resetToFocusDuration() {

@@ -1828,7 +1828,7 @@ struct NotchUtilitySettingsView: View {
                     NMAirPodsPanel()
                 }
             case .pomodoro:
-                NMPomodoroSettingsCard()
+                NMPomodoroPanel()
             case .hud:
                 NMHUDPanel()
             case .shortcuts:
