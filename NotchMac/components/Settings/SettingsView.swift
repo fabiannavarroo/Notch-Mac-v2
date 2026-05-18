@@ -624,125 +624,45 @@ private struct NMPowerEventStatus: View {
 }
 
 struct HUD: View {
-    @EnvironmentObject var vm: BoringViewModel
-    @Default(.inlineHUD) var inlineHUD
-    @Default(.enableGradient) var enableGradient
-    @Default(.optionKeyAction) var optionKeyAction
-    @Default(.hudReplacement) var hudReplacement
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    var body: some View { NMHUDPanel() }
+}
+
+// MARK: - HUD panel (sidebar route)
+
+struct NMHUDPanel: View {
+    @Default(.hudReplacement) private var hudReplacement
+    @Default(.optionKeyAction) private var optionKeyAction
+    @Default(.enableGradient) private var enableGradient
+    @Default(.systemEventIndicatorShadow) private var glow
+    @Default(.systemEventIndicatorUseAccent) private var useAccent
+    @Default(.showOpenNotchHUD) private var showOpenHUD
+    @Default(.showOpenNotchHUDPercentage) private var openPct
+    @Default(.inlineHUD) private var inlineHUD
+    @Default(.showClosedNotchHUDPercentage) private var closedPct
+    @Default(.showCapsLockHUD) private var capsHUD
+
     @State private var accessibilityAuthorized = false
-    
+
+    private var twoCol: [GridItem] {
+        [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+    }
+
     var body: some View {
-        Form {
-            Section {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Replace system HUD")
-                            .font(.headline)
-                        Text("Replaces the standard macOS volume, display brightness, and keyboard brightness HUDs with a custom design.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    Spacer(minLength: 40)
-                    Defaults.Toggle("", key: .hudReplacement)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.large)
-                    .disabled(!accessibilityAuthorized)
-                }
-                
-                if !accessibilityAuthorized {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Accessibility access is required to replace the system HUD.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 16) {
+            NMHUDReplacementCard(authorized: accessibilityAuthorized)
 
-                        HStack(spacing: 12) {
-                            Button("Request Accessibility") {
-                                XPCHelperClient.shared.requestAccessibilityAuthorization()
-                            }
-                            .buttonStyle(.borderedProminent)
-                        }
-                    }
-                    .padding(.top, 6)
-                }
-            }
-            
-            Section {
-                Picker("Option key behaviour", selection: $optionKeyAction) {
-                    ForEach(OptionKeyAction.allCases) { opt in
-                        Text(opt.rawValue).tag(opt)
-                    }
-                }
-                
-                Picker("Progress bar style", selection: $enableGradient) {
-                    Text("Hierarchical")
-                        .tag(false)
-                    Text("Gradient")
-                        .tag(true)
-                }
-                Defaults.Toggle(key: .systemEventIndicatorShadow) {
-                    Text("Enable glowing effect")
-                }
-                Defaults.Toggle(key: .systemEventIndicatorUseAccent) {
-                    Text("Tint progress bar with accent color")
-                }
-            } header: {
-                Text("General")
+            LazyVGrid(columns: twoCol, spacing: 16) {
+                NMHUDBehaviorCard()
+                NMHUDAppearanceCard()
+                NMHUDOpenNotchCard()
+                NMHUDClosedNotchCard()
             }
             .disabled(!hudReplacement)
-            
-            Section {
-                Defaults.Toggle(key: .showOpenNotchHUD) {
-                    Text("Show HUD in open notch")
-                }
-                Defaults.Toggle(key: .showOpenNotchHUDPercentage) {
-                    Text("Show percentage")
-                }
-                .disabled(!Defaults[.showOpenNotchHUD])
-            } header: {
-                HStack {
-                    Text("Open Notch")
-                    customBadge(text: "Beta")
-                }
-            }
-            .disabled(!hudReplacement)
-            
-            Section {
-                Picker("HUD style", selection: $inlineHUD) {
-                    Text("Default")
-                        .tag(false)
-                    Text("Inline")
-                        .tag(true)
-                }
-                .onChange(of: Defaults[.inlineHUD]) {
-                    if Defaults[.inlineHUD] {
-                        withAnimation {
-                            Defaults[.systemEventIndicatorShadow] = false
-                            Defaults[.enableGradient] = false
-                        }
-                    }
-                }
-                
-                Defaults.Toggle(key: .showClosedNotchHUDPercentage) {
-                    Text("Show percentage")
-                }
-            } header: {
-                Text("Closed Notch")
-            }
-            .disabled(!Defaults[.hudReplacement])
+            .opacity(hudReplacement ? 1 : 0.45)
 
-            Section {
-                Defaults.Toggle(key: .showCapsLockHUD) {
-                    Text("Show Caps Lock indicator in notch")
-                }
-            } header: {
-                Text("Caps Lock")
-            }
+            NMHUDCapsLockCard()
         }
         .accentColor(.effectiveAccent)
-        .navigationTitle("HUDs")
         .task {
             accessibilityAuthorized = await XPCHelperClient.shared.isAccessibilityAuthorized()
         }
@@ -752,10 +672,332 @@ struct HUD: View {
         .onDisappear {
             XPCHelperClient.shared.stopMonitoringAccessibilityAuthorization()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .accessibilityAuthorizationChanged)) { notification in
-            if let granted = notification.userInfo?["granted"] as? Bool {
+        .onReceive(NotificationCenter.default.publisher(for: .accessibilityAuthorizationChanged)) { note in
+            if let granted = note.userInfo?["granted"] as? Bool {
                 accessibilityAuthorized = granted
+                if !granted { hudReplacement = false }
             }
+        }
+        .onChange(of: inlineHUD) { _, newValue in
+            if newValue {
+                withAnimation {
+                    glow = false
+                    enableGradient = false
+                }
+            }
+        }
+    }
+}
+
+// MARK: - HUD cards
+
+private struct NMHUDReplacementCard: View {
+    let authorized: Bool
+    @Default(.hudReplacement) private var hudReplacement
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "System HUD Replacement",
+                         subtitle: "Take over the macOS volume, brightness, and keyboard HUDs.")
+
+            HStack(alignment: .center, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text("Replace system HUD")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.white)
+                        NMBadge(authorized ? "Granted" : "Required",
+                                color: authorized ? .green : .orange)
+                    }
+                    Text(authorized
+                         ? "NotchMac intercepts the system HUD and draws inside the notch."
+                         : "Accessibility access is required before NotchMac can intercept HUDs.")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 16)
+                Toggle("", isOn: $hudReplacement)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .tint(.green)
+                    .disabled(!authorized)
+            }
+
+            if !authorized {
+                Button {
+                    XPCHelperClient.shared.requestAccessibilityAuthorization()
+                } label: {
+                    Label("Request Accessibility", systemImage: "lock.shield")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .tint(.accentColor)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMHUDBehaviorCard: View {
+    @Default(.optionKeyAction) private var optionKeyAction
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Behavior",
+                         subtitle: "Action triggered when ⌥ is held on a media key.")
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Option key behaviour")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                Picker("", selection: $optionKeyAction) {
+                    Text("Open System Settings").tag(OptionKeyAction.openSettings)
+                    Text("Show HUD").tag(OptionKeyAction.showHUD)
+                    Text("No Action").tag(OptionKeyAction.none)
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .controlSize(.small)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMHUDAppearanceCard: View {
+    @Default(.enableGradient) private var enableGradient
+    @Default(.systemEventIndicatorShadow) private var glow
+    @Default(.systemEventIndicatorUseAccent) private var useAccent
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Appearance",
+                         subtitle: "Progress bar style and accent treatment.")
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Progress bar style")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                Picker("", selection: $enableGradient) {
+                    Text("Hierarchical").tag(false)
+                    Text("Gradient").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.small)
+            }
+
+            NMSwitchRow(title: "Enable glowing effect",
+                        subtitle: "Adds a soft glow around the active progress bar.",
+                        isOn: $glow)
+
+            NMSwitchRow(title: "Tint progress bar with accent color",
+                        subtitle: "Use the system accent color on the HUD progress fill.",
+                        isOn: $useAccent)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMHUDOpenNotchCard: View {
+    @Default(.showOpenNotchHUD) private var showOpenHUD
+    @Default(.showOpenNotchHUDPercentage) private var openPct
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top) {
+                NMCardHeader(title: "Open Notch HUD",
+                             subtitle: "Volume, brightness, and keyboard inside the expanded notch.")
+                Spacer()
+                NMBadge("Beta", color: .purple)
+            }
+
+            NMSwitchRow(title: "Show HUD in open notch",
+                        subtitle: "Render volume / brightness / keyboard in the expanded notch.",
+                        isOn: $showOpenHUD)
+
+            NMSwitchRow(title: "Show percentage",
+                        subtitle: "Append the current value next to the progress bar.",
+                        isOn: $openPct)
+                .disabled(!showOpenHUD)
+                .opacity(showOpenHUD ? 1 : 0.45)
+
+            NMHUDPreview(style: .open, showPercentage: openPct)
+                .opacity(showOpenHUD ? 1 : 0.45)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMHUDClosedNotchCard: View {
+    @Default(.inlineHUD) private var inlineHUD
+    @Default(.showClosedNotchHUDPercentage) private var closedPct
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Closed Notch HUD",
+                         subtitle: "Compact indicator drawn beside the closed notch.")
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("HUD style")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                Picker("", selection: $inlineHUD) {
+                    Text("Default").tag(false)
+                    Text("Inline").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.small)
+            }
+
+            NMSwitchRow(title: "Show percentage",
+                        subtitle: "Append the current value next to the bar.",
+                        isOn: $closedPct)
+
+            NMHUDPreview(style: inlineHUD ? .closedInline : .closedDefault,
+                         showPercentage: closedPct)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMHUDCapsLockCard: View {
+    @Default(.showCapsLockHUD) private var capsHUD
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Caps Lock",
+                         subtitle: "Pulse a Caps Lock indicator in the notch on state change.")
+
+            NMSwitchRow(title: "Show Caps Lock indicator in notch",
+                        subtitle: "Animate a Caps Lock chip on the closed notch.",
+                        isOn: $capsHUD)
+
+            NMCapsLockPreview(isOn: capsHUD)
+                .opacity(capsHUD ? 1 : 0.45)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+// MARK: - HUD previews
+
+private enum NMHUDPreviewStyle {
+    case open
+    case closedDefault
+    case closedInline
+}
+
+private struct NMHUDPreview: View {
+    let style: NMHUDPreviewStyle
+    let showPercentage: Bool
+    @Default(.enableGradient) private var enableGradient
+    @Default(.systemEventIndicatorShadow) private var glow
+    @Default(.systemEventIndicatorUseAccent) private var useAccent
+
+    var body: some View {
+        HStack(spacing: 10) {
+            previewPill(icon: "speaker.wave.2.fill", value: 0.65, label: "65%")
+            previewPill(icon: "sun.max.fill", value: 0.82, label: "82%")
+            previewPill(icon: "keyboard.fill", value: 0.40, label: "40%")
+        }
+    }
+
+    private func previewPill(icon: String, value: CGFloat, label: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 14)
+            barShape(value: value)
+                .frame(height: style == .closedInline ? 4 : 6)
+            if showPercentage {
+                Text(label)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .monospacedDigit()
+            }
+        }
+        .padding(.horizontal, style == .closedInline ? 8 : 10)
+        .padding(.vertical, style == .closedInline ? 6 : 9)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: style == .closedInline ? 10 : 14, style: .continuous)
+                .fill(.black)
+                .overlay(
+                    RoundedRectangle(cornerRadius: style == .closedInline ? 10 : 14, style: .continuous)
+                        .stroke(.white.opacity(0.08), lineWidth: 0.7)
+                )
+        )
+    }
+
+    @ViewBuilder
+    private func barShape(value: CGFloat) -> some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(.white.opacity(0.12))
+                Capsule()
+                    .fill(fillStyle)
+                    .frame(width: max(0, geo.size.width * value))
+                    .shadow(color: glow ? glowColor : .clear, radius: 6, x: 0, y: 0)
+            }
+        }
+    }
+
+    private var fillStyle: AnyShapeStyle {
+        if enableGradient {
+            let colors: [Color] = useAccent
+                ? [Color.effectiveAccent, Color.effectiveAccent.ensureMinimumBrightness(factor: 0.2)]
+                : [Color.white, Color.white.opacity(0.25)]
+            return AnyShapeStyle(LinearGradient(colors: colors, startPoint: .trailing, endPoint: .leading))
+        }
+        return AnyShapeStyle(useAccent ? Color.effectiveAccent : Color.white)
+    }
+
+    private var glowColor: Color {
+        useAccent ? Color.effectiveAccent.ensureMinimumBrightness(factor: 0.7) : .white
+    }
+}
+
+private struct NMCapsLockPreview: View {
+    let isOn: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Spacer(minLength: 0)
+            HStack(spacing: 8) {
+                Image(systemName: "capslock.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(isOn ? .green : .white.opacity(0.6))
+                Text(isOn ? "Caps Lock indicator active" : "Caps Lock indicator off")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(isOn ? 0.95 : 0.55))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(.black)
+                    .overlay(Capsule().stroke(.white.opacity(0.1), lineWidth: 0.7))
+            )
+            Spacer(minLength: 0)
         }
     }
 }
@@ -1280,29 +1522,8 @@ struct Shelf: View {
 //    }
 //}
 
-struct Shortcuts: View {
-    var body: some View {
-        Form {
-            Section {
-                KeyboardShortcuts.Recorder("Toggle Sneak Peek:", name: .toggleSneakPeek)
-            } header: {
-                Text("Media")
-            } footer: {
-                Text(
-                    "Sneak Peek shows the media title and artist under the notch for a few seconds."
-                )
-                .multilineTextAlignment(.trailing)
-                .foregroundStyle(.secondary)
-                .font(.caption)
-            }
-            Section {
-                KeyboardShortcuts.Recorder("Toggle Notch Open:", name: .toggleNotchOpen)
-            }
-        }
-        .accentColor(.effectiveAccent)
-        .navigationTitle("Shortcuts")
-    }
-}
+// Legacy `Shortcuts` form view replaced by `NMShortcutsPanel`
+// (rendered through `NotchUtilitySettingsView`'s sidebar route).
 
 func customBadge(text: String) -> some View {
     Text(text)
@@ -1345,6 +1566,9 @@ struct NotchUtilitySettingsView: View {
         case calendar
         case battery
         case airPods
+        case hud
+        case shortcuts
+        case updates
     }
 
     let updaterController: SPUStandardUpdaterController?
@@ -1453,6 +1677,33 @@ struct NotchUtilitySettingsView: View {
             .padding(.horizontal, 14)
             .padding(.bottom, 18)
 
+            NMSidebarSection(title: "SYSTEM")
+                .padding(.horizontal, 18)
+                .padding(.bottom, 8)
+
+            VStack(spacing: 2) {
+                NMSidebarItem(
+                    title: "HUD",
+                    systemImage: "speaker.wave.2.fill",
+                    isSelected: selectedItem == .hud,
+                    action: { selectedItem = .hud }
+                )
+                NMSidebarItem(
+                    title: "Shortcuts",
+                    systemImage: "command",
+                    isSelected: selectedItem == .shortcuts,
+                    action: { selectedItem = .shortcuts }
+                )
+                NMSidebarItem(
+                    title: "Updates",
+                    systemImage: "arrow.triangle.2.circlepath",
+                    isSelected: selectedItem == .updates,
+                    action: { selectedItem = .updates }
+                )
+            }
+            .padding(.horizontal, 14)
+            .padding(.bottom, 18)
+
             Spacer(minLength: 0)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -1487,6 +1738,9 @@ struct NotchUtilitySettingsView: View {
         case .calendar: return "Calendar"
         case .battery: return "Battery"
         case .airPods: return "AirPods"
+        case .hud: return "HUD"
+        case .shortcuts: return "Shortcuts"
+        case .updates: return "Updates"
         }
     }
 
@@ -1498,6 +1752,9 @@ struct NotchUtilitySettingsView: View {
         case .calendar: return "Events, reminders, and agenda shown in the notch."
         case .battery: return "Battery level, charging state, and power notifications."
         case .airPods: return "3D live activity, battery rings, and connection alerts."
+        case .hud: return "Replace macOS volume, brightness, keyboard, and Caps Lock indicators."
+        case .shortcuts: return "Keyboard shortcuts for fast notch controls."
+        case .updates: return "Keep NotchMac current with automatic releases."
         }
     }
 
@@ -1524,6 +1781,12 @@ struct NotchUtilitySettingsView: View {
                 if AirPodsModule.visible {
                     NMAirPodsPanel()
                 }
+            case .hud:
+                NMHUDPanel()
+            case .shortcuts:
+                NMShortcutsPanel()
+            case .updates:
+                NMUpdatesPanel(updater: updaterController?.updater)
             }
         }
     }
@@ -3141,6 +3404,297 @@ private struct NMUpdateRow: View {
 }
 
 
+// MARK: - Updates panel
+
+private struct NMUpdatesPanel: View {
+    let updater: SPUUpdater?
+    @ObservedObject private var model = UpdatesStatusModel.shared
+
+    var body: some View {
+        VStack(spacing: 16) {
+            softwareUpdatesCard
+            HStack(alignment: .top, spacing: 16) {
+                versionCard
+                statusCard
+            }
+            releaseNotesCard
+        }
+    }
+
+    // MARK: Software Updates
+
+    private var softwareUpdatesCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Software Updates", subtitle: "Sparkle pulls signed releases from GitHub.")
+
+            NMUpdatesSwitchRow(
+                title: "Automatically check for updates",
+                subtitle: "Look for new releases every hour.",
+                isOn: $model.automaticallyChecksForUpdates,
+                isEnabled: updater != nil
+            )
+            NMUpdatesSwitchRow(
+                title: "Automatically download updates",
+                subtitle: "Stage the installer in the background when one is found.",
+                isOn: $model.automaticallyDownloadsUpdates,
+                isEnabled: updater != nil && model.automaticallyChecksForUpdates
+            )
+
+            Divider().background(.white.opacity(0.06))
+
+            HStack(spacing: 10) {
+                Text("Trigger an immediate check now.")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+                Spacer()
+                Button {
+                    model.checkForUpdates()
+                } label: {
+                    HStack(spacing: 6) {
+                        if model.sessionInProgress {
+                            ProgressView()
+                                .controlSize(.mini)
+                                .scaleEffect(0.7)
+                        } else {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                        }
+                        Text(model.sessionInProgress ? "Checking…" : "Check for Updates")
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .tint(.green)
+                .disabled(updater == nil || !model.canCheckForUpdates || model.sessionInProgress)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+
+    // MARK: Current Version
+
+    private var versionCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Current Version", subtitle: "Build info reported by the app bundle.")
+
+            VStack(spacing: 0) {
+                NMUpdatesInfoRow(label: "App version", value: Bundle.main.releaseVersionNumber ?? "—")
+                NMUpdatesDivider()
+                NMUpdatesInfoRow(label: "Build number", value: Bundle.main.buildVersionNumber ?? "—")
+                NMUpdatesDivider()
+                NMUpdatesInfoRow(label: "Release name", value: Defaults[.releaseName])
+                NMUpdatesDivider()
+                NMUpdatesInfoRow(label: "Last checked", value: formattedLastChecked)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+
+    private var formattedLastChecked: String {
+        guard let date = model.lastChecked else { return "Never" }
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .short
+        return f.string(from: date)
+    }
+
+    // MARK: Status
+
+    private var statusCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Status", subtitle: "Updater feedback.")
+
+            HStack(spacing: 12) {
+                statusIcon
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(statusTitle)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text(statusSubtitle)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .lineLimit(2)
+                }
+                Spacer()
+                if model.sessionInProgress {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            }
+
+            if case let .updateAvailable(_, _, url?) = model.status {
+                Button {
+                    NSWorkspace.shared.open(url)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.down.circle.fill")
+                        Text("Download update")
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .tint(.green)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+
+    private var statusIcon: some View {
+        Group {
+            switch model.status {
+            case .checking:
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .foregroundStyle(.white)
+            case .upToDate:
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundStyle(.green)
+            case .updateAvailable:
+                Image(systemName: "arrow.down.circle.fill")
+                    .foregroundStyle(.green)
+            case .failed:
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+            case .idle:
+                Image(systemName: "circle.dotted")
+                    .foregroundStyle(.white.opacity(0.6))
+            }
+        }
+        .font(.system(size: 18, weight: .semibold))
+        .frame(width: 22)
+    }
+
+    private var statusTitle: String {
+        switch model.status {
+        case .checking: return "Checking…"
+        case .upToDate: return "Up to date"
+        case .updateAvailable(let v, _, _): return "Update available · \(v)"
+        case .failed: return "Check failed"
+        case .idle: return "Idle"
+        }
+    }
+
+    private var statusSubtitle: String {
+        switch model.status {
+        case .checking:
+            return "Contacting the appcast feed."
+        case .upToDate:
+            return "You have the latest signed release."
+        case .updateAvailable(_, let notes, _):
+            if let notes, !notes.isEmpty {
+                return notes.replacingOccurrences(of: "\n", with: " ")
+            }
+            return "A newer signed release is available."
+        case .failed(let msg):
+            return msg
+        case .idle:
+            return "Click Check for Updates to query the feed."
+        }
+    }
+
+    // MARK: Release Notes
+
+    private var releaseNotesCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NMCardHeader(title: "Release Notes", subtitle: "What changed in recent releases.")
+
+            if case let .updateAvailable(_, notes, _) = model.status, let notes, !notes.isEmpty {
+                Text(notes)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.78))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Text("Notes appear here when an update is detected. Open the releases page for the full changelog.")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            if let url = URL(string: "https://github.com/fabiannavarroo/Notch-Mac-v2/releases") {
+                HStack {
+                    Spacer()
+                    Button {
+                        NSWorkspace.shared.open(url)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.up.right.square")
+                            Text("Open Releases")
+                        }
+                        .font(.system(size: 12, weight: .semibold))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .tint(.white)
+                }
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NMCardBG())
+    }
+}
+
+private struct NMUpdatesSwitchRow: View {
+    let title: String
+    let subtitle: String
+    @Binding var isOn: Bool
+    let isEnabled: Bool
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(isEnabled ? 1 : 0.45))
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(isEnabled ? 0.5 : 0.3))
+            }
+            Spacer()
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .tint(.green)
+                .disabled(!isEnabled)
+        }
+    }
+}
+
+private struct NMUpdatesInfoRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.7))
+            Spacer()
+            Text(value)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.white.opacity(0.92))
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+private struct NMUpdatesDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(.white.opacity(0.06))
+            .frame(height: 0.6)
+    }
+}
+
 // MARK: - AirPods debug card
 
 private struct NMAirPodsDebugCard: View {
@@ -4602,4 +5156,355 @@ private struct NMAirPodsRowDivider: View {
             .fill(.white.opacity(0.06))
             .frame(height: 1)
     }
+}
+
+// MARK: - Shortcuts panel
+
+private struct NMShortcutsPanel: View {
+    @State private var conflictMessage: String? = nil
+    @State private var unregistrableMessage: String? = nil
+
+    private let recordable: [KeyboardShortcuts.Name] = [
+        .toggleSneakPeek,
+        .toggleNotchOpen,
+        .hideIsland
+    ]
+
+    private static let shortcutChangeNotification =
+        Notification.Name("KeyboardShortcuts_shortcutByNameDidChange")
+
+    var body: some View {
+        VStack(spacing: 16) {
+            mediaCard
+            notchCard
+            actionsCard
+            conflictsCard
+        }
+        .onAppear(perform: refreshState)
+        .onReceive(NotificationCenter.default.publisher(for: Self.shortcutChangeNotification)) { _ in
+            refreshState()
+        }
+    }
+
+    // MARK: Cards
+
+    private var mediaCard: some View {
+        NMSettingsCard(title: "Media") {
+            NMShortcutRow(
+                title: "Sneak Peek",
+                subtitle: "Toggles the quick media glance under the closed notch.",
+                name: .toggleSneakPeek
+            )
+        }
+    }
+
+    private var notchCard: some View {
+        NMSettingsCard(title: "Notch") {
+            NMShortcutRow(
+                title: "Toggle Notch Open",
+                subtitle: "Expands or collapses the notch from anywhere.",
+                name: .toggleNotchOpen
+            )
+            NMShortcutsDivider()
+            NMShortcutDisplayRow(
+                title: "Manual Hide Island",
+                subtitle: "Hide the live activity island instantly.",
+                name: .hideIsland
+            )
+        }
+    }
+
+    private var actionsCard: some View {
+        NMSettingsCard(title: "Actions") {
+            NMShortcutActionRow(
+                title: "Reset Shortcuts",
+                subtitle: "Restore every recorded shortcut to its default.",
+                buttonLabel: "Reset",
+                role: .standard,
+                action: resetAll
+            )
+            NMShortcutsDivider()
+            NMShortcutActionRow(
+                title: "Clear Shortcuts",
+                subtitle: "Remove every recorded shortcut binding.",
+                buttonLabel: "Clear",
+                role: .destructive,
+                action: clearAll
+            )
+        }
+    }
+
+    private var conflictsCard: some View {
+        NMSettingsCard(title: "Conflicts") {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: hasIssue ? "exclamationmark.triangle.fill" : "checkmark.seal.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(hasIssue ? Color.yellow : Color.green)
+                    .frame(width: 18)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 7) {
+                        Text(hasIssue ? "Conflict detected" : "No conflicts detected")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.92))
+                        if hasIssue {
+                            NMBadge(text: "FIX")
+                        } else {
+                            NMBadge(text: "OK")
+                        }
+                    }
+                    if let detail = combinedDetailMessage {
+                        Text(detail)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.5))
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        Text("All recorded shortcuts registered successfully.")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.45))
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.vertical, 10)
+        }
+    }
+
+    private var hasIssue: Bool {
+        conflictMessage != nil || unregistrableMessage != nil
+    }
+
+    private var combinedDetailMessage: String? {
+        [conflictMessage, unregistrableMessage]
+            .compactMap { $0 }
+            .joined(separator: "\n")
+            .nilIfEmpty
+    }
+
+    // MARK: Actions
+
+    private func resetAll() {
+        KeyboardShortcuts.reset(recordable)
+        refreshState()
+    }
+
+    private func clearAll() {
+        for name in recordable {
+            KeyboardShortcuts.setShortcut(nil, for: name)
+        }
+        refreshState()
+    }
+
+    private func refreshState() {
+        var bucket: [String: [KeyboardShortcuts.Name]] = [:]
+
+        for name in recordable {
+            guard let shortcut = name.shortcut else { continue }
+            let key = "\(shortcut.carbonKeyCode)|\(shortcut.modifiers.rawValue)"
+            bucket[key, default: []].append(name)
+        }
+
+        let duplicates = bucket.values.filter { $0.count > 1 }
+        if duplicates.isEmpty {
+            conflictMessage = nil
+        } else {
+            let descriptions = duplicates.map { group in
+                group.map(prettyTitle(for:)).joined(separator: " · ")
+            }
+            conflictMessage = "Same combination used by: " + descriptions.joined(separator: ", ") + "."
+        }
+
+        // Library does not expose a public "could not register" hook beyond
+        // conflict detection. Surface for future wiring.
+        unregistrableMessage = nil
+    }
+
+    private func prettyTitle(for name: KeyboardShortcuts.Name) -> String {
+        switch name {
+        case .toggleSneakPeek: return "Sneak Peek"
+        case .toggleNotchOpen: return "Toggle Notch Open"
+        case .hideIsland: return "Manual Hide Island"
+        default: return name.rawValue
+        }
+    }
+}
+
+// MARK: - Shortcut row primitives
+
+private struct NMShortcutRow: View {
+    let title: String
+    let subtitle: String
+    let name: KeyboardShortcuts.Name
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 18) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.92))
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.46))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 16)
+            KeyboardShortcuts.Recorder(for: name)
+                .controlSize(.small)
+                .fixedSize()
+        }
+        .padding(.vertical, 10)
+    }
+}
+
+private struct NMShortcutDisplayRow: View {
+    let title: String
+    let subtitle: String
+    let name: KeyboardShortcuts.Name
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 18) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.92))
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.46))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 16)
+            NMShortcutKeycaps(shortcut: name.shortcut)
+        }
+        .padding(.vertical, 10)
+    }
+}
+
+private struct NMShortcutKeycaps: View {
+    let shortcut: KeyboardShortcuts.Shortcut?
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(Array(modifierSymbols.enumerated()), id: \.offset) { _, symbol in
+                NMKeyCap(label: symbol)
+            }
+            if let key = keySymbol {
+                NMKeyCap(label: key)
+            } else {
+                NMKeyCap(label: "—", dimmed: true)
+            }
+        }
+    }
+
+    private var modifierSymbols: [String] {
+        guard let modifiers = shortcut?.modifiers else { return [] }
+        var symbols: [String] = []
+        if modifiers.contains(.control) { symbols.append("⌃") }
+        if modifiers.contains(.option) { symbols.append("⌥") }
+        if modifiers.contains(.shift) { symbols.append("⇧") }
+        if modifiers.contains(.command) { symbols.append("⌘") }
+        return symbols
+    }
+
+    private var keySymbol: String? {
+        guard let shortcut else { return nil }
+        let raw = shortcut.description
+        guard let last = raw.unicodeScalars.last else { return nil }
+        return String(last).uppercased()
+    }
+}
+
+private struct NMKeyCap: View {
+    let label: String
+    var dimmed: Bool = false
+
+    var body: some View {
+        Text(label)
+            .font(.system(size: 11, weight: .semibold, design: .rounded))
+            .foregroundStyle(.white.opacity(dimmed ? 0.35 : 0.88))
+            .frame(minWidth: 22, minHeight: 22)
+            .padding(.horizontal, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(Color.white.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .stroke(Color.white.opacity(0.14), lineWidth: 0.6)
+                    )
+            )
+    }
+}
+
+private struct NMShortcutActionRow: View {
+    enum Role { case standard, destructive }
+
+    let title: String
+    let subtitle: String
+    let buttonLabel: String
+    let role: Role
+    let action: () -> Void
+
+    @State private var confirmingDestructive = false
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 18) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.92))
+                Text(subtitle)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.46))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 16)
+            Button(action: invoke) {
+                Text(buttonLabel)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(role == .destructive ? Color.red.opacity(0.18) : Color.white.opacity(0.10))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .stroke(
+                                        (role == .destructive ? Color.red : Color.white).opacity(0.25),
+                                        lineWidth: 0.6
+                                    )
+                            )
+                    )
+            }
+            .buttonStyle(.plain)
+            .confirmationDialog(
+                "Clear all NotchMac shortcuts?",
+                isPresented: $confirmingDestructive
+            ) {
+                Button("Clear", role: .destructive, action: action)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Recorded keyboard shortcuts will be removed. You can re-record them at any time.")
+            }
+        }
+        .padding(.vertical, 10)
+    }
+
+    private func invoke() {
+        if role == .destructive {
+            confirmingDestructive = true
+        } else {
+            action()
+        }
+    }
+}
+
+private struct NMShortcutsDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(.white.opacity(0.06))
+            .frame(height: 1)
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }
