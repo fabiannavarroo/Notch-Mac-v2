@@ -2557,13 +2557,8 @@ private struct NMPomodoroPanel: View {
                 NMPomodoroHiddenBanner()
             }
             NMPomodoroTimerModuleCard()
-            LazyVGrid(
-                columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)],
-                spacing: 16
-            ) {
-                NMPomodoroDurationsCard()
-                NMPomodoroIndicatorCard()
-            }
+            NMPomodoroDurationsCard()
+            NMPomodoroIndicatorCard()
             NMPomodoroBehaviorCard()
         }
     }
