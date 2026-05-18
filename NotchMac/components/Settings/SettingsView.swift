@@ -1254,7 +1254,7 @@ struct Media: View {
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white)
             Picker("", selection: selection, content: content)
@@ -1518,7 +1518,7 @@ struct Shelf: View {
 // (rendered through `NotchUtilitySettingsView`'s sidebar route).
 
 func customBadge(text: String) -> some View {
-    Text(text)
+    Text(LocalizedStringKey(text))
         .foregroundStyle(.secondary)
         .font(.footnote.bold())
         .padding(.vertical, 3)
@@ -1534,7 +1534,7 @@ func warningBadge(_ text: String, _ description: String) -> some View {
                 .font(.system(size: 22))
                 .foregroundStyle(.yellow)
             VStack(alignment: .leading) {
-                Text(text)
+                Text(LocalizedStringKey(text))
                     .font(.headline)
                 Text(description)
                     .foregroundStyle(.secondary)
@@ -1734,10 +1734,10 @@ struct NotchUtilitySettingsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(headerTitle)
+            Text(LocalizedStringKey(headerTitle))
                 .font(.system(size: 26, weight: .semibold))
                 .foregroundStyle(.white)
-            Text(headerSubtitle)
+            Text(LocalizedStringKey(headerSubtitle))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.52))
         }
@@ -2090,7 +2090,7 @@ private struct NMStatusPill: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(.white.opacity(0.42))
             HStack(spacing: 6) {
@@ -2119,7 +2119,7 @@ private struct NMSettingsCard<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
 
@@ -2144,14 +2144,14 @@ private struct NMPreferenceRow<Control: View>: View {
         HStack(alignment: .center, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 7) {
-                    Text(title)
+                    Text(LocalizedStringKey(title))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white.opacity(isEnabled ? 0.92 : 0.38))
                     if let badge {
                         NMBadge(text: badge)
                     }
                 }
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(isEnabled ? 0.46 : 0.26))
                     .fixedSize(horizontal: false, vertical: true)
@@ -2171,7 +2171,7 @@ private struct NMInfoPill: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(.white.opacity(0.42))
             Text(value)
@@ -2206,7 +2206,7 @@ private struct NMBadge: View {
     }
 
     var body: some View {
-        Text(text)
+        Text(LocalizedStringKey(text))
             .font(.system(size: 9, weight: .bold))
             .foregroundStyle(color.opacity(subtle ? 0.72 : 0.95))
             .padding(.horizontal, 6)
@@ -2232,7 +2232,7 @@ private struct NMSettingsCardBackground: View {
 private struct NMSidebarSection: View {
     let title: String
     var body: some View {
-        Text(title)
+        Text(LocalizedStringKey(title))
             .font(.system(size: 10, weight: .bold))
             .foregroundStyle(.white.opacity(0.4))
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -2252,7 +2252,7 @@ private struct NMSidebarItem: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white.opacity(isSelected ? 1 : 0.65))
                     .frame(width: 18)
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.white.opacity(isSelected ? 1 : 0.78))
                 Spacer()
@@ -2354,7 +2354,7 @@ private struct NMNotchMockup: View {
         HStack(spacing: 5) {
             Image(systemName: systemImage)
                 .font(.system(size: 11, weight: .bold))
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 10, weight: .bold))
                 .lineLimit(1)
         }
@@ -2455,10 +2455,10 @@ private struct NMCardHeader: View {
     let subtitle: String
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(.white)
-            Text(subtitle)
+            Text(LocalizedStringKey(subtitle))
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.white.opacity(0.5))
         }
@@ -2576,10 +2576,10 @@ private struct NMDefaultsSwitchRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 1) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white)
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(0.5))
             }
@@ -3131,10 +3131,10 @@ private struct NMSliderRow: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
+                    Text(LocalizedStringKey(title))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white)
-                    Text(subtitle)
+                    Text(LocalizedStringKey(subtitle))
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.white.opacity(0.5))
                 }
@@ -3160,10 +3160,10 @@ private struct NMStepperRow: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white)
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(0.5))
             }
@@ -3219,14 +3219,14 @@ private struct NMModuleRow: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 7) {
-                    Text(title)
+                    Text(LocalizedStringKey(title))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white)
                     ForEach(badges, id: \.self) { badge in
                         NMBadge(text: badge)
                     }
                 }
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(0.5))
             }
@@ -3343,7 +3343,7 @@ private struct NMSizingCard: View {
         range: ClosedRange<CGFloat>
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white)
 
@@ -3690,10 +3690,10 @@ private struct NMSwitchRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 1) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white)
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(0.5))
             }
@@ -3960,7 +3960,7 @@ private struct NMAboutCreditRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white)
             Spacer()
@@ -4004,10 +4004,10 @@ private struct NMAboutLinkRow: View {
                     .foregroundStyle(.white)
                     .frame(width: 18)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(title)
+                    Text(LocalizedStringKey(title))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white)
-                    Text(subtitle)
+                    Text(LocalizedStringKey(subtitle))
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.white.opacity(0.5))
                 }
@@ -4033,7 +4033,7 @@ private struct NMAboutActionButton: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: systemImage)
-                Text(title)
+                Text(LocalizedStringKey(title))
             }
             .font(.system(size: 12, weight: .semibold))
             .padding(.horizontal, 12)
@@ -4332,10 +4332,10 @@ private struct NMUpdatesSwitchRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 1) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white.opacity(isEnabled ? 1 : 0.45))
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(isEnabled ? 0.5 : 0.3))
             }
@@ -4596,7 +4596,7 @@ private struct NMAirPodsDebugCard: View {
 
     private func previewBlock<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 9, weight: .bold))
                 .tracking(1.2)
                 .foregroundStyle(.white.opacity(0.45))
@@ -4639,10 +4639,10 @@ private struct NMAirPodsDebugCard: View {
 
     private func debugLabel(_ title: String, _ subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white)
-            Text(subtitle)
+            Text(LocalizedStringKey(subtitle))
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.white.opacity(0.5))
         }
@@ -4657,7 +4657,7 @@ private struct NMAirPodsDebugCard: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.85))
                 Spacer()
@@ -4914,10 +4914,10 @@ private struct NMCalRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white.opacity(disabled ? 0.45 : 1))
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(disabled ? 0.3 : 0.5))
             }
@@ -5002,7 +5002,7 @@ private struct NMPermissionPrompt: View {
 private struct NMEmptyHint: View {
     let text: String
     var body: some View {
-        Text(text)
+        Text(LocalizedStringKey(text))
             .font(.system(size: 11, weight: .medium))
             .foregroundStyle(.white.opacity(0.5))
             .padding(.vertical, 8)
@@ -5389,7 +5389,7 @@ private struct NMShelfChip: View {
             Image(systemName: systemImage)
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(tint)
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.85))
         }
@@ -5728,12 +5728,12 @@ private struct NMAirPodsToggleRow: View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(title)
+                    Text(LocalizedStringKey(title))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white.opacity(disabled ? 0.4 : 0.95))
                     ForEach(badges, id: \.self) { NMBadge(text: $0) }
                 }
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(disabled ? 0.25 : 0.5))
                     .fixedSize(horizontal: false, vertical: true)
@@ -5762,10 +5762,10 @@ private struct NMAirPodsThresholdRow: View {
                 Circle().fill(color.opacity(disabled ? 0.35 : 0.9)).frame(width: 10, height: 10)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white.opacity(disabled ? 0.4 : 0.95))
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(disabled ? 0.25 : 0.5))
             }
@@ -6018,10 +6018,10 @@ private struct NMShortcutRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.92))
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(0.46))
                     .fixedSize(horizontal: false, vertical: true)
@@ -6043,10 +6043,10 @@ private struct NMShortcutDisplayRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.92))
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(0.46))
                     .fixedSize(horizontal: false, vertical: true)
@@ -6127,10 +6127,10 @@ private struct NMShortcutActionRow: View {
     var body: some View {
         HStack(alignment: .center, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.92))
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(0.46))
                     .fixedSize(horizontal: false, vertical: true)

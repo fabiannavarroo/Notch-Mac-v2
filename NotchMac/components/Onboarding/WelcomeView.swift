@@ -131,7 +131,7 @@ private struct OnboardingFeatureRow: View {
                 )
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white)
                 Text(detail)

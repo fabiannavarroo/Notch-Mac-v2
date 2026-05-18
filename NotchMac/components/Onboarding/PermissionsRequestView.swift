@@ -30,7 +30,7 @@ struct PermissionRequestView: View {
             .padding(.top, 34)
 
             VStack(spacing: 8) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
 

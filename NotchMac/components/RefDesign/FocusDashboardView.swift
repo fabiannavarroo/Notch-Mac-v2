@@ -340,7 +340,7 @@ struct FocusDashboardView: View {
                 }
                 .frame(width: 40, height: 40)
 
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(0.58))
             }
@@ -374,7 +374,7 @@ struct FocusDashboardView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(isSelected ? .orange : .white.opacity(0.58))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
