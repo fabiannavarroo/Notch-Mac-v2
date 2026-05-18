@@ -1031,7 +1031,6 @@ struct Media: View {
                 albumArtCard
                 liveActivityCard
                 mediaSourceCard
-                playerControlsCard
                 effectsCard
                 visualizerCard
             }
@@ -1113,6 +1112,11 @@ struct Media: View {
                     }
                     NMBadge("Beta", color: .purple)
                 }
+
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    NMSwitchRow(title: "Show lyrics below artist name", subtitle: "Display available lyrics in the open notch.", isOn: $enableLyrics)
+                    NMBadge("Beta", color: .purple)
+                }
             }
         }
     }
@@ -1147,19 +1151,6 @@ struct Media: View {
                 NMSwitchRow(title: "Drop shadow on album art", subtitle: "Adds depth to the compact artwork.", isOn: $liveActivityAlbumArtShadow)
             }
         }
-    }
-
-    private var playerControlsCard: some View {
-        musicSettingsCard(title: "Player Controls", subtitle: "Five live slots used by the notch player.") {
-            VStack(alignment: .leading, spacing: 14) {
-                MusicSlotConfigurationView()
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    NMSwitchRow(title: "Show lyrics below artist name", subtitle: "Display available lyrics in the open notch.", isOn: $enableLyrics)
-                    NMBadge("Beta", color: .purple)
-                }
-            }
-        }
-        .gridCellColumns(2)
     }
 
     private var effectsCard: some View {
@@ -1198,6 +1189,7 @@ struct Media: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .gridCellColumns(2)
     }
 
     private var albumArtPreview: some View {
@@ -1804,7 +1796,6 @@ struct NotchUtilitySettingsView: View {
                 NMAutoHideAppsCard()
             case .modules:
                 NMModulesCard()
-                NMLivePreviewCard()
             case .music:
                 Media()
             case .shelf:
@@ -2566,7 +2557,6 @@ private struct NMPomodoroPanel: View {
                 NMPomodoroHiddenBanner()
             }
             NMPomodoroTimerModuleCard()
-            NMPomodoroCurrentTimerCard()
             LazyVGrid(
                 columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)],
                 spacing: 16
@@ -2650,17 +2640,6 @@ private struct NMPomodoroTimerModuleCard: View {
                     .toggleStyle(.switch)
                     .controlSize(.small)
                     .tint(.green)
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                Text("PREVIEW")
-                    .font(.system(size: 9, weight: .heavy))
-                    .tracking(0.6)
-                    .foregroundStyle(.white.opacity(0.45))
-                HStack(alignment: .top, spacing: 12) {
-                    NMPomodoroNotchPreview(isOpen: false)
-                    NMPomodoroNotchPreview(isOpen: true)
-                }
             }
         }
         .padding(20)
@@ -3704,10 +3683,8 @@ private struct NMAboutPanel: View {
     var body: some View {
         VStack(spacing: 16) {
             aboutCard
-            HStack(alignment: .top, spacing: 16) {
-                creditsCard
-                linksCard
-            }
+            creditsCard
+            linksCard
             diagnosticsCard
         }
     }
@@ -4080,10 +4057,8 @@ private struct NMUpdatesPanel: View {
     var body: some View {
         VStack(spacing: 16) {
             softwareUpdatesCard
-            HStack(alignment: .top, spacing: 16) {
-                versionCard
-                statusCard
-            }
+            versionCard
+            statusCard
             releaseNotesCard
         }
     }
@@ -4752,7 +4727,6 @@ private struct NMCalendarPanel: View {
             NMCalendarDisplayCard()
             NMCalendarListCard()
             NMRemindersListCard()
-            NMCalendarPreviewCard()
         }
         .onAppear {
             Task {
@@ -5164,7 +5138,6 @@ struct NMShelfPanel: View {
         VStack(spacing: 16) {
             NMShelfBehaviorCard()
             NMQuickShareCard()
-            NMDropZonePreviewCard()
             NMShelfAppleIntelligenceCard()
         }
         .onAppear {
@@ -5450,7 +5423,6 @@ private struct NMAirPodsPanel: View {
             NMAirPodsActivityCard()
             NMAirPodsAlertsCard()
             NMAirPodsPreviewCard(manager: manager)
-            NMAirPodsModelCard(manager: manager)
             if AirPodsModule.tuningPanelVisible {
                 NMAirPodsDeveloperTuningCard()
             }
