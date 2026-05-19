@@ -74,16 +74,17 @@ class CalendarManager: ObservableObject {
         }
 
         switch status {
-        case .notDetermined:
-            guard !Defaults[.calendarPermissionPrompted] else {
+        case .notDetermined, .writeOnly:
+            // .writeOnly means an older build requested only write access; re-request full.
+            if status == .notDetermined && Defaults[.calendarPermissionPrompted] {
                 return
             }
             Defaults[.calendarPermissionPrompted] = true
             guard let granted = try? await calendarService.requestAccess(to: .event) else {
-                self.calendarAuthorizationStatus = .notDetermined
+                self.calendarAuthorizationStatus = EKEventStore.authorizationStatus(for: .event)
                 return
             }
-            self.calendarAuthorizationStatus = granted ? .fullAccess : .denied
+            self.calendarAuthorizationStatus = granted ? .fullAccess : EKEventStore.authorizationStatus(for: .event)
             if granted {
                 await reloadCalendarAndReminderLists()
                 await updateEvents()
@@ -96,8 +97,6 @@ class CalendarManager: ObservableObject {
             await reloadCalendarAndReminderLists()
             await updateEvents()
             await updateDashboardEvents()
-        case .writeOnly:
-            NSLog("Write only")
         @unknown default:
             print("Unknown authorization status")
         }
@@ -111,16 +110,16 @@ class CalendarManager: ObservableObject {
         }
 
         switch status {
-        case .notDetermined:
-            guard !Defaults[.reminderPermissionPrompted] else {
+        case .notDetermined, .writeOnly:
+            if status == .notDetermined && Defaults[.reminderPermissionPrompted] {
                 return
             }
             Defaults[.reminderPermissionPrompted] = true
             guard let granted = try? await calendarService.requestAccess(to: .reminder) else {
-                self.reminderAuthorizationStatus = .notDetermined
+                self.reminderAuthorizationStatus = EKEventStore.authorizationStatus(for: .reminder)
                 return
             }
-            self.reminderAuthorizationStatus = granted ? .fullAccess : .denied
+            self.reminderAuthorizationStatus = granted ? .fullAccess : EKEventStore.authorizationStatus(for: .reminder)
             if granted {
                 await reloadCalendarAndReminderLists()
             }
@@ -129,8 +128,6 @@ class CalendarManager: ObservableObject {
         case .fullAccess:
             NSLog("Full access")
             await reloadCalendarAndReminderLists()
-        case .writeOnly:
-            NSLog("Write only")
         @unknown default:
             print("Unknown authorization status")
         }
