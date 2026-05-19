@@ -7,7 +7,7 @@
             <sparkle:version>206</sparkle:version>
             <sparkle:shortVersionString>1.7.4</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Auto-release 1.7.4 build 206.]]></description>
+            <description><![CDATA[<h3>NotchMac 1.7.4 — Fix: toggle HUD detecta el permiso de la app principal</h3><ul><li><b>Bug:</b> el panel HUD consultaba el estado de Accesibilidad solo vía el XPC helper. Si tenías <code>NotchMac.app</code> autorizado en la lista pero el helper aún no había aparecido, el toggle <i>Reemplazar HUD del sistema</i> seguía en gris con badge «Requerido».</li><li><b>Fix:</b> <code>isAccessibilityAuthorized</code> y <code>ensureAccessibilityAuthorization</code> ahora comprueban primero <code>AXIsProcessTrusted()</code> en la propia NotchMac (donde corre el event tap real) y solo consultan al XPC helper como fallback.</li><li><b>Resultado:</b> con NotchMac autorizado, el toggle se desbloquea de inmediato y volumen / teclas multimedia / tecla Opción funcionan al instante.</li><li><b>Recordatorio:</b> brillo de pantalla y teclado siguen requiriendo que <code>BoringNotchXPCHelper</code> aparezca en la lista de Accesibilidad y esté activado.</li></ul>]]></description>
             <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.7.4/NotchMac-1.7.4.zip" sparkle:edSignature="uwHKbwG6D7rZWrmLVCIA+a+DPRSYJjqWIKjliX5Ekz+ygH0BEdgs4PIMb18JlOMnYkZbGQcp0PbguhJPw0uOCg==" length="10932061" type="application/octet-stream"/>
         </item>
 
