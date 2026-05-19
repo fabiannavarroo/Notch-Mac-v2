@@ -1,3 +1,4 @@
+import ApplicationServices
 import Foundation
 import Cocoa
 import AsyncXPCConnection
@@ -109,6 +110,17 @@ final class XPCHelperClient: NSObject {
     }
     
     nonisolated func isAccessibilityAuthorized() async -> Bool {
+        // Primary check: main app's own accessibility trust. The MediaKey event
+        // tap lives in the host app, not in the XPC helper, so this is the
+        // permission that actually matters for HUD interception.
+        let appTrusted = AXIsProcessTrusted()
+        if appTrusted {
+            await MainActor.run { notifyAuthorizationChange(true) }
+            return true
+        }
+
+        // Fallback: ask the XPC helper (covers display-brightness paths that
+        // run inside the helper process).
         do {
             let service = await MainActor.run {
                 ensureRemoteService()
@@ -123,11 +135,22 @@ final class XPCHelperClient: NSObject {
             }
             return result
         } catch {
+            await MainActor.run { notifyAuthorizationChange(false) }
             return false
         }
     }
     
     nonisolated func ensureAccessibilityAuthorization(promptIfNeeded: Bool) async -> Bool {
+        // Main app trust check first (cheap + authoritative for the event tap).
+        let promptKey = "AXTrustedCheckOptionPrompt" as CFString
+        let options: CFDictionary = [promptKey: promptIfNeeded] as CFDictionary
+        if AXIsProcessTrustedWithOptions(options) {
+            await MainActor.run { notifyAuthorizationChange(true) }
+            return true
+        }
+
+        // Fall back to helper-side check; useful if user already granted the
+        // helper but not the main app.
         do {
             let service = await MainActor.run {
                 ensureRemoteService()
@@ -142,6 +165,7 @@ final class XPCHelperClient: NSObject {
             }
             return result
         } catch {
+            await MainActor.run { notifyAuthorizationChange(false) }
             return false
         }
     }
