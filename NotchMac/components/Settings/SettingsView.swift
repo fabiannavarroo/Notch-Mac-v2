@@ -5,6 +5,7 @@
 //  Created by Richard Kunkli on 07/08/2024.
 //
 
+import ApplicationServices
 import Combine
 import Defaults
 import EventKit
@@ -664,11 +665,9 @@ struct NMHUDPanel: View {
             }
 
             LazyVGrid(columns: twoCol, spacing: 16) {
-                NMHUDOpenNotchCard()
-                NMHUDClosedNotchCard()
+                NMHUDOpenNotchCard(replacementEnabled: hudReplacement)
+                NMHUDClosedNotchCard(replacementEnabled: hudReplacement)
             }
-            .disabled(!hudReplacement)
-            .opacity(hudReplacement ? 1 : 0.55)
 
             NMHUDCapsLockCard()
         }
@@ -737,7 +736,7 @@ private struct NMHUDReplacementCard: View {
 
             if !authorized {
                 Button {
-                    XPCHelperClient.shared.requestAccessibilityAuthorization()
+                    requestAccessibility()
                 } label: {
                     Label("Request Accessibility", systemImage: "lock.shield")
                         .font(.system(size: 12, weight: .semibold))
@@ -750,6 +749,15 @@ private struct NMHUDReplacementCard: View {
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(NMCardBG())
+    }
+
+    private func requestAccessibility() {
+        XPCHelperClient.shared.requestAccessibilityAuthorization()
+        let promptKey = "AXTrustedCheckOptionPrompt" as CFString
+        _ = AXIsProcessTrustedWithOptions([promptKey: true] as CFDictionary)
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
     }
 }
 
@@ -820,6 +828,7 @@ private struct NMHUDAppearanceCard: View {
 }
 
 private struct NMHUDOpenNotchCard: View {
+    let replacementEnabled: Bool
     @Default(.showOpenNotchHUD) private var showOpenHUD
     @Default(.showOpenNotchHUDPercentage) private var openPct
 
@@ -844,6 +853,10 @@ private struct NMHUDOpenNotchCard: View {
 
             NMHUDPreview(style: .open, showPercentage: openPct)
                 .opacity(showOpenHUD ? 1 : 0.45)
+
+            if !replacementEnabled {
+                NMHUDReplacementHint()
+            }
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -852,6 +865,7 @@ private struct NMHUDOpenNotchCard: View {
 }
 
 private struct NMHUDClosedNotchCard: View {
+    let replacementEnabled: Bool
     @Default(.inlineHUD) private var inlineHUD
     @Default(.showClosedNotchHUDPercentage) private var closedPct
 
@@ -879,10 +893,39 @@ private struct NMHUDClosedNotchCard: View {
 
             NMHUDPreview(style: inlineHUD ? .closedInline : .closedDefault,
                          showPercentage: closedPct)
+
+            if !replacementEnabled {
+                NMHUDReplacementHint()
+            }
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(NMCardBG())
+    }
+}
+
+private struct NMHUDReplacementHint: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "info.circle.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.orange)
+            Text("Enable “Replace system HUD” for these settings to take effect.")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.65))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(.white.opacity(0.04))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(.white.opacity(0.06), lineWidth: 0.7)
+                )
+        )
     }
 }
 

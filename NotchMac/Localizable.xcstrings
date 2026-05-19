@@ -28337,6 +28337,23 @@
           }
         }
       }
+    },
+    "Enable “Replace system HUD” for these settings to take effect.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable “Replace system HUD” for these settings to take effect."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activa «Reemplazar HUD del sistema» para que estos ajustes surtan efecto."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
