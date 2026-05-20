@@ -71,6 +71,12 @@ enum SliderColorEnum: String, CaseIterable, Defaults.Serializable {
     case accent = "Accent color"
 }
 
+enum SystemEventTintColor: String, CaseIterable, Defaults.Serializable {
+    case white = "White"
+    case accent = "Accent color"
+    case song = "Now Playing color"
+}
+
 enum PomodoroIndicatorStyle: String, CaseIterable, Defaults.Serializable {
     case off = "Off"
     case dot = "Dot inside notch"

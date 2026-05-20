@@ -793,12 +793,12 @@ private struct NMHUDBehaviorCard: View {
 private struct NMHUDAppearanceCard: View {
     @Default(.enableGradient) private var enableGradient
     @Default(.systemEventIndicatorShadow) private var glow
-    @Default(.systemEventIndicatorUseAccent) private var useAccent
+    @Default(.systemEventIndicatorTint) private var tint
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             NMCardHeader(title: "Appearance",
-                         subtitle: "Progress bar style and accent treatment.")
+                         subtitle: "Progress bar style and tint treatment.")
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Progress bar style")
@@ -817,9 +817,22 @@ private struct NMHUDAppearanceCard: View {
                         subtitle: "Adds a soft glow around the active progress bar.",
                         isOn: $glow)
 
-            NMSwitchRow(title: "Tint progress bar with accent color",
-                        subtitle: "Use the system accent color on the HUD progress fill.",
-                        isOn: $useAccent)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Tint progress bar")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                Picker("", selection: $tint) {
+                    Text("White").tag(SystemEventTintColor.white)
+                    Text("Accent").tag(SystemEventTintColor.accent)
+                    Text("Now Playing").tag(SystemEventTintColor.song)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.small)
+                Text("Now Playing matches the current song's album-art color.")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+            }
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -963,7 +976,19 @@ private struct NMHUDPreview: View {
     let showPercentage: Bool
     @Default(.enableGradient) private var enableGradient
     @Default(.systemEventIndicatorShadow) private var glow
-    @Default(.systemEventIndicatorUseAccent) private var useAccent
+    @Default(.systemEventIndicatorTint) private var tint
+    @ObservedObject private var musicManager = MusicManager.shared
+
+    private var tintColor: Color {
+        switch tint {
+        case .white:
+            return .white
+        case .accent:
+            return .effectiveAccent
+        case .song:
+            return Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.8)
+        }
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -1016,16 +1041,16 @@ private struct NMHUDPreview: View {
 
     private var fillStyle: AnyShapeStyle {
         if enableGradient {
-            let colors: [Color] = useAccent
-                ? [Color.effectiveAccent, Color.effectiveAccent.ensureMinimumBrightness(factor: 0.2)]
-                : [Color.white, Color.white.opacity(0.25)]
+            let colors: [Color] = tint == .white
+                ? [Color.white, Color.white.opacity(0.25)]
+                : [tintColor, tintColor.ensureMinimumBrightness(factor: 0.2)]
             return AnyShapeStyle(LinearGradient(colors: colors, startPoint: .trailing, endPoint: .leading))
         }
-        return AnyShapeStyle(useAccent ? Color.effectiveAccent : Color.white)
+        return AnyShapeStyle(tintColor)
     }
 
     private var glowColor: Color {
-        useAccent ? Color.effectiveAccent.ensureMinimumBrightness(factor: 0.7) : .white
+        tint == .white ? .white : tintColor.ensureMinimumBrightness(factor: 0.7)
     }
 }
 

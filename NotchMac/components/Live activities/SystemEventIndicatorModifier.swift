@@ -99,10 +99,25 @@ struct DraggableProgressBar: View {
     @EnvironmentObject var vm: BoringViewModel
     @Binding var value: CGFloat
     var onChange: ((CGFloat) -> Void)? = nil
-    
+
     @State private var isDragging = false
     @State private var dragOffset: CGFloat = 0
-    
+    @ObservedObject private var musicManager = MusicManager.shared
+    @Default(.systemEventIndicatorTint) private var tint
+    @Default(.enableGradient) private var enableGradient
+    @Default(.systemEventIndicatorShadow) private var glow
+
+    private var tintColor: Color {
+        switch tint {
+        case .white:
+            return .white
+        case .accent:
+            return .effectiveAccent
+        case .song:
+            return Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.8)
+        }
+    }
+
     var body: some View {
         VStack {
             GeometryReader { geo in
@@ -111,21 +126,19 @@ struct DraggableProgressBar: View {
                         .fill(.tertiary)
                     Capsule()
                         .fill(
-                            Defaults[.enableGradient] ?
+                            enableGradient ?
                                 AnyShapeStyle(LinearGradient(
-                                    colors: Defaults[.systemEventIndicatorUseAccent] ?
-                                        [Color.effectiveAccent, Color.effectiveAccent.ensureMinimumBrightness(factor: 0.2)] :
-                                        [Color.white, Color.white.opacity(0.2)],
+                                    colors: tint == .white ?
+                                        [Color.white, Color.white.opacity(0.2)] :
+                                        [tintColor, tintColor.ensureMinimumBrightness(factor: 0.2)],
                                     startPoint: .trailing,
                                     endPoint: .leading
                                 )) :
-                                AnyShapeStyle(Defaults[.systemEventIndicatorUseAccent] ? Color.effectiveAccent : Color.white)
+                                AnyShapeStyle(tintColor)
                         )
                         .frame(width: max(0, min(geo.size.width * value, geo.size.width)))
-                        .shadow(color: Defaults[.systemEventIndicatorShadow] ?
-                            (Defaults[.systemEventIndicatorUseAccent] ?
-                                Color.effectiveAccent.ensureMinimumBrightness(factor: 0.7) :
-                                Color.white) :
+                        .shadow(color: glow ?
+                            (tint == .white ? Color.white : tintColor.ensureMinimumBrightness(factor: 0.7)) :
                             Color.clear,
                             radius: 8, x: 3)
                         .opacity(value.isZero ? 0 : 1)

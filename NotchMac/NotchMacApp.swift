@@ -498,6 +498,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        if !Defaults[.systemEventIndicatorTintMigrated] {
+            Defaults[.systemEventIndicatorTint] = Defaults[.systemEventIndicatorUseAccent] ? .accent : .white
+            Defaults[.systemEventIndicatorTintMigrated] = true
+        }
+
         applyMenuBarIconVisibility(Defaults[.menubarIcon])
 
         Defaults.publisher(.menubarIcon)
