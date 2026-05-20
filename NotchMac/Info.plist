@@ -13,6 +13,16 @@
 	</dict>
 	<key>NSAudioCaptureUsageDescription</key>
 	<string>NotchMac analyzes audio from your music app to draw a real-time waveform in the notch. Audio is processed locally and never leaves your Mac.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>NotchMac shows your upcoming events in the notch.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>NotchMac shows your upcoming events in the notch and lets you glance at calendar details without leaving your current app.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>NotchMac shows your reminders in the notch.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>NotchMac shows your reminders in the notch and lets you mark them complete from the dashboard.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>NotchMac uses contacts to show attendee names on calendar events.</string>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUScheduledCheckInterval</key>
