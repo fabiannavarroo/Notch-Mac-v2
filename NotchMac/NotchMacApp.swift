@@ -71,6 +71,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var notchStateCancellable: AnyCancellable?
     private var defaultsCancellables: Set<AnyCancellable> = []
     private var hideAnimationTask: Task<Void, Never>?
+    private var fullscreenCancellable: AnyCancellable?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
@@ -91,6 +92,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         MusicManager.shared.destroy()
         cleanupDragDetectors()
         cleanupWindows()
+        fullscreenCancellable?.cancel()
+        fullscreenCancellable = nil
         XPCHelperClient.shared.stopMonitoringAccessibilityAuthorization()
     }
 
@@ -123,6 +126,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var fadeTimer: Timer?
 
+    // Hide notch window when any app is fullscreen on its screen.
+    // Settings: hideNotchOption (.always / .nowPlayingOnly / .never).
+    // FullscreenMediaDetector publish per-screen status. Manual hide
+    // (nmIslandHidden) take precedence — see applyIslandVisibility().
+    @MainActor
+    func applyFullscreenVisibility() {
+        guard !Defaults[.nmIslandHidden] else { return }
+        let enabled = Defaults[.hideNotchOption] != .never
+        let status = FullscreenMediaDetector.shared.fullscreenStatus
+
+        func target(forScreenUUID uuid: String?) -> CGFloat {
+            guard enabled, let uuid, status[uuid] == true else { return 1 }
+            return 0
+        }
+
+        if Defaults[.showOnAllDisplays] {
+            for (uuid, win) in windows {
+                win.alphaValue = target(forScreenUUID: uuid)
+            }
+        } else if let win = window {
+            let uuid = win.screen?.displayUUID ?? coordinator.selectedScreenUUID
+            win.alphaValue = target(forScreenUUID: uuid)
+        }
+    }
+
+    private func setupFullscreenObserver() {
+        fullscreenCancellable = FullscreenMediaDetector.shared.$fullscreenStatus
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.applyFullscreenVisibility() }
+            }
+    }
+
     func applyIslandVisibility() {
         let hidden = Defaults[.nmIslandHidden]
         hideAnimationTask?.cancel()
@@ -149,6 +185,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 allVMs.forEach { $0.isPerformingHideAnimation = false }
                 self.stopHiddenHoverDetector()
                 self.animateWindowAlpha(to: 1, duration: 0.32)
+                try? await Task.sleep(for: .milliseconds(340))
+                self.applyFullscreenVisibility()
             }
         }
     }
@@ -431,6 +469,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 y: screenFrame.origin.y + screenFrame.height - window.frame.height
             ))
         window.alphaValue = 1
+        applyFullscreenVisibility()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -691,6 +730,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupDragDetectors()
         refreshIslandVisibilityForActiveApp()
         applyIslandVisibility()
+        setupFullscreenObserver()
+        applyFullscreenVisibility()
+
+        Defaults.publisher(.hideNotchOption)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                Task { @MainActor in self?.applyFullscreenVisibility() }
+            }
+            .store(in: &defaultsCancellables)
 
         if coordinator.firstLaunch {
             DispatchQueue.main.async {
