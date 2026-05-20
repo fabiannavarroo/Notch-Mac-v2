@@ -75,10 +75,11 @@ class CalendarManager: ObservableObject {
 
         switch status {
         case .notDetermined, .writeOnly:
+            // .notDetermined always re-prompts: TCC keeps the answer once shown, so if the
+            // user previously accepted/denied the status reflects that and we never re-enter
+            // this branch. A stuck .notDetermined means the prompt never actually fired
+            // (e.g. earlier build was missing entitlements) and must be retried.
             // .writeOnly means an older build requested only write access; re-request full.
-            if status == .notDetermined && Defaults[.calendarPermissionPrompted] {
-                return
-            }
             Defaults[.calendarPermissionPrompted] = true
             guard let granted = try? await calendarService.requestAccess(to: .event) else {
                 self.calendarAuthorizationStatus = EKEventStore.authorizationStatus(for: .event)
@@ -111,9 +112,8 @@ class CalendarManager: ObservableObject {
 
         switch status {
         case .notDetermined, .writeOnly:
-            if status == .notDetermined && Defaults[.reminderPermissionPrompted] {
-                return
-            }
+            // See checkCalendarAuthorization: don't gate retries on the prompted flag;
+            // TCC tracks the user's decision via the status itself.
             Defaults[.reminderPermissionPrompted] = true
             guard let granted = try? await calendarService.requestAccess(to: .reminder) else {
                 self.reminderAuthorizationStatus = EKEventStore.authorizationStatus(for: .reminder)
