@@ -33,6 +33,8 @@
 	<array>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER)-spks</string>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER)-spki</string>
+		<string>com.apple.bluetooth.xpc</string>
+		<string>com.apple.bluetoothd</string>
 	</array>
 </dict>
 </plist>
