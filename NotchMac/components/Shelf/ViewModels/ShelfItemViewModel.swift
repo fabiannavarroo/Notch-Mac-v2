@@ -105,8 +105,10 @@ final class ShelfItemViewModel: ObservableObject {
             selection.toggle(item)
         } else if flags.contains(.control) {
             handleRightClick(event: event, view: view)
-        } else {
+        } else if event.clickCount == 2 {
             if !selection.isSelected(item.id) { selection.selectSingle(item) }
+        } else {
+            selection.toggle(item)
         }
         if event.clickCount == 2 { handleDoubleClick() }
     }

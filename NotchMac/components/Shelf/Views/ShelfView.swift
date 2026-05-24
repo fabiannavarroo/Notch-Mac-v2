@@ -94,8 +94,6 @@ struct ShelfView: View {
             .transaction { transaction in
                 transaction.animation = vm.animation
             }
-            .contentShape(Rectangle())
-            .onTapGesture { selection.clear() }
     }
 
     var content: some View {
@@ -114,28 +112,29 @@ struct ShelfView: View {
                         .fontWeight(.medium)
                 }
             } else {
-                ScrollView(.vertical, showsIndicators: true) {
-                    LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 110, maximum: 130), spacing: spacing)],
-                        alignment: .center,
-                        spacing: spacing
-                    ) {
-                        if enableAIShelf {
-                            AppleIntelligencePDFDropView()
+                GeometryReader { geo in
+                    let availableH = max(60, geo.size.height - 4)
+                    let tile: CGFloat = min(availableH, 96)
+                    let columns = [GridItem(.adaptive(minimum: tile, maximum: tile), spacing: spacing, alignment: .top)]
+
+                    ScrollView(.vertical, showsIndicators: true) {
+                        LazyVGrid(columns: columns, alignment: .leading, spacing: spacing) {
+                            if enableAIShelf {
+                                AppleIntelligencePDFDropView(size: tile)
+                            }
+                            ForEach(tvm.items) { item in
+                                ShelfItemView(item: item, size: tile)
+                                    .environmentObject(quickLookService)
+                            }
                         }
-                        ForEach(tvm.items) { item in
-                            ShelfItemView(item: item)
-                                .environmentObject(quickLookService)
-                        }
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(.horizontal, 4)
-                    .padding(.top, 2)
-                    .padding(.bottom, 6)
-                    .frame(maxWidth: .infinity, alignment: .top)
-                }
-                .scrollIndicators(.visible)
-                .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
-                    handleDrop(providers: providers)
+                    .scrollIndicators(.visible)
+                    .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
+                        handleDrop(providers: providers)
+                    }
                 }
             }
         }

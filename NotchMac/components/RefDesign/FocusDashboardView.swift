@@ -234,7 +234,10 @@ struct FocusDashboardView: View {
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .monospacedDigit()
-                    .frame(width: 34)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .frame(minWidth: 34)
 
                 durationButton("plus") {
                     updateFocusMinutes(by: 5)
@@ -248,7 +251,7 @@ struct FocusDashboardView: View {
                     .overlay(Capsule().stroke(.white.opacity(0.12), lineWidth: 1))
             )
         }
-        .frame(width: 100)
+        .fixedSize()
     }
 
     private func durationButton(_ systemImage: String, action: @escaping () -> Void) -> some View {

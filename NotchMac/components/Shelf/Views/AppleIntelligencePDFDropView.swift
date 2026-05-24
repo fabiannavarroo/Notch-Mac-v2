@@ -47,6 +47,8 @@ final class AppleIntelligencePDFState: ObservableObject {
 
 @MainActor
 struct AppleIntelligencePDFDropView: View {
+    var size: CGFloat = 110
+    @EnvironmentObject private var vm: BoringViewModel
     @ObservedObject private var state = AppleIntelligencePDFState.shared
     @ObservedObject private var coordinator = BoringViewCoordinator.shared
     @State private var isTargeted: Bool = false
@@ -59,14 +61,18 @@ struct AppleIntelligencePDFDropView: View {
         ZStack {
             background
             content
-                .padding(10)
+                .padding(size * 0.09)
         }
-        .frame(width: 110, height: 110)
+        .frame(width: size, height: size)
         .opacity(available ? 1.0 : 0.55)
         .help(available ? "Drop a PDF to summarize" : "Requires Apple Intelligence")
         .onDrop(of: [UTType.pdf, UTType.fileURL], isTargeted: $isTargeted) { providers in
             guard available, !state.isProcessing else { return false }
+            vm.dropEvent = true
             return handleDrop(providers)
+        }
+        .onChange(of: isTargeted) { _, targeted in
+            vm.generalDropTargeting = targeted
         }
         .onTapGesture {
             guard available else { return }
@@ -106,16 +112,17 @@ struct AppleIntelligencePDFDropView: View {
 
     @ViewBuilder
     private var content: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: max(2, size * 0.05)) {
             logo
             Text(label)
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .font(.system(size: max(8, size * 0.095), weight: .semibold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.92))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
+                .minimumScaleFactor(0.75)
             if !state.fileName.isEmpty, case .done = state.phase {
                 Text(state.fileName)
-                    .font(.system(size: 9))
+                    .font(.system(size: max(7, size * 0.08)))
                     .foregroundStyle(.white.opacity(0.55))
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -133,7 +140,7 @@ struct AppleIntelligencePDFDropView: View {
                     .foregroundStyle(.white, Color.purple)
             }
         }
-        .frame(width: 30, height: 30)
+        .frame(width: size * 0.28, height: size * 0.28)
         .rotationEffect(.degrees(state.isProcessing ? 360 : 0))
         .animation(state.isProcessing ? .linear(duration: 2.5).repeatForever(autoreverses: false) : .default, value: state.isProcessing)
     }

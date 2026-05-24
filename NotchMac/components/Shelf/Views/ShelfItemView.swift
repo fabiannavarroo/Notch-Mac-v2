@@ -13,6 +13,7 @@ import QuickLook
 
 struct ShelfItemView: View {
     let item: ShelfItem
+    var size: CGFloat = 110
     @EnvironmentObject var vm: BoringViewModel
     @ObservedObject var selection = ShelfSelectionModel.shared
     @StateObject private var viewModel: ShelfItemViewModel
@@ -24,9 +25,13 @@ struct ShelfItemView: View {
 
     private var isSelected: Bool { viewModel.isSelected }
     private var shouldHideDuringDrag: Bool { selection.isDragging && selection.isSelected(item.id) && false }
-    
-    init(item: ShelfItem) {
+
+    private var iconSide: CGFloat { max(34, size * 0.55) }
+    private var textHeight: CGFloat { max(20, size * 0.27) }
+
+    init(item: ShelfItem, size: CGFloat = 110) {
         self.item = item
+        self.size = size
         _viewModel = StateObject(wrappedValue: ShelfItemViewModel(item: item))
     }
 
@@ -37,7 +42,7 @@ struct ShelfItemView: View {
                     iconView
                     textView
                 }
-                .frame(width: 105)
+                .frame(width: size, height: size)
                 .padding(.vertical, 4)
                 .padding(.horizontal, 5)
                 .background(backgroundView)
@@ -82,7 +87,7 @@ struct ShelfItemView: View {
                 )
             } else {
                 Color.clear
-                    .frame(width: 105)
+                    .frame(width: size, height: size)
                     .padding(.vertical, 10)
                     .padding(.horizontal, 5)
             }
@@ -122,19 +127,20 @@ struct ShelfItemView: View {
         Image(nsImage: viewModel.thumbnail ?? item.icon)
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .frame(width: 56, height: 56)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .frame(width: iconSide, height: iconSide)
+            .clipShape(RoundedRectangle(cornerRadius: max(8, iconSide * 0.22)))
             .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
     }
 
     private var textView: some View {
         Text(item.displayName)
-            .font(.system(size: 12, weight: .medium))
+            .font(.system(size: max(9, size * 0.105), weight: .medium))
             .foregroundStyle(.primary)
             .lineLimit(2)
             .truncationMode(.middle)
             .multilineTextAlignment(.center)
-            .frame(height: 30, alignment: .top)
+            .minimumScaleFactor(0.8)
+            .frame(height: textHeight, alignment: .top)
     }
 
     private var backgroundView: some View {

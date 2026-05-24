@@ -41,18 +41,64 @@ enum AppleIntelligenceError: LocalizedError {
     }
 }
 
+enum AppleIntelligenceStatus: Equatable {
+    case available
+    case unsupportedOS
+    case appleIntelligenceNotEnabled
+    case modelNotReady
+    case deviceNotEligible
+    case other(String)
+
+    var isAvailable: Bool { self == .available }
+
+    var userMessage: String {
+        switch self {
+        case .available:
+            return "Available on this Mac"
+        case .unsupportedOS:
+            return "Requires macOS 26 Tahoe or later"
+        case .appleIntelligenceNotEnabled:
+            return "Enable Apple Intelligence in System Settings → Apple Intelligence & Siri"
+        case .modelNotReady:
+            return "Apple Intelligence model is still downloading. Try again later."
+        case .deviceNotEligible:
+            return "This Mac or Siri language is not eligible for Apple Intelligence"
+        case .other(let s):
+            return "Unavailable: \(s)"
+        }
+    }
+}
+
 @MainActor
 final class AppleIntelligenceManager {
     static let shared = AppleIntelligenceManager()
     private init() {}
 
-    var isAvailable: Bool {
+    var isAvailable: Bool { status.isAvailable }
+
+    var status: AppleIntelligenceStatus {
         #if canImport(FoundationModels)
         if #available(macOS 26.0, *) {
-            return SystemLanguageModel.default.availability == .available
+            switch SystemLanguageModel.default.availability {
+            case .available:
+                return .available
+            case .unavailable(let reason):
+                switch reason {
+                case .appleIntelligenceNotEnabled:
+                    return .appleIntelligenceNotEnabled
+                case .modelNotReady:
+                    return .modelNotReady
+                case .deviceNotEligible:
+                    return .deviceNotEligible
+                @unknown default:
+                    return .other(String(describing: reason))
+                }
+            @unknown default:
+                return .other("unknown availability")
+            }
         }
         #endif
-        return false
+        return .unsupportedOS
     }
 
     func extractText(from pdfURL: URL) throws -> String {
