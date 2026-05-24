@@ -225,6 +225,14 @@ final class UpdatesStatusModel: NSObject, ObservableObject, SPUUpdaterDelegate, 
         updater.checkForUpdates()
     }
 
+    /// Silent background check — Sparkle decide gentle-reminder vs alert based
+    /// on `supportsGentleScheduledUpdateReminders`. Use on app launch so users
+    /// always see fresh updates without waiting for the scheduled timer.
+    func checkForUpdatesInBackground() {
+        guard let updater else { return }
+        updater.checkForUpdatesInBackground()
+    }
+
     // MARK: SPUUpdaterDelegate
 
     func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
@@ -253,18 +261,26 @@ final class UpdatesStatusModel: NSObject, ObservableObject, SPUUpdaterDelegate, 
     /// Sparkle is about to surface an update sheet. For background apps the
     /// sheet alone is easy to miss, so we also fire a UNUserNotification and
     /// activate the app so any window comes forward.
+    ///
+    /// `handleShowingUpdate=false` is the gentle-reminder path: Sparkle will
+    /// NOT show alert this session — only post notification. Activating dock
+    /// in that case cause flash + immediate revert by WillFinishUpdateSession
+    /// (the visible "pantallazo que se esconde"). Only activate when Sparkle
+    /// actually about to show alert.
     func standardUserDriverWillHandleShowingUpdate(
         _ handleShowingUpdate: Bool,
         forUpdate update: SUAppcastItem,
         state: SPUUserUpdateState
     ) {
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
+        if handleShowingUpdate {
+            NSApp.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
+        }
         if !state.userInitiated {
             requestNotificationAuthorizationIfNeeded()
             postUpdateNotification(for: update)
         }
-        NSLog("[NotchMac][Updater] will show update version=\(update.displayVersionString) userInitiated=\(state.userInitiated)")
+        NSLog("[NotchMac][Updater] will show update version=\(update.displayVersionString) userInitiated=\(state.userInitiated) handleShowingUpdate=\(handleShowingUpdate)")
     }
 
     /// Sparkle is telling us the user engaged with its UI — clear any pending

@@ -498,6 +498,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        // Always run a background update check on every launch (gentle-reminder
+        // path — Sparkle posts a UNUserNotification when an update is found and
+        // shows the alert sheet only once the user clicks it). Sparkle's
+        // built-in scheduler only fires after the interval, so a quick
+        // relaunch within the hour never sees fresh appcast entries. Delay 5 s
+        // to let networking + UI settle before kicking the request off.
+        if upd.automaticallyChecksForUpdates {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                NSLog("[NotchMac][Boot] launch-time checkForUpdatesInBackground()")
+                UpdatesStatusModel.shared.checkForUpdatesInBackground()
+            }
+        }
+
         if !Defaults[.systemEventIndicatorTintMigrated] {
             Defaults[.systemEventIndicatorTint] = Defaults[.systemEventIndicatorUseAccent] ? .accent : .white
             Defaults[.systemEventIndicatorTintMigrated] = true
