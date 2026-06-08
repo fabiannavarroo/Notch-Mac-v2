@@ -195,7 +195,6 @@ struct AppleIntelligencePDFSummaryOverlay: View {
 
     private func close() {
         inputFocused = false
-        AppleIntelligenceManager.shared.endChat()
         state.reset()
         coordinator.currentView = .home
         vm.close()
