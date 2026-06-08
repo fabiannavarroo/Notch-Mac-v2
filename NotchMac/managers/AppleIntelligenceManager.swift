@@ -142,42 +142,29 @@ final class AppleIntelligenceManager {
         throw AppleIntelligenceError.unavailable
     }
 
-    // Persistent chat session for the active document. Reusing one session keeps
-    // the document in context only once (no costly re-prefill per question, which
-    // looked like a hang) and lets Foundation Models manage the running transcript.
-    // Stored as `Any?` so the property doesn't require macOS 26 availability.
-    private var chatSessionBox: Any?
-
-    /// Drop the current chat session (e.g. when a new PDF is loaded or the chat closes).
-    func endChat() {
-        chatSessionBox = nil
-    }
-
-    /// Streams an answer token-by-token. `onPartial` is called on the main actor
-    /// with the cumulative text so the UI can update live (no infinite spinner).
-    /// Returns the final full answer.
-    @discardableResult
-    func askStream(
-        question: String,
-        context: String,
-        onPartial: @escaping (String) -> Void
-    ) async throws -> String {
+    /// Answers a question about the document. Mirrors `summarize` exactly (short
+    /// instructions, document + history carried in the *prompt*, fresh session,
+    /// non-streaming `respond`) because that path is proven to work — putting a large
+    /// document in the session `instructions` is what made earlier attempts hang.
+    func ask(question: String, context: String, history: [ChatMessage]) async throws -> String {
         #if canImport(FoundationModels)
         if #available(macOS 26.0, *), isAvailable {
-            // Issuing a request while one is in flight traps in Foundation Models.
-            if let s = chatSessionBox as? LanguageModelSession, s.isResponding {
-                throw AppleIntelligenceError.sessionFailed("Still answering the previous question — please wait.")
+            let session = LanguageModelSession(instructions: """
+            You answer questions about the document provided in the prompt. Use only that document. If the answer is not in it, say so plainly. Reply in the same language as the question, be concise, and use simple Markdown (** for bold, - for bullet lists).
+            """)
+            var convo = ""
+            for m in history.suffix(8) {
+                convo += (m.role == .user ? "Q: " : "A: ") + m.text + "\n"
             }
+            let prompt = """
+            DOCUMENT:
+            \(truncated(context, limit: 12_000))
+
+            \(convo)Question: \(question)
+            """
             do {
-                return try await stream(question, context: context, onPartial: onPartial)
-            } catch let error as LanguageModelSession.GenerationError {
-                // Context overflow (long doc + long chat): rebuild a fresh session
-                // with just the document and retry once, instead of stalling.
-                if case .exceededContextWindowSize = error {
-                    chatSessionBox = nil
-                    return try await stream(question, context: context, onPartial: onPartial)
-                }
-                throw AppleIntelligenceError.sessionFailed(error.localizedDescription)
+                let response = try await session.respond(to: prompt)
+                return response.content
             } catch {
                 throw AppleIntelligenceError.sessionFailed(error.localizedDescription)
             }
@@ -185,43 +172,6 @@ final class AppleIntelligenceManager {
         #endif
         throw AppleIntelligenceError.unavailable
     }
-
-    #if canImport(FoundationModels)
-    @available(macOS 26.0, *)
-    private func stream(
-        _ question: String,
-        context: String,
-        onPartial: @escaping (String) -> Void
-    ) async throws -> String {
-        let session = chatSession(for: context)
-        var last = ""
-        for try await partial in session.streamResponse(to: question) {
-            last = partial.content
-            onPartial(last)
-        }
-        return last
-    }
-    #endif
-
-    #if canImport(FoundationModels)
-    @available(macOS 26.0, *)
-    private func chatSession(for context: String) -> LanguageModelSession {
-        if let existing = chatSessionBox as? LanguageModelSession {
-            return existing
-        }
-        let session = LanguageModelSession(instructions: """
-        You answer questions about the PDF document below. Use only this document; \
-        if the answer is not in it, say so plainly. Reply in the same language as the \
-        question, be concise, and format with simple Markdown (use ** for bold and \
-        - for bullet lists).
-
-        DOCUMENT:
-        \(truncated(context, limit: 6_000))
-        """)
-        chatSessionBox = session
-        return session
-    }
-    #endif
 
     private func truncated(_ s: String, limit: Int) -> String {
         if s.count <= limit { return s }

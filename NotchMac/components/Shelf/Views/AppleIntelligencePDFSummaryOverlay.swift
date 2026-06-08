@@ -15,7 +15,6 @@ struct AppleIntelligencePDFSummaryOverlay: View {
     @ObservedObject private var coordinator = BoringViewCoordinator.shared
     @State private var input: String = ""
     @State private var isAsking: Bool = false
-    @State private var streamingID: UUID? = nil
     @FocusState private var inputFocused: Bool
 
     var body: some View {
@@ -29,10 +28,8 @@ struct AppleIntelligencePDFSummaryOverlay: View {
                         ForEach(state.messages) { msg in
                             ChatBubble(message: msg).id(msg.id)
                         }
-                        // Animated "typing" dots while we wait for the first token.
-                        // Once tokens start streaming into the assistant bubble it
-                        // disappears (the bubble itself shows the live text).
-                        if isAsking && streamingID == nil {
+                        // Animated "typing" dots while the model prepares the answer.
+                        if isAsking {
                             ThinkingBubble().id("thinking")
                         }
                     }
@@ -148,40 +145,47 @@ struct AppleIntelligencePDFSummaryOverlay: View {
         let q = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty, !isAsking else { return }
         input = ""
+        let history = state.messages
+        let ctx = state.context
         state.messages.append(ChatMessage(role: .user, text: q))
         isAsking = true
-        streamingID = nil
-        let assistantID = UUID()
         Task {
             do {
-                try await AppleIntelligenceManager.shared.askStream(
-                    question: q,
-                    context: state.context
-                ) { partial in
-                    // Append the assistant bubble on the first token, then keep
-                    // updating its text live as more tokens stream in.
-                    if streamingID == nil {
-                        streamingID = assistantID
-                        state.messages.append(ChatMessage(id: assistantID, role: .assistant, text: partial))
-                    } else if let idx = state.messages.firstIndex(where: { $0.id == assistantID }) {
-                        state.messages[idx].text = partial
-                    }
-                }
-                if streamingID == nil {
-                    // Model produced no text at all.
-                    state.messages.append(ChatMessage(role: .assistant, text: "No tengo una respuesta para eso en el documento."))
-                }
+                let answer = try await askWithTimeout(q, context: ctx, history: history)
+                let clean = answer.trimmingCharacters(in: .whitespacesAndNewlines)
+                state.messages.append(ChatMessage(
+                    role: .assistant,
+                    text: clean.isEmpty ? "No tengo una respuesta para eso en el documento." : clean
+                ))
             } catch {
                 state.messages.append(ChatMessage(role: .assistant, text: "⚠️ \(error.localizedDescription)"))
             }
             isAsking = false
-            streamingID = nil
+        }
+    }
+
+    /// Runs the model request with a hard timeout so the chat never hangs on an
+    /// unresponsive model — the user gets a clear error instead of an endless spinner.
+    private func askWithTimeout(_ q: String, context: String, history: [ChatMessage]) async throws -> String {
+        try await withThrowingTaskGroup(of: String.self) { group in
+            group.addTask {
+                try await AppleIntelligenceManager.shared.ask(question: q, context: context, history: history)
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: 75_000_000_000) // 75s
+                throw AppleIntelligenceError.sessionFailed("Tiempo de espera agotado — el modelo no respondió.")
+            }
+            guard let result = try await group.next() else {
+                throw AppleIntelligenceError.sessionFailed("Sin respuesta del modelo.")
+            }
+            group.cancelAll()
+            return result
         }
     }
 
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
         withAnimation(.easeOut(duration: 0.2)) {
-            if isAsking && streamingID == nil {
+            if isAsking {
                 proxy.scrollTo("thinking", anchor: .bottom)
             } else if let last = state.messages.last {
                 proxy.scrollTo(last.id, anchor: .bottom)
@@ -191,7 +195,6 @@ struct AppleIntelligencePDFSummaryOverlay: View {
 
     private func close() {
         inputFocused = false
-        AppleIntelligenceManager.shared.endChat()
         state.reset()
         coordinator.currentView = .home
         vm.close()
