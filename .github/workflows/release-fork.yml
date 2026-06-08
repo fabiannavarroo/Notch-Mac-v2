@@ -202,7 +202,10 @@ jobs:
           # Cambiamos a main para evitar non-fast-forward; trasladamos solo el appcast actualizado
           cp "$APPCAST" /tmp/new_appcast.xml
           git fetch origin main
-          git checkout -B main origin/main
+          # -f: discard the freshly-generated (dirty) appcast in the tag worktree —
+          # it's already saved to /tmp — otherwise checkout aborts when origin/main's
+          # appcast differs from the tag's committed copy.
+          git checkout -f -B main origin/main
           cp /tmp/new_appcast.xml "$APPCAST"
           git add "$APPCAST"
           if ! git diff --staged --quiet; then
