@@ -333,6 +333,9 @@ extension Defaults.Keys {
     // Option key modifier behaviour for media keys
     static let optionKeyAction = Key<OptionKeyAction>("optionKeyAction", default: OptionKeyAction.openSettings)
     
+    // MARK: System Monitor
+    static let showSystemMonitor = Key<Bool>("showSystemMonitor", default: false)
+
     // MARK: Shelf
     static let boringShelf = Key<Bool>("boringShelf", default: true)
     static let enableAppleIntelligenceShelf = Key<Bool>("enableAppleIntelligenceShelf", default: false)

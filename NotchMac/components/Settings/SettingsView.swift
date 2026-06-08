@@ -1640,6 +1640,7 @@ struct NotchUtilitySettingsView: View {
         case airPods
         case pomodoro
         case hud
+        case systemMonitor
         case lockScreenMusic
         case shortcuts
         case updates
@@ -1775,6 +1776,12 @@ struct NotchUtilitySettingsView: View {
                     isSelected: selectedItem == .hud,
                     action: { selectedItem = .hud }
                 )
+                NMSidebarItem(
+                    title: "System Monitor",
+                    systemImage: "gauge.with.dots.needle.33percent",
+                    isSelected: selectedItem == .systemMonitor,
+                    action: { selectedItem = .systemMonitor }
+                )
                 // Lock Screen Music — hidden while feature is in development.
                 // Wiring + code paths stay in the project so we can resume
                 // without re-plumbing everything. To re-enable: restore this
@@ -1839,6 +1846,7 @@ struct NotchUtilitySettingsView: View {
         case .airPods: return "AirPods"
         case .pomodoro: return "Pomodoro"
         case .hud: return "HUD"
+        case .systemMonitor: return "System Monitor"
         case .lockScreenMusic: return "Lock Screen Music"
         case .shortcuts: return "Shortcuts"
         case .updates: return "Updates"
@@ -1858,6 +1866,7 @@ struct NotchUtilitySettingsView: View {
         case .airPods: return "3D live activity, battery rings, and connection alerts."
         case .pomodoro: return "Focus sessions, breaks, and timer indicators in the notch."
         case .hud: return "Replace macOS volume, brightness, keyboard, and Caps Lock indicators."
+        case .systemMonitor: return "CPU and memory usage gauges in the notch header."
         case .lockScreenMusic: return "Music widget + dynamic wallpaper on the macOS lock screen."
         case .shortcuts: return "Keyboard shortcuts for fast notch controls."
         case .updates: return "Keep NotchMac current with automatic releases."
@@ -1898,6 +1907,8 @@ struct NotchUtilitySettingsView: View {
                 NMPomodoroPanel()
             case .hud:
                 NMHUDPanel()
+            case .systemMonitor:
+                SystemMonitorSettings()
             case .lockScreenMusic:
                 LockScreenMusicSettingsView()
             case .shortcuts:
@@ -2562,6 +2573,8 @@ private struct NMModulesCard: View {
                     NMDivider()
                     NMModuleRow(title: "AirPods", subtitle: "Device plate and battery alerts", systemImage: "airpods", tint: .mint, key: .enableAirPodsWidget, badges: ["Beta"])
                 }
+                NMDivider()
+                NMModuleRow(title: "Mirror", subtitle: "Webcam preview inside the notch", systemImage: "web.camera", tint: .purple, key: .showMirror, badges: ["Requires Permission"])
             }
         }
         .padding(20)
@@ -3282,6 +3295,7 @@ private struct NMModuleRow: View {
     @Default(.showBatteryIndicator) private var batteryOn
     @Default(.showTimerModule) private var timerOn
     @Default(.enableAirPodsWidget) private var airPodsOn
+    @Default(.showMirror) private var mirrorOn
 
     var body: some View {
         let _ = refreshToken
@@ -3325,7 +3339,7 @@ private struct NMModuleRow: View {
     private var isEnabled: Bool { Defaults[key] }
 
     private var refreshToken: String {
-        "\(musicOn)-\(shelfOn)-\(calendarOn)-\(batteryOn)-\(timerOn)-\(airPodsOn)"
+        "\(musicOn)-\(shelfOn)-\(calendarOn)-\(batteryOn)-\(timerOn)-\(airPodsOn)-\(mirrorOn)"
     }
 
     private var binding: Binding<Bool> {

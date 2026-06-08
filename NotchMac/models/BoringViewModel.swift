@@ -33,6 +33,7 @@ class BoringViewModel: NSObject, ObservableObject {
     @Published var isHoveringCalendar: Bool = false
     @Published var isBatteryPopoverActive: Bool = false
     @Published var isAudioPopoverActive: Bool = false
+    @Published var isSystemMonitorPopoverActive: Bool = false
 
     @Published var screenUUID: String?
 
@@ -209,6 +210,7 @@ class BoringViewModel: NSObject, ObservableObject {
         self.notchState = .closed
         self.isBatteryPopoverActive = false
         self.isAudioPopoverActive = false
+        self.isSystemMonitorPopoverActive = false
         self.coordinator.sneakPeek.show = false
         self.edgeAutoOpenActive = false
 
