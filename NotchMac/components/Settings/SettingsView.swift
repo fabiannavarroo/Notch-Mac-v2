@@ -5630,7 +5630,21 @@ private struct NMShelfAppleIntelligenceCard: View {
     @Default(.enableAppleIntelligenceShelf) private var enabled
     @Default(.boringShelf) private var shelfEnabled
 
-    private var available: Bool { AppleIntelligenceManager.shared.isAvailable }
+    // Live status, refreshed whenever the card appears or the window becomes
+    // active, so enabling Apple Intelligence in System Settings reflects here
+    // without restarting the app.
+    @State private var status: AppleIntelligenceStatus = AppleIntelligenceManager.shared.status
+
+    private var available: Bool { status.isAvailable }
+
+    // True when the only thing missing is the user turning Apple Intelligence on.
+    private var canFixInSettings: Bool {
+        status == .appleIntelligenceNotEnabled
+    }
+
+    private func refresh() {
+        status = AppleIntelligenceManager.shared.status
+    }
 
     var body: some View {
         NMSettingsCard(title: "Apple Intelligence") {
@@ -5657,11 +5671,25 @@ private struct NMShelfAppleIntelligenceCard: View {
                         Image(systemName: available ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
                             .font(.system(size: 10))
                             .foregroundStyle(available ? Color.green : Color.orange)
-                        Text(available
-                             ? "Available on this Mac"
-                             : "Unavailable, requires macOS 26 + Apple Intelligence")
+                        // Show the precise reason (e.g. "Enable Apple Intelligence
+                        // in System Settings") instead of a generic message.
+                        Text(status.userMessage)
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(.white.opacity(0.6))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if !available && canFixInSettings {
+                        Button {
+                            if let url = URL(string: "x-apple.systempreferences:com.apple.Siri-Settings.extension") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        } label: {
+                            Text("Open Apple Intelligence Settings")
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.top, 2)
                     }
                 }
 
@@ -5672,6 +5700,10 @@ private struct NMShelfAppleIntelligenceCard: View {
                     .disabled(!available || !shelfEnabled)
             }
             .padding(.vertical, 4)
+        }
+        .onAppear(perform: refresh)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            refresh()
         }
     }
 }
