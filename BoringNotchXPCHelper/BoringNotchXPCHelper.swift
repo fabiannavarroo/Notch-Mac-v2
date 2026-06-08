@@ -103,11 +103,18 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
 
     @objc func isScreenBrightnessAvailable(with reply: @escaping (Bool) -> Void) {
         var b: Float = 0
-        reply(displayServicesGetBrightness(displayID: CGMainDisplayID(), out: &b) || ioServiceFor(displayID: CGMainDisplayID()) != nil)
+        let display = CGMainDisplayID()
+        reply(coreDisplayGetUserBrightness(displayID: display) != nil
+              || displayServicesGetBrightness(displayID: display, out: &b)
+              || ioServiceFor(displayID: display) != nil)
     }
 
     @objc func currentScreenBrightness(with reply: @escaping (NSNumber?) -> Void) {
         var b: Float = 0
+        if let cd = coreDisplayGetUserBrightness(displayID: CGMainDisplayID()) {
+            reply(NSNumber(value: cd))
+            return
+        }
         if displayServicesGetBrightness(displayID: CGMainDisplayID(), out: &b) {
             reply(NSNumber(value: b))
             return
@@ -126,11 +133,25 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
 
     @objc func setScreenBrightness(_ value: Float, with reply: @escaping (Bool) -> Void) {
         let clamped = max(0, min(1, value))
-        if displayServicesSetBrightness(displayID: CGMainDisplayID(), value: clamped) {
+        let display = CGMainDisplayID()
+
+        // Primary path on Apple Silicon internal displays: CoreDisplay sets the
+        // user brightness, then DisplayServicesBrightnessChanged tells the system
+        // to persist it and refresh the menu-bar/Control-Center value.
+        if coreDisplaySetUserBrightness(displayID: display, value: clamped) {
+            displayServicesBrightnessChanged(displayID: display, value: clamped)
             reply(true)
             return
         }
-        if let io = ioServiceFor(displayID: CGMainDisplayID()) {
+
+        // Fallback for Intel / external displays exposing DisplayServices.
+        if displayServicesSetBrightness(displayID: display, value: clamped) {
+            reply(true)
+            return
+        }
+
+        // Legacy IOKit path (IODisplayConnect) — Intel only.
+        if let io = ioServiceFor(displayID: display) {
             let ok = IODisplaySetFloatParameter(io, 0, kIODisplayBrightnessKey as CFString, clamped) == kIOReturnSuccess
             IOObjectRelease(io)
             reply(ok)
@@ -157,6 +178,37 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         return fn(displayID, value) == 0
     }
 
+    // MARK: - CoreDisplay (Apple Silicon internal display)
+
+    /// Sets brightness on the built-in display via CoreDisplay. Returns false for
+    /// non-builtin displays or when the private symbol is unavailable, so callers
+    /// fall through to the DisplayServices/IOKit paths.
+    private func coreDisplaySetUserBrightness(displayID: CGDirectDisplayID, value: Float) -> Bool {
+        guard CGDisplayIsBuiltin(displayID) != 0 else { return false }
+        guard let sym = dlsym(CoreDisplayHandle.handle, "CoreDisplay_Display_SetUserBrightness") else { return false }
+        typealias Fn = @convention(c) (CGDirectDisplayID, Double) -> Void
+        let fn = unsafeBitCast(sym, to: Fn.self)
+        fn(displayID, Double(value))
+        return true
+    }
+
+    private func coreDisplayGetUserBrightness(displayID: CGDirectDisplayID) -> Float? {
+        guard CGDisplayIsBuiltin(displayID) != 0 else { return nil }
+        guard let sym = dlsym(CoreDisplayHandle.handle, "CoreDisplay_Display_GetUserBrightness") else { return nil }
+        typealias Fn = @convention(c) (CGDirectDisplayID) -> Double
+        let fn = unsafeBitCast(sym, to: Fn.self)
+        return Float(fn(displayID))
+    }
+
+    /// Notifies the system of a brightness change so it persists the value and
+    /// updates the menu-bar / Control Center indicator.
+    private func displayServicesBrightnessChanged(displayID: CGDirectDisplayID, value: Float) {
+        guard let sym = dlsym(DisplayServicesHandle.handle, "DisplayServicesBrightnessChanged") else { return }
+        typealias Fn = @convention(c) (CGDirectDisplayID, Double) -> Void
+        let fn = unsafeBitCast(sym, to: Fn.self)
+        fn(displayID, Double(value))
+    }
+
     private func ioServiceFor(displayID: CGDirectDisplayID) -> io_service_t? {
         var iterator: io_iterator_t = 0
         guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("IODisplayConnect"), &iterator) == kIOReturnSuccess else { return nil }
@@ -181,6 +233,19 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
             let paths = [
                 "/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices",
                 "/System/Library/PrivateFrameworks/DisplayServices.framework/Versions/Current/DisplayServices"
+            ]
+            for p in paths {
+                if let h = dlopen(p, RTLD_LAZY) { return h }
+            }
+            return nil
+        }()
+    }
+
+    private enum CoreDisplayHandle {
+        static let handle: UnsafeMutableRawPointer? = {
+            let paths = [
+                "/System/Library/Frameworks/CoreDisplay.framework/CoreDisplay",
+                "/System/Library/Frameworks/CoreDisplay.framework/Versions/Current/CoreDisplay"
             ]
             for p in paths {
                 if let h = dlopen(p, RTLD_LAZY) { return h }
