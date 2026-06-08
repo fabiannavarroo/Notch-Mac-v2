@@ -186,7 +186,7 @@ struct AppleIntelligencePDFDropView: View {
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
 
         do {
-            let text = try manager.extractText(from: url)
+            let text = try await manager.extractText(from: url)
             state.context = text
             state.phase = .summarizing
             let summary = try await manager.summarize(text: text)

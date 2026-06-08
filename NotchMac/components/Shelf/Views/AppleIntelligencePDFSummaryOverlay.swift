@@ -15,6 +15,10 @@ struct AppleIntelligencePDFSummaryOverlay: View {
     @ObservedObject private var coordinator = BoringViewCoordinator.shared
     @State private var input: String = ""
     @State private var isAsking: Bool = false
+    // Monotonic token: each question bumps it. The model task and the watchdog both
+    // check it before touching the UI, so a stale/stuck answer can never write back
+    // after a timeout or a newer question — this is what guarantees no hang.
+    @State private var askGeneration: Int = 0
     @FocusState private var inputFocused: Bool
 
     var body: some View {
@@ -149,37 +153,39 @@ struct AppleIntelligencePDFSummaryOverlay: View {
         let ctx = state.context
         state.messages.append(ChatMessage(role: .user, text: q))
         isAsking = true
-        Task {
+        askGeneration += 1
+        let gen = askGeneration
+
+        // Watchdog: frees the UI even if Apple Intelligence never returns or ignores
+        // cancellation. It is fully decoupled from the model task — it doesn't wait on
+        // it — so a stuck `respond` can't keep the spinner up. Bumping the generation
+        // makes any late answer from the in-flight task a no-op.
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 60_000_000_000) // 60s
+            guard isAsking, gen == askGeneration else { return }
+            askGeneration += 1
+            isAsking = false
+            state.messages.append(ChatMessage(
+                role: .assistant,
+                text: "⚠️ Tiempo de espera agotado — Apple Intelligence no respondió."
+            ))
+        }
+
+        Task { @MainActor in
             do {
-                let answer = try await askWithTimeout(q, context: ctx, history: history)
+                let answer = try await AppleIntelligenceManager.shared.ask(question: q, context: ctx, history: history)
+                guard gen == askGeneration else { return } // superseded by timeout or a newer question
                 let clean = answer.trimmingCharacters(in: .whitespacesAndNewlines)
                 state.messages.append(ChatMessage(
                     role: .assistant,
                     text: clean.isEmpty ? "No tengo una respuesta para eso en el documento." : clean
                 ))
+                isAsking = false
             } catch {
+                guard gen == askGeneration else { return }
                 state.messages.append(ChatMessage(role: .assistant, text: "⚠️ \(error.localizedDescription)"))
+                isAsking = false
             }
-            isAsking = false
-        }
-    }
-
-    /// Runs the model request with a hard timeout so the chat never hangs on an
-    /// unresponsive model — the user gets a clear error instead of an endless spinner.
-    private func askWithTimeout(_ q: String, context: String, history: [ChatMessage]) async throws -> String {
-        try await withThrowingTaskGroup(of: String.self) { group in
-            group.addTask {
-                try await AppleIntelligenceManager.shared.ask(question: q, context: context, history: history)
-            }
-            group.addTask {
-                try await Task.sleep(nanoseconds: 75_000_000_000) // 75s
-                throw AppleIntelligenceError.sessionFailed("Tiempo de espera agotado — el modelo no respondió.")
-            }
-            guard let result = try await group.next() else {
-                throw AppleIntelligenceError.sessionFailed("Sin respuesta del modelo.")
-            }
-            group.cancelAll()
-            return result
         }
     }
 

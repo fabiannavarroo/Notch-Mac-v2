@@ -13,6 +13,7 @@
 import Foundation
 import AppKit
 import PDFKit
+import Vision
 
 #if canImport(FoundationModels)
 import FoundationModels
@@ -35,13 +36,15 @@ enum AppleIntelligenceError: LocalizedError {
     case unavailable
     case pdfUnreadable
     case emptyPDF
+    case ocrFailed
     case sessionFailed(String)
 
     var errorDescription: String? {
         switch self {
         case .unavailable: return "Apple Intelligence is unavailable on this Mac."
         case .pdfUnreadable: return "Could not read the PDF."
-        case .emptyPDF: return "The PDF contains no extractable text."
+        case .emptyPDF: return "The PDF has no readable text, even after OCR."
+        case .ocrFailed: return "Could not recognize text in the scanned PDF."
         case .sessionFailed(let msg): return msg
         }
     }
@@ -107,21 +110,78 @@ final class AppleIntelligenceManager {
         return .unsupportedOS
     }
 
-    func extractText(from pdfURL: URL) throws -> String {
+    /// Extracts the document text off the main thread. Uses PDFKit's embedded text
+    /// when present; for scanned PDFs (image-only pages) it falls back to on-device
+    /// OCR with Vision. Heavy work (PDF render + OCR) runs on a detached task so the
+    /// `@MainActor` UI never blocks.
+    func extractText(from pdfURL: URL) async throws -> String {
+        try await Task.detached(priority: .userInitiated) {
+            try Self.extract(from: pdfURL)
+        }.value
+    }
+
+    func summarize(pdf url: URL) async throws -> (summary: String, context: String) {
+        let text = try await extractText(from: url)
+        let summary = try await summarize(text: text)
+        return (summary, text)
+    }
+
+    // MARK: - Text extraction (nonisolated, runs off the main thread)
+
+    nonisolated private static func extract(from pdfURL: URL) throws -> String {
         guard let doc = PDFDocument(url: pdfURL) else { throw AppleIntelligenceError.pdfUnreadable }
+        let embedded = embeddedText(doc)
+        // Embedded text is enough for normal (text-layer) PDFs; bail early to skip OCR.
+        if isEnoughText(embedded, pageCount: doc.pageCount) { return embedded }
+        // Scanned / image-only PDF: OCR the rendered pages.
+        let ocr = ocrText(doc)
+        let best = ocr.count > embedded.count ? ocr : embedded
+        let trimmed = best.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw AppleIntelligenceError.emptyPDF }
+        return trimmed
+    }
+
+    nonisolated private static func embeddedText(_ doc: PDFDocument) -> String {
         var chunks: [String] = []
         for i in 0..<doc.pageCount {
             if let s = doc.page(at: i)?.string, !s.isEmpty { chunks.append(s) }
         }
-        let text = chunks.joined(separator: "\n\n").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { throw AppleIntelligenceError.emptyPDF }
-        return text
+        return chunks.joined(separator: "\n\n").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    func summarize(pdf url: URL) async throws -> (summary: String, context: String) {
-        let text = try extractText(from: url)
-        let summary = try await summarize(text: text)
-        return (summary, text)
+    /// True when the embedded text layer looks real (not a few stray glyphs from a scan).
+    nonisolated private static func isEnoughText(_ text: String, pageCount: Int) -> Bool {
+        let minChars = max(40, pageCount * 10)
+        return text.count >= minChars
+    }
+
+    /// On-device OCR of each page via Vision. Renders the page to a bitmap and runs
+    /// `VNRecognizeTextRequest` (accurate, with language correction). Capped to a
+    /// sane page count so a huge scan can't run unbounded.
+    nonisolated private static func ocrText(_ doc: PDFDocument) -> String {
+        let maxPages = min(doc.pageCount, 30)
+        var out: [String] = []
+        for i in 0..<maxPages {
+            guard let page = doc.page(at: i) else { continue }
+            let bounds = page.bounds(for: .mediaBox)
+            guard bounds.width > 0, bounds.height > 0 else { continue }
+            let scale: CGFloat = 2.0 // upscale so small print is legible to Vision
+            let size = CGSize(width: bounds.width * scale, height: bounds.height * scale)
+            let thumb = page.thumbnail(of: size, for: .mediaBox)
+            guard let cg = thumb.cgImage(forProposedRect: nil, context: nil, hints: nil) else { continue }
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = .accurate
+            request.usesLanguageCorrection = true
+            let handler = VNImageRequestHandler(cgImage: cg, options: [:])
+            do {
+                try handler.perform([request])
+                let lines = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+                if !lines.isEmpty { out.append(lines.joined(separator: "\n")) }
+            } catch {
+                continue // one bad page shouldn't sink the whole document
+            }
+        }
+        return out.joined(separator: "\n\n")
     }
 
     func summarize(text: String) async throws -> String {
@@ -130,7 +190,9 @@ final class AppleIntelligenceManager {
             let session = LanguageModelSession(instructions: """
             You are a concise document summarizer. Given the text of a PDF, produce a clear, well-structured summary in the same language as the document. Use short paragraphs and bullet points for key facts. Keep it under 400 words.
             """)
-            let prompt = "Summarize this document:\n\n\(truncated(text, limit: 16_000))"
+            // Foundation Models has a small context window (~4k tokens incl. output),
+            // so keep the document slice well under that to avoid a context-overflow throw.
+            let prompt = "Summarize this document:\n\n\(truncated(text, limit: 9_000))"
             do {
                 let response = try await session.respond(to: prompt)
                 return response.content
@@ -153,12 +215,14 @@ final class AppleIntelligenceManager {
             You answer questions about the document provided in the prompt. Use only that document. If the answer is not in it, say so plainly. Reply in the same language as the question, be concise, and use simple Markdown (** for bold, - for bullet lists).
             """)
             var convo = ""
-            for m in history.suffix(8) {
+            for m in history.suffix(6) {
                 convo += (m.role == .user ? "Q: " : "A: ") + m.text + "\n"
             }
+            // Keep the document slice small so document + history + question + answer
+            // all fit Foundation Models' context window.
             let prompt = """
             DOCUMENT:
-            \(truncated(context, limit: 12_000))
+            \(truncated(context, limit: 5_000))
 
             \(convo)Question: \(question)
             """
