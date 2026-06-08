@@ -1936,6 +1936,7 @@ private struct NMGeneralSystemCard: View {
     @Default(.showOnAllDisplays) private var showOnAllDisplays
     @Default(.automaticallySwitchDisplay) private var automaticallySwitchDisplay
     @Default(.showCaffeinateButton) private var showCaffeinateButton
+    @Default(.showMirror) private var showMirror
     @ObservedObject private var coordinator = BoringViewCoordinator.shared
     @State private var screens: [(uuid: String, name: String)] = Self.availableScreens()
 
@@ -2006,6 +2007,18 @@ private struct NMGeneralSystemCard: View {
                 subtitle: "Adds the quick keep-awake control to the open notch header."
             ) {
                 Toggle("", isOn: $showCaffeinateButton)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .tint(.green)
+            }
+
+            NMPreferenceRow(
+                title: "Mirror",
+                subtitle: "Webcam preview inside the notch",
+                badge: "Requires Permission"
+            ) {
+                Toggle("", isOn: $showMirror)
                     .labelsHidden()
                     .toggleStyle(.switch)
                     .controlSize(.small)
@@ -2575,6 +2588,8 @@ private struct NMModulesCard: View {
                 }
                 NMDivider()
                 NMModuleRow(title: "Mirror", subtitle: "Webcam preview inside the notch", systemImage: "web.camera", tint: .purple, key: .showMirror, badges: ["Requires Permission"])
+                NMDivider()
+                NMModuleRow(title: "AI Quota", subtitle: "Claude & Codex usage tab", systemImage: "chart.bar.fill", tint: .teal, key: .showAIQuota, badges: ["Beta"])
             }
         }
         .padding(20)

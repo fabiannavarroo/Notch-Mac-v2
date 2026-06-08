@@ -1,6 +1,24 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "AI Quota": {
+      "comment": "Title of the AI quota notch tab showing Claude and Codex usage."
+    },
+    "Refresh AI quota": {
+      "comment": "Accessibility help for the AI quota refresh button."
+    },
+    "Reset time unavailable": {
+      "comment": "Shown when an AI quota tier has no known reset time."
+    },
+    "Resets in %@": {
+      "comment": "Time until an AI quota tier resets."
+    },
+    "Show AI quota (Claude & Codex)": {
+      "comment": "Toggle label that enables the AI quota tab."
+    },
+    "Updated %@ ago": {
+      "comment": "Relative time since the AI quota was last fetched."
+    },
     "Activity Monitor": {
       "comment": "A button label that opens the Activity Monitor."
     },

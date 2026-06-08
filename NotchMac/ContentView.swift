@@ -645,6 +645,8 @@ struct ContentView: View {
                 }
             case .summary:
                 AppleIntelligencePDFSummaryOverlay()
+            case .quota:
+                AIQuotaView()
             }
         }
         .transition(

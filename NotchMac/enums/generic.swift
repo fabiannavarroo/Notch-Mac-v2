@@ -30,6 +30,7 @@ public enum NotchViews {
     case focus
     case airpods
     case summary
+    case quota
 }
 
 enum SettingsEnum {

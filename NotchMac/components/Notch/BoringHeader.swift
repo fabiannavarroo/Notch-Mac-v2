@@ -22,7 +22,7 @@ struct BoringHeader: View {
         HStack(spacing: 0) {
             HStack {
                 let hasModuleTab = (showShelf || showTimer)
-                if (!tvm.isEmpty || coordinator.alwaysShowTabs) && hasModuleTab {
+                if Defaults[.showAIQuota] || ((!tvm.isEmpty || coordinator.alwaysShowTabs) && hasModuleTab) {
                     TabSelectionView()
                 } else if vm.notchState == .open {
                     EmptyView()
