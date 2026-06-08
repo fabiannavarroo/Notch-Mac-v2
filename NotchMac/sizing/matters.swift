@@ -14,7 +14,24 @@ let batterySneakSize: CGSize = .init(width: 160, height: 1)
 
 let shadowPadding: CGFloat = 20
 let openNotchSize: CGSize = .init(width: 640, height: 190)
-let windowSize: CGSize = .init(width: openNotchSize.width, height: openNotchSize.height + shadowPadding)
+// The PDF summary / chat overlay needs more room than the standard open notch so
+// the summary stays legible and the chat can scroll. The hosting window must be
+// large enough to fit the tallest/widest open layout (transparent areas pass clicks
+// through, so the extra size never blocks the menu bar).
+let summaryNotchSize: CGSize = .init(width: 720, height: 380)
+let windowSize: CGSize = .init(
+    width: max(openNotchSize.width, summaryNotchSize.width),
+    height: max(openNotchSize.height, summaryNotchSize.height) + shadowPadding
+)
+
+/// Open-notch dimensions for the currently displayed view. Most views use the
+/// standard size; the PDF summary expands so its content fits without clipping.
+@MainActor func notchOpenSize(for view: NotchViews) -> CGSize {
+    switch view {
+    case .summary: return summaryNotchSize
+    default: return openNotchSize
+    }
+}
 // Valores exactos del boring.notch original (upstream) para que el modo expandido
 // tenga las mismas curvas y trazo.
 let cornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (opened: (top: 19, bottom: 24), closed: (top: 6, bottom: 14))

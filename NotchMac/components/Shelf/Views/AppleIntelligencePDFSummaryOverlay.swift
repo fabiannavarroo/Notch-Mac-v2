@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import AppKit
 
 @MainActor
 struct AppleIntelligencePDFSummaryOverlay: View {
+    @EnvironmentObject private var vm: BoringViewModel
     @ObservedObject private var state = AppleIntelligencePDFState.shared
     @ObservedObject private var coordinator = BoringViewCoordinator.shared
     @State private var input: String = ""
@@ -58,9 +60,18 @@ struct AppleIntelligencePDFSummaryOverlay: View {
             }
             inputBar
         }
+        .frame(width: summaryNotchSize.width)
         .padding(.top, 6)
         .padding(.bottom, 8)
         .background(Color.black)
+        // Allow the (normally non-key) notch panel to take keyboard focus while the
+        // chat is on screen, so the text field accepts clicks and typing.
+        .background(NotchKeyWindowActivator())
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                inputFocused = true
+            }
+        }
     }
 
     private var header: some View {
@@ -168,8 +179,44 @@ struct AppleIntelligencePDFSummaryOverlay: View {
     }
 
     private func close() {
+        inputFocused = false
         state.reset()
         coordinator.currentView = .home
+        vm.close()
+    }
+}
+
+/// Bridges into the hosting notch panel to (de)authorize keyboard focus. The notch
+/// is non-key by default to avoid stealing focus on hover; this enables it only
+/// while the PDF chat is visible so the input field can be clicked and typed into.
+private struct NotchKeyWindowActivator: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        // Defer until the view is in a window. Activating the (accessory) app is
+        // required so keystrokes route to our panel's text field, not the app the
+        // user was last in.
+        DispatchQueue.main.async {
+            guard let panel = view.window as? (any KeyboardActivatablePanel) else { return }
+            panel.allowsKeyboardActivation = true
+            NSApp.activate(ignoringOtherApps: true)
+            panel.makeKey()
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        // Keep the panel key-eligible across SwiftUI updates without re-stealing
+        // focus (don't re-activate here — the user may have clicked elsewhere).
+        (nsView.window as? (any KeyboardActivatablePanel))?.allowsKeyboardActivation = true
+    }
+
+    static func dismantleNSView(_ nsView: NSView, coordinator: ()) {
+        if let panel = nsView.window as? (any KeyboardActivatablePanel) {
+            panel.allowsKeyboardActivation = false
+            panel.makeFirstResponder(nil)
+        }
+        // Hand activation back to whatever app the user was using before.
+        NSApp.deactivate()
     }
 }
 

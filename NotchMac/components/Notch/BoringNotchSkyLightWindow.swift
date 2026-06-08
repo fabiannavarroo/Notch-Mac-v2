@@ -31,8 +31,10 @@ extension SkyLightOperator {
     }
 }
 
-class BoringNotchSkyLightWindow: NSPanel {
+class BoringNotchSkyLightWindow: NSPanel, KeyboardActivatablePanel {
     private var isSkyLightEnabled: Bool = false
+    // Opt-in keyboard focus for embedded text fields (e.g. PDF chat input).
+    var allowsKeyboardActivation: Bool = false
     
     override init(
         contentRect: NSRect,
@@ -109,6 +111,6 @@ class BoringNotchSkyLightWindow: NSPanel {
     
     private var observers: Set<AnyCancellable> = []
     
-    override var canBecomeKey: Bool { false }
+    override var canBecomeKey: Bool { allowsKeyboardActivation }
     override var canBecomeMain: Bool { false }
 }

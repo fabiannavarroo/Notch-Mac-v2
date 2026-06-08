@@ -176,7 +176,7 @@ struct ContentView: View {
                 let mainLayout = NotchLayout()
                     .id(moduleRenderID)
                     .frame(
-                        height: vm.notchState == .open ? openNotchSize.height - 12 : nil,
+                        height: vm.notchState == .open ? vm.notchSize.height - 12 : nil,
                         alignment: .top
                     )
                     .padding(
@@ -278,6 +278,14 @@ struct ContentView: View {
                             withAnimation {
                                 isHovering = false
                             }
+                        }
+                    }
+                    .onChange(of: coordinator.currentView) { _, newView in
+                        // Resize the open notch to fit the active view (the PDF summary
+                        // needs more room than the standard layout).
+                        guard vm.notchState == .open else { return }
+                        withAnimation(animationSpring) {
+                            vm.notchSize = notchOpenSize(for: newView)
                         }
                     }
                     .onChange(of: vm.isBatteryPopoverActive) {
@@ -954,7 +962,9 @@ struct ContentView: View {
 
     private func handleUpGesture(translation: CGFloat, phase: NSEvent.Phase) {
         guard vm.notchState == .open && !vm.isHoveringCalendar else { return }
-        guard coordinator.currentView != .shelf else { return }
+        // Don't treat scroll-up inside the shelf or the scrollable PDF summary as a
+        // close gesture — the user is scrolling content, not dismissing the notch.
+        guard coordinator.currentView != .shelf, coordinator.currentView != .summary else { return }
 
         withAnimation(animationSpring) {
             gestureProgress = (translation / Defaults[.gestureSensitivity]) * -20

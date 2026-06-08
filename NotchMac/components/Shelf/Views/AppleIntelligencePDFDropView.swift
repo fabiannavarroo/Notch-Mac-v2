@@ -192,7 +192,12 @@ struct AppleIntelligencePDFDropView: View {
             let summary = try await manager.summarize(text: text)
             state.summary = summary
             state.phase = .done
+            // Open (or re-open, if it auto-closed during processing) the notch and
+            // size it to the summary so the result is visible without clipping.
             coordinator.currentView = .summary
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.8)) {
+                vm.open()
+            }
         } catch {
             state.phase = .error(error.localizedDescription)
         }

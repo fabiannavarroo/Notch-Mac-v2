@@ -7,7 +7,17 @@
 
 import Cocoa
 
-class BoringNotchWindow: NSPanel {
+/// A notch panel that can be temporarily allowed to become the key window so
+/// embedded text fields (e.g. the PDF chat input) can receive focus and typing.
+/// The notch is normally non-key to avoid stealing focus on hover; views opt in
+/// by flipping `allowsKeyboardActivation` only while they need keyboard input.
+protocol KeyboardActivatablePanel: NSPanel {
+    var allowsKeyboardActivation: Bool { get set }
+}
+
+class BoringNotchWindow: NSPanel, KeyboardActivatablePanel {
+    var allowsKeyboardActivation: Bool = false
+
     override init(
         contentRect: NSRect,
         styleMask: NSWindow.StyleMask,
@@ -41,9 +51,9 @@ class BoringNotchWindow: NSPanel {
     }
     
     override var canBecomeKey: Bool {
-        false
+        allowsKeyboardActivation
     }
-    
+
     override var canBecomeMain: Bool {
         false
     }
