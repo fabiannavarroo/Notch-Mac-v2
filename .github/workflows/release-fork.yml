@@ -16,7 +16,10 @@ permissions:
 jobs:
   build:
     name: Build, sign update and release
-    runs-on: macos-15
+    # macOS 26 runner: needed so the macOS 26 SDK (FoundationModels / Apple
+    # Intelligence) is present. Older runners compile that feature out, which left
+    # the PDF-summary drop tile disabled in installed builds.
+    runs-on: macos-26
     env:
       SCHEME: NotchMac
       APP_NAME: NotchMac
@@ -41,8 +44,17 @@ jobs:
           BN=$(git rev-list --count HEAD)
           echo "build=$BN" >> "$GITHUB_OUTPUT"
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app || true
+      - name: Select Xcode 26 (FoundationModels SDK)
+        run: |
+          set -euo pipefail
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1 || true)
+          if [ -z "$XC" ]; then XC=/Applications/Xcode.app; fi
+          echo "Using $XC"
+          sudo xcode-select -s "$XC"
+          xcodebuild -version
+          # Fail early if the macOS 26 SDK isn't present (would silently disable AI).
+          xcodebuild -showsdks | grep -iE "macosx26" \
+            || { echo "::error::macOS 26 SDK not found — Apple Intelligence would be disabled"; exit 1; }
 
       - name: Cache SPM
         uses: actions/cache@v4
@@ -66,6 +78,7 @@ jobs:
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
+            OTHER_LDFLAGS="\$(inherited) -weak_framework FoundationModels" \
             -quiet \
             build
 
