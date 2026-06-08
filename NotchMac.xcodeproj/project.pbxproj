@@ -163,6 +163,9 @@
 		B1F747F92EC7E94000F841DB /* LottieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F747F82EC7E94000F841DB /* LottieView.swift */; };
 		B1FEB4992C7686630066EBBC /* PanGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1FEB4982C7686630066EBBC /* PanGesture.swift */; };
 		F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */; };
+		6AAA0000000000000000BB01 /* NetworkActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AAA0000000000000000AA01 /* NetworkActivityManager.swift */; };
+		6AAA0000000000000000BB02 /* NetworkStatusViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AAA0000000000000000AA02 /* NetworkStatusViewModel.swift */; };
+		6AAA0000000000000000BB03 /* BoringNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AAA0000000000000000AA03 /* BoringNetwork.swift */; };
 		5AAA0000000000000000BB01 /* SystemMonitorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AAA0000000000000000AA01 /* SystemMonitorManager.swift */; };
 		5AAA0000000000000000BB02 /* SystemMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AAA0000000000000000AA02 /* SystemMonitorView.swift */; };
 		5AAA0000000000000000BB03 /* SystemMonitorSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AAA0000000000000000AA03 /* SystemMonitorSettingsView.swift */; };
@@ -362,6 +365,9 @@
 		B1F747F82EC7E94000F841DB /* LottieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottieView.swift; sourceTree = "<group>"; };
 		B1FEB4982C7686630066EBBC /* PanGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanGesture.swift; sourceTree = "<group>"; };
 		F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryActivityManager.swift; sourceTree = "<group>"; };
+		6AAA0000000000000000AA01 /* NetworkActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkActivityManager.swift; sourceTree = "<group>"; };
+		6AAA0000000000000000AA02 /* NetworkStatusViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkStatusViewModel.swift; sourceTree = "<group>"; };
+		6AAA0000000000000000AA03 /* BoringNetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringNetwork.swift; sourceTree = "<group>"; };
 		5AAA0000000000000000AA01 /* SystemMonitorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorManager.swift; sourceTree = "<group>"; };
 		5AAA0000000000000000AA02 /* SystemMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorView.swift; sourceTree = "<group>"; };
 		5AAA0000000000000000AA03 /* SystemMonitorSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorSettingsView.swift; sourceTree = "<group>"; };
@@ -609,6 +615,7 @@
 				C6555FA7B9C149AC84DE28E9 /* AudioOutputManager.swift */,
 				11D58EA12E760AE100FA8377 /* ImageService.swift */,
 				F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */,
+				6AAA0000000000000000AA01 /* NetworkActivityManager.swift */,
 				1A11C0DE10000001000A0001 /* LaunchAtLoginManager.swift */,
 				CAFE1AE000000000000F0001 /* CaffeinateManager.swift */,
 				112FB7342CCF16F70015238C /* NotchSpaceManager.swift */,
@@ -741,6 +748,7 @@
 				B19016232CC15B4D00E3F12E /* Constants.swift */,
 				14D570C82C5F38890011E668 /* BoringViewModel.swift */,
 				14D570CA2C5F4B2C0011E668 /* BatteryStatusViewModel.swift */,
+				6AAA0000000000000000AA02 /* NetworkStatusViewModel.swift */,
 				1153BD902D986DB300979FB0 /* PlaybackState.swift */,
 			);
 			path = models;
@@ -871,6 +879,7 @@
 			children = (
 				115C12EB2ED3D003009754CA /* OpenNotchHUD.swift */,
 				14D570CC2C5F4BB70011E668 /* BoringBattery.swift */,
+				6AAA0000000000000000AA03 /* BoringNetwork.swift */,
 				B1C974332C642B6D0000E707 /* MarqueeTextView.swift */,
 				B1D365CD2C6A979C0047BDBC /* LiveActivityModifier.swift */,
 				B1D365CF2C6A9A6C0047BDBC /* SystemEventIndicatorModifier.swift */,
@@ -1078,6 +1087,9 @@
 				1194E87C2EA19E09009C82D6 /* ImageProcessingService.swift in Sources */,
 				1194E8872EA6DDA7009C82D6 /* BoringNotchSkyLightWindow.swift in Sources */,
 				14D570CB2C5F4B2C0011E668 /* BatteryStatusViewModel.swift in Sources */,
+				6AAA0000000000000000BB02 /* NetworkStatusViewModel.swift in Sources */,
+				6AAA0000000000000000BB03 /* BoringNetwork.swift in Sources */,
+				6AAA0000000000000000BB01 /* NetworkActivityManager.swift in Sources */,
 				9A0887322C7A693000C160EA /* TabButton.swift in Sources */,
 				1153BD9C2D98853B00979FB0 /* NowPlayingController.swift in Sources */,
 				11AA00012D98870000979FB0 /* MediaSourcePriority.swift in Sources */,
