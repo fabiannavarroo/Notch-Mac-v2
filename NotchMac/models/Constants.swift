@@ -180,6 +180,9 @@ extension Defaults.Keys {
     static let waitInterval = Key<Double>("waitInterval", default: 3)
     static let showShuffleAndRepeat = Key<Bool>("showShuffleAndRepeat", default: false)
     static let enableLyrics = Key<Bool>("enableLyrics", default: false)
+    // MARK: Lock Screen Music
+    static let lockScreenMusicEnabled = Key<Bool>("nm.lockScreenMusic.enabled", default: false)
+    static let lockScreenMusicShowLyrics = Key<Bool>("nm.lockScreenMusic.showLyrics", default: false)
     // MARK: Music player effects (opt-in, port of upstream PR #1136)
     static let enableParallaxAlbumArt = Key<Bool>("nm.music.fx.parallaxAlbumArt", default: false)
     static let enableAlbumArtFlip = Key<Bool>("nm.music.fx.albumArtFlip", default: false)

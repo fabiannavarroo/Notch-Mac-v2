@@ -1640,6 +1640,7 @@ struct NotchUtilitySettingsView: View {
         case airPods
         case pomodoro
         case hud
+        case lockScreenMusic
         case shortcuts
         case updates
         case about
@@ -1774,6 +1775,10 @@ struct NotchUtilitySettingsView: View {
                     isSelected: selectedItem == .hud,
                     action: { selectedItem = .hud }
                 )
+                // Lock Screen Music — hidden while feature is in development.
+                // Wiring + code paths stay in the project so we can resume
+                // without re-plumbing everything. To re-enable: restore this
+                // NMSidebarItem and re-enable LockScreenMusicCoordinator.start().
                 NMSidebarItem(
                     title: "Shortcuts",
                     systemImage: "command",
@@ -1834,6 +1839,7 @@ struct NotchUtilitySettingsView: View {
         case .airPods: return "AirPods"
         case .pomodoro: return "Pomodoro"
         case .hud: return "HUD"
+        case .lockScreenMusic: return "Lock Screen Music"
         case .shortcuts: return "Shortcuts"
         case .updates: return "Updates"
         case .about: return "About"
@@ -1852,6 +1858,7 @@ struct NotchUtilitySettingsView: View {
         case .airPods: return "3D live activity, battery rings, and connection alerts."
         case .pomodoro: return "Focus sessions, breaks, and timer indicators in the notch."
         case .hud: return "Replace macOS volume, brightness, keyboard, and Caps Lock indicators."
+        case .lockScreenMusic: return "Music widget + dynamic wallpaper on the macOS lock screen."
         case .shortcuts: return "Keyboard shortcuts for fast notch controls."
         case .updates: return "Keep NotchMac current with automatic releases."
         case .about: return "Version, credits, license, and project links."
@@ -1891,6 +1898,8 @@ struct NotchUtilitySettingsView: View {
                 NMPomodoroPanel()
             case .hud:
                 NMHUDPanel()
+            case .lockScreenMusic:
+                LockScreenMusicSettingsView()
             case .shortcuts:
                 NMShortcutsPanel()
             case .updates:

@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FAD200000000000000000011 /* LockScreenColorCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD200000000000000000001 /* LockScreenColorCache.swift */; };
+		FAD200000000000000000012 /* LockScreenWallpaperManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD200000000000000000002 /* LockScreenWallpaperManager.swift */; };
+		FAD200000000000000000013 /* LockScreenMusicWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD200000000000000000003 /* LockScreenMusicWindow.swift */; };
+		FAD200000000000000000014 /* LockScreenMusicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD200000000000000000004 /* LockScreenMusicView.swift */; };
+		FAD200000000000000000015 /* LockScreenMusicCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD200000000000000000005 /* LockScreenMusicCoordinator.swift */; };
+		FAD200000000000000000016 /* LockScreenMusicSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD200000000000000000006 /* LockScreenMusicSettingsView.swift */; };
 		FA11360A02F00136A0010001 /* ParallaxTiltModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA11360A01F00136A0010001 /* ParallaxTiltModifier.swift */; };
 		FA11360A02F00136A0010002 /* WavySlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA11360A01F00136A0010002 /* WavySlider.swift */; };
 		DD20E7C5D4814AE79EA431CF /* AudioOutputPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F057CFDCEE024378B6FFB41F /* AudioOutputPicker.swift */; };
@@ -205,6 +211,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		FAD200000000000000000001 /* LockScreenColorCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenColorCache.swift; sourceTree = "<group>"; };
+		FAD200000000000000000002 /* LockScreenWallpaperManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenWallpaperManager.swift; sourceTree = "<group>"; };
+		FAD200000000000000000003 /* LockScreenMusicWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenMusicWindow.swift; sourceTree = "<group>"; };
+		FAD200000000000000000004 /* LockScreenMusicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenMusicView.swift; sourceTree = "<group>"; };
+		FAD200000000000000000005 /* LockScreenMusicCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenMusicCoordinator.swift; sourceTree = "<group>"; };
+		FAD200000000000000000006 /* LockScreenMusicSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenMusicSettingsView.swift; sourceTree = "<group>"; };
 		FA11360A01F00136A0010001 /* ParallaxTiltModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParallaxTiltModifier.swift; sourceTree = "<group>"; };
 		FA11360A01F00136A0010002 /* WavySlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WavySlider.swift; sourceTree = "<group>"; };
 		F057CFDCEE024378B6FFB41F /* AudioOutputPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioOutputPicker.swift; sourceTree = "<group>"; };
@@ -544,10 +556,24 @@
 			path = AirPods;
 			sourceTree = "<group>";
 		};
+		FAD2000000000000000000A0 /* LockScreenMusic */ = {
+			isa = PBXGroup;
+			children = (
+				FAD200000000000000000001 /* LockScreenColorCache.swift */,
+				FAD200000000000000000002 /* LockScreenWallpaperManager.swift */,
+				FAD200000000000000000003 /* LockScreenMusicWindow.swift */,
+				FAD200000000000000000004 /* LockScreenMusicView.swift */,
+				FAD200000000000000000005 /* LockScreenMusicCoordinator.swift */,
+				FAD200000000000000000006 /* LockScreenMusicSettingsView.swift */,
+			);
+			path = LockScreenMusic;
+			sourceTree = "<group>";
+		};
 		1471639B2C5D362F0068B555 /* components */ = {
 			isa = PBXGroup;
 			children = (
 				8950AF3A3557499293759B24 /* AirPods */,
+				FAD2000000000000000000A0 /* LockScreenMusic */,
 				B141C23B2CA5F50900AC8CC8 /* Onboarding */,
 				B1C448992C97375A001F0858 /* Tips */,
 				14C08BB72C8DE49E000F8AA0 /* Calendar */,
@@ -1006,6 +1032,12 @@
 				7A1436C3FBBB409DA3D6E4D1 /* AirPodsManager.swift in Sources */,
 				3AF7FA9DD8834152ACC1465D /* AirPods3DView.swift in Sources */,
 				F7ED575A68C943B68957D6FB /* AirPodsDashboardView.swift in Sources */,
+				FAD200000000000000000011 /* LockScreenColorCache.swift in Sources */,
+				FAD200000000000000000012 /* LockScreenWallpaperManager.swift in Sources */,
+				FAD200000000000000000013 /* LockScreenMusicWindow.swift in Sources */,
+				FAD200000000000000000014 /* LockScreenMusicView.swift in Sources */,
+				FAD200000000000000000015 /* LockScreenMusicCoordinator.swift in Sources */,
+				FAD200000000000000000016 /* LockScreenMusicSettingsView.swift in Sources */,
 				DD20E7C5D4814AE79EA431CF /* AudioOutputPicker.swift in Sources */,
 				FA11360A02F00136A0010001 /* ParallaxTiltModifier.swift in Sources */,
 				FA11360A02F00136A0010002 /* WavySlider.swift in Sources */,

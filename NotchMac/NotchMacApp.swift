@@ -90,6 +90,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             screenUnlockedObserver = nil
         }
         MusicManager.shared.destroy()
+        Task { @MainActor in
+            LockScreenMusicCoordinator.shared.stop()
+        }
         cleanupDragDetectors()
         cleanupWindows()
         fullscreenCancellable?.cancel()
@@ -288,11 +291,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             enableSkyLightOnAllWindows()
         }
+        LockScreenMusicCoordinator.shared.screenLocked()
     }
 
     @MainActor
     func onScreenUnlocked(_ notification: Notification) {
         isScreenLocked = false
+        LockScreenMusicCoordinator.shared.screenUnlocked()
         if !Defaults[.showOnLockScreen] {
             adjustWindowPosition(changeAlpha: true)
         } else {
@@ -750,6 +755,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         applyIslandVisibility()
         setupFullscreenObserver()
         applyFullscreenVisibility()
+
+        Task { @MainActor in
+            LockScreenMusicCoordinator.shared.start()
+        }
 
         Defaults.publisher(.hideNotchOption)
             .receive(on: RunLoop.main)
