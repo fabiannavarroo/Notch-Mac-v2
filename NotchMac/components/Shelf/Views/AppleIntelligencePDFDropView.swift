@@ -180,6 +180,7 @@ struct AppleIntelligencePDFDropView: View {
 
     private func runPipeline(url: URL) async {
         state.reset()
+        manager.endChat()  // start a fresh chat session for the new document
         state.fileName = url.lastPathComponent
         state.phase = .extracting
         let scoped = url.startAccessingSecurityScopedResource()

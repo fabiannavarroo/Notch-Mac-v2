@@ -142,29 +142,61 @@ final class AppleIntelligenceManager {
         throw AppleIntelligenceError.unavailable
     }
 
-    /// Answers a question about the document. Mirrors `summarize` exactly (short
-    /// instructions, document + history carried in the *prompt*, fresh session,
-    /// non-streaming `respond`) because that path is proven to work — putting a large
-    /// document in the session `instructions` is what made earlier attempts hang.
-    func ask(question: String, context: String, history: [ChatMessage]) async throws -> String {
+    // One persistent chat session per document. The document is sent in the FIRST
+    // prompt (not in instructions — that hangs); follow-up questions send only the
+    // question, and Foundation Models keeps the running transcript itself. This is
+    // what stops the model from echoing the conversation back ("Q: … A: …").
+    private var chatSessionBox: Any?
+    private var chatPrimed = false
+
+    /// Drop the chat session (call when a new PDF loads or the chat closes).
+    func endChat() {
+        chatSessionBox = nil
+        chatPrimed = false
+    }
+
+    /// Answers a question about the document. Short instructions; the document goes
+    /// in the first prompt; later turns reuse the same session so history is kept
+    /// internally (no manual transcript in the prompt, so no echoing).
+    func ask(question: String, context: String, history: [ChatMessage], allowRetry: Bool = true) async throws -> String {
         #if canImport(FoundationModels)
         if #available(macOS 26.0, *), isAvailable {
-            let session = LanguageModelSession(instructions: """
-            You answer questions about the document provided in the prompt. Use only that document. If the answer is not in it, say so plainly. Reply in the same language as the question, be concise, and use simple Markdown (** for bold, - for bullet lists).
-            """)
-            var convo = ""
-            for m in history.suffix(8) {
-                convo += (m.role == .user ? "Q: " : "A: ") + m.text + "\n"
+            let session: LanguageModelSession
+            if let existing = chatSessionBox as? LanguageModelSession {
+                session = existing
+            } else {
+                session = LanguageModelSession(instructions: """
+                You are a helpful assistant answering questions about a document the user shares. Use only that document; if the answer isn't in it, say so plainly. Reply in the same language as the question and keep answers short and direct. Plain text only — do NOT repeat the question, do NOT prefix answers with "A:" or "Q:", and use **bold** only for a few key terms.
+                """)
+                chatSessionBox = session
+                chatPrimed = false
             }
-            let prompt = """
-            DOCUMENT:
-            \(truncated(context, limit: 12_000))
 
-            \(convo)Question: \(question)
-            """
             do {
+                let prompt: String
+                if chatPrimed {
+                    prompt = question
+                } else {
+                    prompt = """
+                    Here is the document. Read it, then answer my questions about it.
+
+                    DOCUMENT:
+                    \(truncated(context, limit: 12_000))
+
+                    First question: \(question)
+                    """
+                    chatPrimed = true
+                }
                 let response = try await session.respond(to: prompt)
                 return response.content
+            } catch let error as LanguageModelSession.GenerationError {
+                // Rebuild + re-prime once on context overflow instead of failing.
+                if case .exceededContextWindowSize = error, allowRetry {
+                    chatSessionBox = nil
+                    chatPrimed = false
+                    return try await ask(question: question, context: context, history: history, allowRetry: false)
+                }
+                throw AppleIntelligenceError.sessionFailed(error.localizedDescription)
             } catch {
                 throw AppleIntelligenceError.sessionFailed(error.localizedDescription)
             }
