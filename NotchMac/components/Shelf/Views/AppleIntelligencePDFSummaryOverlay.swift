@@ -15,6 +15,7 @@ struct AppleIntelligencePDFSummaryOverlay: View {
     @ObservedObject private var coordinator = BoringViewCoordinator.shared
     @State private var input: String = ""
     @State private var isAsking: Bool = false
+    @State private var streamingID: UUID? = nil
     @FocusState private var inputFocused: Bool
 
     var body: some View {
@@ -28,35 +29,18 @@ struct AppleIntelligencePDFSummaryOverlay: View {
                         ForEach(state.messages) { msg in
                             ChatBubble(message: msg).id(msg.id)
                         }
-                        if isAsking {
-                            HStack(spacing: 6) {
-                                ProgressView()
-                                    .progressViewStyle(.circular)
-                                    .scaleEffect(0.55)
-                                Text("Thinking…")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.white.opacity(0.6))
-                            }
-                            .id("thinking")
+                        // Animated "typing" dots while we wait for the first token.
+                        // Once tokens start streaming into the assistant bubble it
+                        // disappears (the bubble itself shows the live text).
+                        if isAsking && streamingID == nil {
+                            ThinkingBubble().id("thinking")
                         }
                     }
                     .padding(.horizontal, 12)
                     .padding(.bottom, 4)
                 }
-                .onChange(of: state.messages.count) {
-                    if let last = state.messages.last {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            proxy.scrollTo(last.id, anchor: .bottom)
-                        }
-                    }
-                }
-                .onChange(of: isAsking) {
-                    if isAsking {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            proxy.scrollTo("thinking", anchor: .bottom)
-                        }
-                    }
-                }
+                .onChange(of: state.messages) { scrollToBottom(proxy) }
+                .onChange(of: isAsking) { scrollToBottom(proxy) }
             }
             inputBar
         }
@@ -164,21 +148,44 @@ struct AppleIntelligencePDFSummaryOverlay: View {
         let q = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty, !isAsking else { return }
         input = ""
-        let history = state.messages
         state.messages.append(ChatMessage(role: .user, text: q))
         isAsking = true
+        streamingID = nil
+        let assistantID = UUID()
         Task {
             do {
-                let answer = try await AppleIntelligenceManager.shared.ask(
+                try await AppleIntelligenceManager.shared.askStream(
                     question: q,
-                    context: state.context,
-                    history: history
-                )
-                state.messages.append(ChatMessage(role: .assistant, text: answer))
+                    context: state.context
+                ) { partial in
+                    // Append the assistant bubble on the first token, then keep
+                    // updating its text live as more tokens stream in.
+                    if streamingID == nil {
+                        streamingID = assistantID
+                        state.messages.append(ChatMessage(id: assistantID, role: .assistant, text: partial))
+                    } else if let idx = state.messages.firstIndex(where: { $0.id == assistantID }) {
+                        state.messages[idx].text = partial
+                    }
+                }
+                if streamingID == nil {
+                    // Model produced no text at all.
+                    state.messages.append(ChatMessage(role: .assistant, text: "No tengo una respuesta para eso en el documento."))
+                }
             } catch {
                 state.messages.append(ChatMessage(role: .assistant, text: "⚠️ \(error.localizedDescription)"))
             }
             isAsking = false
+            streamingID = nil
+        }
+    }
+
+    private func scrollToBottom(_ proxy: ScrollViewProxy) {
+        withAnimation(.easeOut(duration: 0.2)) {
+            if isAsking && streamingID == nil {
+                proxy.scrollTo("thinking", anchor: .bottom)
+            } else if let last = state.messages.last {
+                proxy.scrollTo(last.id, anchor: .bottom)
+            }
         }
     }
 
@@ -222,6 +229,35 @@ private struct NotchKeyWindowActivator: NSViewRepresentable {
         }
         // Hand activation back to whatever app the user was using before.
         NSApp.deactivate()
+    }
+}
+
+/// Animated "typing" indicator (three pulsing dots) shown while the model is
+/// preparing the first token of an answer.
+private struct ThinkingBubble: View {
+    @State private var phase = 0
+    private let timer = Timer.publish(every: 0.28, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        HStack {
+            HStack(spacing: 4) {
+                ForEach(0..<3, id: \.self) { i in
+                    Circle()
+                        .fill(Color.white.opacity(phase == i ? 0.95 : 0.28))
+                        .frame(width: 6, height: 6)
+                        .scaleEffect(phase == i ? 1.0 : 0.7)
+                }
+            }
+            .animation(.easeInOut(duration: 0.28), value: phase)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 9)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.white.opacity(0.07))
+            )
+            Spacer(minLength: 24)
+        }
+        .onReceive(timer) { _ in phase = (phase + 1) % 3 }
     }
 }
 

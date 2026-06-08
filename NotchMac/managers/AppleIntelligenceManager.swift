@@ -20,9 +20,15 @@ import FoundationModels
 
 struct ChatMessage: Identifiable, Equatable, Hashable {
     enum Role { case user, assistant }
-    let id = UUID()
+    let id: UUID
     let role: Role
-    let text: String
+    var text: String
+
+    init(id: UUID = UUID(), role: Role, text: String) {
+        self.id = id
+        self.role = role
+        self.text = text
+    }
 }
 
 enum AppleIntelligenceError: LocalizedError {
@@ -147,27 +153,29 @@ final class AppleIntelligenceManager {
         chatSessionBox = nil
     }
 
-    func ask(question: String, context: String, history: [ChatMessage]) async throws -> String {
+    /// Streams an answer token-by-token. `onPartial` is called on the main actor
+    /// with the cumulative text so the UI can update live (no infinite spinner).
+    /// Returns the final full answer.
+    @discardableResult
+    func askStream(
+        question: String,
+        context: String,
+        onPartial: @escaping (String) -> Void
+    ) async throws -> String {
         #if canImport(FoundationModels)
         if #available(macOS 26.0, *), isAvailable {
-            let session = chatSession(for: context)
-
             // Issuing a request while one is in flight traps in Foundation Models.
-            guard !session.isResponding else {
+            if let s = chatSessionBox as? LanguageModelSession, s.isResponding {
                 throw AppleIntelligenceError.sessionFailed("Still answering the previous question — please wait.")
             }
-
             do {
-                let response = try await session.respond(to: question)
-                return response.content
+                return try await stream(question, context: context, onPartial: onPartial)
             } catch let error as LanguageModelSession.GenerationError {
                 // Context overflow (long doc + long chat): rebuild a fresh session
-                // with just the document and retry once, instead of crashing.
+                // with just the document and retry once, instead of stalling.
                 if case .exceededContextWindowSize = error {
                     chatSessionBox = nil
-                    let fresh = chatSession(for: context)
-                    let response = try await fresh.respond(to: question)
-                    return response.content
+                    return try await stream(question, context: context, onPartial: onPartial)
                 }
                 throw AppleIntelligenceError.sessionFailed(error.localizedDescription)
             } catch {
@@ -177,6 +185,23 @@ final class AppleIntelligenceManager {
         #endif
         throw AppleIntelligenceError.unavailable
     }
+
+    #if canImport(FoundationModels)
+    @available(macOS 26.0, *)
+    private func stream(
+        _ question: String,
+        context: String,
+        onPartial: @escaping (String) -> Void
+    ) async throws -> String {
+        let session = chatSession(for: context)
+        var last = ""
+        for try await partial in session.streamResponse(to: question) {
+            last = partial.content
+            onPartial(last)
+        }
+        return last
+    }
+    #endif
 
     #if canImport(FoundationModels)
     @available(macOS 26.0, *)
@@ -191,7 +216,7 @@ final class AppleIntelligenceManager {
         - for bullet lists).
 
         DOCUMENT:
-        \(truncated(context, limit: 10_000))
+        \(truncated(context, limit: 6_000))
         """)
         chatSessionBox = session
         return session
