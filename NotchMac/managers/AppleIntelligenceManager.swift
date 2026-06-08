@@ -136,24 +136,40 @@ final class AppleIntelligenceManager {
         throw AppleIntelligenceError.unavailable
     }
 
+    // Persistent chat session for the active document. Reusing one session keeps
+    // the document in context only once (no costly re-prefill per question, which
+    // looked like a hang) and lets Foundation Models manage the running transcript.
+    // Stored as `Any?` so the property doesn't require macOS 26 availability.
+    private var chatSessionBox: Any?
+
+    /// Drop the current chat session (e.g. when a new PDF is loaded or the chat closes).
+    func endChat() {
+        chatSessionBox = nil
+    }
+
     func ask(question: String, context: String, history: [ChatMessage]) async throws -> String {
         #if canImport(FoundationModels)
         if #available(macOS 26.0, *), isAvailable {
-            let session = LanguageModelSession(instructions: """
-            You are answering questions about a specific PDF document. Use only the provided document context to answer. If the answer is not in the document, say so plainly. Answer in the same language as the question. Keep answers concise.
+            let session = chatSession(for: context)
 
-            DOCUMENT:
-            \(truncated(context, limit: 14_000))
-            """)
-            var convo = ""
-            for m in history.suffix(10) {
-                let tag = m.role == .user ? "User" : "Assistant"
-                convo += "\(tag): \(m.text)\n"
+            // Issuing a request while one is in flight traps in Foundation Models.
+            guard !session.isResponding else {
+                throw AppleIntelligenceError.sessionFailed("Still answering the previous question — please wait.")
             }
-            convo += "User: \(question)"
+
             do {
-                let response = try await session.respond(to: convo)
+                let response = try await session.respond(to: question)
                 return response.content
+            } catch let error as LanguageModelSession.GenerationError {
+                // Context overflow (long doc + long chat): rebuild a fresh session
+                // with just the document and retry once, instead of crashing.
+                if case .exceededContextWindowSize = error {
+                    chatSessionBox = nil
+                    let fresh = chatSession(for: context)
+                    let response = try await fresh.respond(to: question)
+                    return response.content
+                }
+                throw AppleIntelligenceError.sessionFailed(error.localizedDescription)
             } catch {
                 throw AppleIntelligenceError.sessionFailed(error.localizedDescription)
             }
@@ -161,6 +177,26 @@ final class AppleIntelligenceManager {
         #endif
         throw AppleIntelligenceError.unavailable
     }
+
+    #if canImport(FoundationModels)
+    @available(macOS 26.0, *)
+    private func chatSession(for context: String) -> LanguageModelSession {
+        if let existing = chatSessionBox as? LanguageModelSession {
+            return existing
+        }
+        let session = LanguageModelSession(instructions: """
+        You answer questions about the PDF document below. Use only this document; \
+        if the answer is not in it, say so plainly. Reply in the same language as the \
+        question, be concise, and format with simple Markdown (use ** for bold and \
+        - for bullet lists).
+
+        DOCUMENT:
+        \(truncated(context, limit: 10_000))
+        """)
+        chatSessionBox = session
+        return session
+    }
+    #endif
 
     private func truncated(_ s: String, limit: Int) -> String {
         if s.count <= limit { return s }

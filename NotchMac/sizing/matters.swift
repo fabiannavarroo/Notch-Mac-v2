@@ -14,11 +14,12 @@ let batterySneakSize: CGSize = .init(width: 160, height: 1)
 
 let shadowPadding: CGFloat = 20
 let openNotchSize: CGSize = .init(width: 640, height: 190)
-// The PDF summary / chat overlay needs more room than the standard open notch so
-// the summary stays legible and the chat can scroll. The hosting window must be
-// large enough to fit the tallest/widest open layout (transparent areas pass clicks
-// through, so the extra size never blocks the menu bar).
-let summaryNotchSize: CGSize = .init(width: 720, height: 380)
+// The PDF summary / chat overlay needs more vertical room than the standard open
+// notch so the summary stays legible and the chat can scroll. Keep the SAME width
+// as the normal open notch so it fills the notch shape (rounded corners) exactly
+// like the other interfaces — only the height grows. The host window grows to fit
+// (transparent areas pass clicks through, so the extra height never blocks clicks).
+let summaryNotchSize: CGSize = .init(width: openNotchSize.width, height: 380)
 let windowSize: CGSize = .init(
     width: max(openNotchSize.width, summaryNotchSize.width),
     height: max(openNotchSize.height, summaryNotchSize.height) + shadowPadding

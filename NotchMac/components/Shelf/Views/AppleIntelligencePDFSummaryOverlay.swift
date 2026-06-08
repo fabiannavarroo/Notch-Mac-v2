@@ -60,10 +60,13 @@ struct AppleIntelligencePDFSummaryOverlay: View {
             }
             inputBar
         }
-        .frame(width: summaryNotchSize.width)
+        // Fill the notch width so the parent's rounded notch shape clips the corners
+        // exactly like the other interfaces (don't force a fixed width — that overflows
+        // the window and produces square corners). The parent already paints the black
+        // background and applies the notch clip shape.
+        .frame(maxWidth: .infinity)
         .padding(.top, 6)
         .padding(.bottom, 8)
-        .background(Color.black)
         // Allow the (normally non-key) notch panel to take keyboard focus while the
         // chat is on screen, so the text field accepts clicks and typing.
         .background(NotchKeyWindowActivator())
@@ -112,9 +115,10 @@ struct AppleIntelligencePDFSummaryOverlay: View {
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.45))
                     .textCase(.uppercase)
-                Text(state.summary)
+                Text(MarkdownText.render(state.summary))
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.92))
+                    .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
             }
@@ -180,6 +184,7 @@ struct AppleIntelligencePDFSummaryOverlay: View {
 
     private func close() {
         inputFocused = false
+        AppleIntelligenceManager.shared.endChat()
         state.reset()
         coordinator.currentView = .home
         vm.close()
@@ -226,9 +231,10 @@ private struct ChatBubble: View {
     var body: some View {
         HStack {
             if message.role == .user { Spacer(minLength: 24) }
-            Text(message.text)
+            Text(MarkdownText.render(message.text))
                 .font(.system(size: 11))
                 .foregroundStyle(.white.opacity(0.95))
+                .lineSpacing(2)
                 .padding(.horizontal, 9)
                 .padding(.vertical, 6)
                 .background(
@@ -241,5 +247,40 @@ private struct ChatBubble: View {
                 .textSelection(.enabled)
             if message.role == .assistant { Spacer(minLength: 24) }
         }
+    }
+}
+
+/// Renders the LLM's Markdown (bold, italic, inline code, lists, headings) into a
+/// styled `AttributedString` so the chat doesn't show raw `**` markers. Line breaks
+/// are preserved; list markers become bullets; heading hashes become bold lines.
+enum MarkdownText {
+    static func render(_ raw: String) -> AttributedString {
+        let cleaned = preprocess(raw)
+        let options = AttributedString.MarkdownParsingOptions(
+            allowsExtendedAttributes: true,
+            interpretedSyntax: .inlineOnlyPreservingWhitespace,
+            failurePolicy: .returnPartiallyParsedIfPossible
+        )
+        if let attr = try? AttributedString(markdown: cleaned, options: options) {
+            return attr
+        }
+        return AttributedString(cleaned)
+    }
+
+    private static func preprocess(_ raw: String) -> String {
+        raw.components(separatedBy: "\n").map { line -> String in
+            // "### Title" -> bold line (inline parser handles the ** emphasis).
+            if let r = line.range(of: #"^\s{0,3}#{1,6}\s+"#, options: .regularExpression) {
+                let title = line[r.upperBound...].trimmingCharacters(in: .whitespaces)
+                return title.isEmpty ? "" : "**\(title)**"
+            }
+            // "- item" / "* item" / "+ item" -> bullet, keeping indentation.
+            if let r = line.range(of: #"^(\s*)[-*+]\s+"#, options: .regularExpression) {
+                let indent = line[r].prefix { $0 == " " }
+                return "\(indent)•  \(line[r.upperBound...])"
+            }
+            return line
+        }
+        .joined(separator: "\n")
     }
 }
