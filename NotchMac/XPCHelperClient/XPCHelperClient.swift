@@ -6,7 +6,12 @@ import AsyncXPCConnection
 final class XPCHelperClient: NSObject {
     nonisolated static let shared = XPCHelperClient()
     
-    private let serviceName = "theboringteam.boringnotch.BoringNotchXPCHelper"
+    // Must match the XPC helper's CFBundleIdentifier (PRODUCT_BUNDLE_IDENTIFIER
+    // of the BoringNotchXPCHelper target). The fork renamed it away from the
+    // upstream "theboringteam.boringnotch.*" id; if this string drifts from the
+    // real bundle id, NSXPCConnection never resolves and every helper call hangs
+    // (breaks accessibility detection, brightness, keyboard backlight, etc.).
+    private let serviceName = "com.fabiannavarrofonte.notchmac.XPCHelper"
     
     private var remoteService: RemoteXPCService<BoringNotchXPCHelperProtocol>?
     private var connection: NSXPCConnection?
