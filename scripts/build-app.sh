@@ -22,7 +22,23 @@ xcodebuild \
   CODE_SIGNING_ALLOWED=NO \
   build -quiet
 
-codesign --force --deep --sign - "$APP_PATH" >/dev/null
+# Sign the same way the release workflow does (release-fork.yml) so local
+# builds behave like shipped ones. A plain `--deep --sign -` strips entitlements
+# (breaks TCC prompts) and lets Xcode's default sandbox stick on the helper,
+# which blocks DisplayServices brightness writes. Sign each piece explicitly.
+HELPER="$APP_PATH/Contents/XPCServices/BoringNotchXPCHelper.xpc"
+if [[ -d "$HELPER" ]]; then
+  codesign --force --sign - \
+    --entitlements "$ROOT_DIR/BoringNotchXPCHelper/BoringNotchXPCHelper.entitlements" \
+    "$HELPER" >/dev/null
+fi
+for FW in "$APP_PATH"/Contents/Frameworks/*.framework "$APP_PATH"/Contents/Frameworks/*.dylib; do
+  [[ -e "$FW" ]] || continue
+  codesign --force --sign - "$FW" >/dev/null
+done
+codesign --force --sign - \
+  --entitlements "$ROOT_DIR/NotchMac/NotchMac.entitlements" \
+  "$APP_PATH" >/dev/null
 
 echo "$APP_PATH"
 
