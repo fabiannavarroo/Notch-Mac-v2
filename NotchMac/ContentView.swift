@@ -217,9 +217,16 @@ struct ContentView: View {
                                 .allowsHitTesting(false)
                         }
                     }
+                    // Drop the shadow straight down by its blur radius so its
+                    // top extent lands exactly on the notch's top edge — kills
+                    // the grey halo that otherwise bled up over the menu bar at
+                    // the upper corners, while keeping the side/bottom shadow.
                     .shadow(
                         color: ((vm.notchState == .open || isHovering) && Defaults[.enableShadow])
-                            ? .black.opacity(0.7) : .clear, radius: Defaults[.cornerRadiusScaling] ? 6 : 4
+                            ? .black.opacity(0.7) : .clear,
+                        radius: Defaults[.cornerRadiusScaling] ? 6 : 4,
+                        x: 0,
+                        y: Defaults[.cornerRadiusScaling] ? 6 : 4
                     )
                     .padding(
                         .bottom,
