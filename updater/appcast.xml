@@ -7,7 +7,14 @@
             <sparkle:version>274</sparkle:version>
             <sparkle:shortVersionString>1.7.20</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Auto-release 1.7.20 build 274.]]></description>
+            <description><![CDATA[
+                <h2>NotchMac 1.7.20</h2>
+                <h3>🛠 Mejoras</h3>
+                <ul>
+                    <li><b>Chat IA del PDF</b> ya no congela la interfaz: la sesión corre en segundo plano con cancelación limpia y un timeout de 30 segundos si el modelo se atasca.</li>
+                    <li><b>Mejor contexto en preguntas</b> sobre el PDF: historial estructurado y recorte del documento para evitar que el modelo se quede sin memoria.</li>
+                </ul>
+            ]]></description>
             <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.7.20/NotchMac-1.7.20.zip" sparkle:edSignature="kJW0ymyXNpF51wZDsL0O3jGzbApOaiTjktGWToA/IKijziYKpGZfe2+cOyT47+aMr4dO8aJyj7L5T0WAIOUKBA==" length="11082413" type="application/octet-stream"/>
         </item>
 
