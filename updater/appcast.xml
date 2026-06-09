@@ -7,7 +7,21 @@
             <sparkle:version>270</sparkle:version>
             <sparkle:shortVersionString>1.7.19</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Auto-release 1.7.19 build 270.]]></description>
+            <description><![CDATA[
+                <h2>NotchMac 1.7.19</h2>
+                <h3>✨ Novedades</h3>
+                <ul>
+                    <li><b>Wi-Fi en el notch</b> — aviso en vivo cuando cambia tu conexión: conectado, desconectado, Wi-Fi limitada o hotspot.</li>
+                </ul>
+                <h3>🛠 Mejoras</h3>
+                <ul>
+                    <li><b>Resumen de PDF con IA</b> más estable: sin cuelgues del chat, con OCR para PDFs escaneados y menos contexto del modelo.</li>
+                </ul>
+                <h3>🐞 Correcciones</h3>
+                <ul>
+                    <li>Quitado el halo de sombra en la esquina del notch expandido.</li>
+                </ul>
+            ]]></description>
             <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.7.19/NotchMac-1.7.19.zip" sparkle:edSignature="ckYt71VNt5mREogL/B631FoZ/DYc9x/qLqpQbu1fLc/pzLKD/8hbwxttw3nK0foTGjL20P71qC/XOIRvCmyEBA==" length="11081528" type="application/octet-stream"/>
         </item>
 
