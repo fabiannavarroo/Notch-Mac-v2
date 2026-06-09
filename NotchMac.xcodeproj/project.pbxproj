@@ -163,17 +163,9 @@
 		B1F747F92EC7E94000F841DB /* LottieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F747F82EC7E94000F841DB /* LottieView.swift */; };
 		B1FEB4992C7686630066EBBC /* PanGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1FEB4982C7686630066EBBC /* PanGesture.swift */; };
 		F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */; };
-		AC0A0000000000000000BB01 /* AIQuotaModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0A0000000000000000AA01 /* AIQuotaModels.swift */; };
-		AC0A0000000000000000BB02 /* AIQuotaManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0A0000000000000000AA02 /* AIQuotaManager.swift */; };
-		AC0A0000000000000000BB03 /* AIQuotaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0A0000000000000000AA03 /* AIQuotaView.swift */; };
-		AC0A0000000000000000BB04 /* QuotaCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0A0000000000000000AA04 /* QuotaCardView.swift */; };
-		AC0A0000000000000000BB05 /* QuotaProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0A0000000000000000AA05 /* QuotaProgressBar.swift */; };
 		6AAA0000000000000000BB01 /* NetworkActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AAA0000000000000000AA01 /* NetworkActivityManager.swift */; };
 		6AAA0000000000000000BB02 /* NetworkStatusViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AAA0000000000000000AA02 /* NetworkStatusViewModel.swift */; };
 		6AAA0000000000000000BB03 /* BoringNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AAA0000000000000000AA03 /* BoringNetwork.swift */; };
-		5AAA0000000000000000BB01 /* SystemMonitorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AAA0000000000000000AA01 /* SystemMonitorManager.swift */; };
-		5AAA0000000000000000BB02 /* SystemMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AAA0000000000000000AA02 /* SystemMonitorView.swift */; };
-		5AAA0000000000000000BB03 /* SystemMonitorSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AAA0000000000000000AA03 /* SystemMonitorSettingsView.swift */; };
 		1A11C0DE10000001000A0002 /* LaunchAtLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A11C0DE10000001000A0001 /* LaunchAtLoginManager.swift */; };
 		CAFE1AE000000000000B0001 /* CaffeinateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAFE1AE000000000000F0001 /* CaffeinateManager.swift */; };
 		ED3CE16BE6E3437E9D653987 /* AirPodsAssetLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80CA1CB236EA4EF6911774E3 /* AirPodsAssetLoader.swift */; };
@@ -370,17 +362,9 @@
 		B1F747F82EC7E94000F841DB /* LottieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottieView.swift; sourceTree = "<group>"; };
 		B1FEB4982C7686630066EBBC /* PanGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanGesture.swift; sourceTree = "<group>"; };
 		F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryActivityManager.swift; sourceTree = "<group>"; };
-		AC0A0000000000000000AA01 /* AIQuotaModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIQuotaModels.swift; sourceTree = "<group>"; };
-		AC0A0000000000000000AA02 /* AIQuotaManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIQuotaManager.swift; sourceTree = "<group>"; };
-		AC0A0000000000000000AA03 /* AIQuotaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIQuotaView.swift; sourceTree = "<group>"; };
-		AC0A0000000000000000AA04 /* QuotaCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaCardView.swift; sourceTree = "<group>"; };
-		AC0A0000000000000000AA05 /* QuotaProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaProgressBar.swift; sourceTree = "<group>"; };
 		6AAA0000000000000000AA01 /* NetworkActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkActivityManager.swift; sourceTree = "<group>"; };
 		6AAA0000000000000000AA02 /* NetworkStatusViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkStatusViewModel.swift; sourceTree = "<group>"; };
 		6AAA0000000000000000AA03 /* BoringNetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringNetwork.swift; sourceTree = "<group>"; };
-		5AAA0000000000000000AA01 /* SystemMonitorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorManager.swift; sourceTree = "<group>"; };
-		5AAA0000000000000000AA02 /* SystemMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorView.swift; sourceTree = "<group>"; };
-		5AAA0000000000000000AA03 /* SystemMonitorSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMonitorSettingsView.swift; sourceTree = "<group>"; };
 		1A11C0DE10000001000A0001 /* LaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginManager.swift; sourceTree = "<group>"; };
 		CAFE1AE000000000000F0001 /* CaffeinateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaffeinateManager.swift; sourceTree = "<group>"; };
 		80CA1CB236EA4EF6911774E3 /* AirPodsAssetLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPodsAssetLoader.swift; sourceTree = "<group>"; };
@@ -603,8 +587,6 @@
 				149E0B982C737D26006418B1 /* Webcam */,
 				B18654312C6F45AE000B926A /* Live activities */,
 				B18654302C6F4590000B926A /* Settings */,
-				5AAA0000000000000000CC01 /* SystemMonitor */,
-				AC0A0000000000000000CC01 /* AIQuota */,
 				B186542F2C6F455E000B926A /* Notch */,
 				FAB1000000000000000000A3 /* RefDesign */,
 				9A0887332C7AFF7E00C160EA /* Tabs */,
@@ -627,7 +609,6 @@
 				11D58EA12E760AE100FA8377 /* ImageService.swift */,
 				F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */,
 				6AAA0000000000000000AA01 /* NetworkActivityManager.swift */,
-				AC0A0000000000000000AA02 /* AIQuotaManager.swift */,
 				1A11C0DE10000001000A0001 /* LaunchAtLoginManager.swift */,
 				CAFE1AE000000000000F0001 /* CaffeinateManager.swift */,
 				112FB7342CCF16F70015238C /* NotchSpaceManager.swift */,
@@ -643,7 +624,6 @@
 				D2D13F28E5804A3CBD3E84EE /* AirPodsManager.swift */,
 				696E2B47C2CA4F60B285E2A7 /* AirPodsTuning.swift */,
 				AB100000000000000A100001 /* AppleIntelligenceManager.swift */,
-				5AAA0000000000000000AA01 /* SystemMonitorManager.swift */,
 			);
 			path = managers;
 			sourceTree = "<group>";
@@ -761,7 +741,6 @@
 				14D570C82C5F38890011E668 /* BoringViewModel.swift */,
 				14D570CA2C5F4B2C0011E668 /* BatteryStatusViewModel.swift */,
 				6AAA0000000000000000AA02 /* NetworkStatusViewModel.swift */,
-				AC0A0000000000000000AA01 /* AIQuotaModels.swift */,
 				1153BD902D986DB300979FB0 /* PlaybackState.swift */,
 			);
 			path = models;
@@ -874,27 +853,8 @@
 				B1D6FD422C6603730015F173 /* SoftwareUpdater.swift */,
 				B1B112902C6A572100093D8F /* EditPanelView.swift */,
 				B1C448972C972CC4001F0858 /* ListItemPopover.swift */,
-				5AAA0000000000000000AA03 /* SystemMonitorSettingsView.swift */,
 			);
 			path = Settings;
-			sourceTree = "<group>";
-		};
-		5AAA0000000000000000CC01 /* SystemMonitor */ = {
-			isa = PBXGroup;
-			children = (
-				5AAA0000000000000000AA02 /* SystemMonitorView.swift */,
-			);
-			path = SystemMonitor;
-			sourceTree = "<group>";
-		};
-		AC0A0000000000000000CC01 /* AIQuota */ = {
-			isa = PBXGroup;
-			children = (
-				AC0A0000000000000000AA03 /* AIQuotaView.swift */,
-				AC0A0000000000000000AA04 /* QuotaCardView.swift */,
-				AC0A0000000000000000AA05 /* QuotaProgressBar.swift */,
-			);
-			path = AIQuota;
 			sourceTree = "<group>";
 		};
 		B18654312C6F45AE000B926A /* Live activities */ = {
@@ -1146,14 +1106,6 @@
 				14C08BC12C8E03AD000F8AA0 /* NSImage+Extensions.swift in Sources */,
 				149E0B9A2C737D40006418B1 /* WebcamView.swift in Sources */,
 				1471639A2C5D35FF0068B555 /* MusicManager.swift in Sources */,
-				AC0A0000000000000000BB01 /* AIQuotaModels.swift in Sources */,
-				AC0A0000000000000000BB02 /* AIQuotaManager.swift in Sources */,
-				AC0A0000000000000000BB03 /* AIQuotaView.swift in Sources */,
-				AC0A0000000000000000BB04 /* QuotaCardView.swift in Sources */,
-				AC0A0000000000000000BB05 /* QuotaProgressBar.swift in Sources */,
-				5AAA0000000000000000BB01 /* SystemMonitorManager.swift in Sources */,
-				5AAA0000000000000000BB02 /* SystemMonitorView.swift in Sources */,
-				5AAA0000000000000000BB03 /* SystemMonitorSettingsView.swift in Sources */,
 				F1F2A0A100000000000000F1 /* AudioCaptureManager.swift in Sources */,
 				B1B112932C6A577E00093D8F /* MouseTracker.swift in Sources */,
 				B1C448962C9712C4001F0858 /* ActionBar.swift in Sources */,

@@ -38,7 +38,6 @@ struct DynamicNotchApp: App {
 
         // Initialize the settings window controller with the updater controller
         SettingsWindowController.shared.setUpdaterController(updaterController)
-        _ = AIQuotaManager.shared
     }
 
     var body: some Scene {

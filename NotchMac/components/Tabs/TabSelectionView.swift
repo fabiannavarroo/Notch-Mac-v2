@@ -21,7 +21,6 @@ struct TabSelectionView: View {
     @Default(.showTimerModule) private var showTimer
     @Default(.enableAirPodsWidget) private var showAirPods
     @Default(.airPodsDebugAlwaysShow) private var airPodsDebugAlwaysShow
-    @Default(.showAIQuota) private var showAIQuota
     @ObservedObject private var airPods = AirPodsManager.shared
     @Namespace var animation
     var body: some View {
@@ -30,11 +29,6 @@ struct TabSelectionView: View {
                     TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view) {
                         withAnimation(.smooth) {
                             coordinator.currentView = tab.view
-                        }
-                        if tab.view == .quota {
-                            Task {
-                                await AIQuotaManager.shared.fetchAll()
-                            }
                         }
                     }
                     .frame(height: 26)
@@ -66,9 +60,6 @@ struct TabSelectionView: View {
         }
         if AirPodsModule.visible && showAirPods && (airPods.state != nil || airPodsDebugAlwaysShow) {
             base.append(TabModel(label: "AirPods", icon: "airpods", view: .airpods))
-        }
-        if showAIQuota {
-            base.append(TabModel(label: "AI", icon: "chart.bar.fill", view: .quota))
         }
         return base
     }

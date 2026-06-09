@@ -156,7 +156,6 @@ extension Defaults.Keys {
     static let showCapsLockHUD = Key<Bool>("showCapsLockHUD", default: true)
     static let tileShowLabels = Key<Bool>("tileShowLabels", default: false)
     static let showCalendar = Key<Bool>("showCalendar", default: false)
-    static let showAIQuota = Key<Bool>("showAIQuota", default: false)
     static let hideCompletedReminders = Key<Bool>("hideCompletedReminders", default: true)
     static let sliderColor = Key<SliderColorEnum>(
         "sliderUseAlbumArtColor",
@@ -334,9 +333,6 @@ extension Defaults.Keys {
     // Option key modifier behaviour for media keys
     static let optionKeyAction = Key<OptionKeyAction>("optionKeyAction", default: OptionKeyAction.openSettings)
     
-    // MARK: System Monitor
-    static let showSystemMonitor = Key<Bool>("showSystemMonitor", default: false)
-
     // MARK: Shelf
     static let boringShelf = Key<Bool>("boringShelf", default: true)
     static let enableAppleIntelligenceShelf = Key<Bool>("enableAppleIntelligenceShelf", default: false)
