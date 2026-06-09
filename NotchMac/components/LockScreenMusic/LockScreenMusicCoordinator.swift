@@ -22,14 +22,21 @@ final class LockScreenMusicCoordinator {
 
     private init() {}
 
+    /// Master kill-switch: Lock Screen Music is hidden while the feature is
+    /// in development. It must gate *every* entry point — `start()` alone is
+    /// not enough because `AppDelegate` calls `screenLocked()` directly,
+    /// which re-activated the feature for users whose (now-hidden) toggle
+    /// was left flipped in Defaults. Set to `true` to re-enable, and restore
+    /// the sidebar item in SettingsView.
+    static let isFeatureEnabled = false
+
     func start() {
-        // Lock Screen Music is hidden while the feature is in development.
-        // Early-return guarantees no observers fire, no overlay window is
-        // created, and no wallpaper / TCC side effects happen in release
-        // builds — regardless of whether the user previously flipped the
-        // (now-hidden) toggle in Defaults. Remove this guard to re-enable.
-        return
-        // swiftlint:disable:next unreachable_code
+        guard Self.isFeatureEnabled else {
+            // Clear a previously-flipped toggle so no code path can read a
+            // stale `true` while the feature is hidden.
+            Defaults[.lockScreenMusicEnabled] = false
+            return
+        }
         guard !isStarted else { return }
         isStarted = true
 
@@ -88,6 +95,7 @@ final class LockScreenMusicCoordinator {
     // MARK: - Hooks called by AppDelegate
 
     func screenLocked() {
+        guard Self.isFeatureEnabled else { return }
         NSLog("[NotchMac][LockScreenMusic] screenLocked. enabled=\(Defaults[.lockScreenMusicEnabled]) idle=\(MusicManager.shared.isPlayerIdle) title='\(MusicManager.shared.songTitle)'")
         isScreenLocked = true
         // Snapshot the user's wallpaper BEFORE we start swapping. Doing it here
