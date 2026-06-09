@@ -187,18 +187,13 @@ final class AppleIntelligenceManager {
     func summarize(text: String) async throws -> String {
         #if canImport(FoundationModels)
         if #available(macOS 26.0, *), isAvailable {
-            let session = LanguageModelSession(instructions: """
+            let instructions = """
             You are a concise document summarizer. Given the text of a PDF, produce a clear, well-structured summary in the same language as the document. Use short paragraphs and bullet points for key facts. Keep it under 400 words.
-            """)
+            """
             // Foundation Models has a small context window (~4k tokens incl. output),
             // so keep the document slice well under that to avoid a context-overflow throw.
             let prompt = "Summarize this document:\n\n\(truncated(text, limit: 9_000))"
-            do {
-                let response = try await session.respond(to: prompt)
-                return response.content
-            } catch {
-                throw AppleIntelligenceError.sessionFailed(error.localizedDescription)
-            }
+            return try await Self.respondOffMainActor(instructions: instructions, prompt: prompt)
         }
         #endif
         throw AppleIntelligenceError.unavailable
@@ -211,24 +206,51 @@ final class AppleIntelligenceManager {
     func ask(question: String, context: String, history: [ChatMessage]) async throws -> String {
         #if canImport(FoundationModels)
         if #available(macOS 26.0, *), isAvailable {
-            let session = LanguageModelSession(instructions: """
+            let instructions = """
             You answer questions about the document provided in the prompt. Use only that document. If the answer is not in it, say so plainly. Reply in the same language as the question, be concise, and use simple Markdown (** for bold, - for bullet lists).
-            """)
-            var convo = ""
-            for m in history.suffix(6) {
-                convo += (m.role == .user ? "Q: " : "A: ") + m.text + "\n"
-            }
-            // Keep the document slice small so document + history + question + answer
-            // all fit Foundation Models' context window.
+            """
+            let previousTurns = history.suffix(4).map { message in
+                let speaker = message.role == .user ? "User" : "Assistant"
+                return "\(speaker): \(message.text)"
+            }.joined(separator: "\n")
+            let conversation = previousTurns.isEmpty
+                ? ""
+                : "Previous conversation:\n\(previousTurns)\n\n"
+            let document = truncated(context, limit: 4_500)
+            let currentQuestion = question.trimmingCharacters(in: .whitespacesAndNewlines)
             let prompt = """
             DOCUMENT:
-            \(truncated(context, limit: 5_000))
+            \(document)
 
-            \(convo)Question: \(question)
+            \(conversation)Current question:
+            \(currentQuestion)
+
+            Answer only the current question. Do not prefix the answer with User, Assistant, Q, or A.
             """
-            do {
+
+            return try await Self.respondOffMainActor(instructions: instructions, prompt: prompt)
+        }
+        #endif
+        throw AppleIntelligenceError.unavailable
+    }
+
+    nonisolated private static func respondOffMainActor(instructions: String, prompt: String) async throws -> String {
+        #if canImport(FoundationModels)
+        if #available(macOS 26.0, *) {
+            let worker = Task.detached(priority: .userInitiated) {
+                try Task.checkCancellation()
+                let session = LanguageModelSession(instructions: instructions)
                 let response = try await session.respond(to: prompt)
+                try Task.checkCancellation()
                 return response.content
+            }
+
+            do {
+                return try await withTaskCancellationHandler {
+                    try await worker.value
+                } onCancel: {
+                    worker.cancel()
+                }
             } catch {
                 throw AppleIntelligenceError.sessionFailed(error.localizedDescription)
             }

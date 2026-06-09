@@ -14,35 +14,29 @@ struct AppleIntelligencePDFSummaryOverlay: View {
     @ObservedObject private var state = AppleIntelligencePDFState.shared
     @ObservedObject private var coordinator = BoringViewCoordinator.shared
     @State private var input: String = ""
-    @State private var isAsking: Bool = false
-    // Monotonic token: each question bumps it. The model task and the watchdog both
-    // check it before touching the UI, so a stale/stuck answer can never write back
-    // after a timeout or a newer question — this is what guarantees no hang.
-    @State private var askGeneration: Int = 0
     @FocusState private var inputFocused: Bool
+    private let transcriptHeight = summaryNotchSize.height - 92
 
     var body: some View {
         VStack(spacing: 6) {
             header
             Divider().background(Color.white.opacity(0.08))
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 8) {
-                        summaryBlock
-                        ForEach(state.messages) { msg in
-                            ChatBubble(message: msg).id(msg.id)
-                        }
-                        // Animated "typing" dots while the model prepares the answer.
-                        if isAsking {
-                            ThinkingBubble().id("thinking")
-                        }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    summaryBlock
+                    ForEach(state.messages) { msg in
+                        ChatBubble(message: msg)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 4)
+                    // Animated "typing" dots while the model prepares the answer.
+                    if state.isAsking {
+                        ThinkingBubble()
+                    }
                 }
-                .onChange(of: state.messages) { scrollToBottom(proxy) }
-                .onChange(of: isAsking) { scrollToBottom(proxy) }
+                .padding(.horizontal, 12)
+                .padding(.bottom, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .frame(height: transcriptHeight)
             inputBar
         }
         // Fill the notch width so the parent's rounded notch shape clips the corners
@@ -56,8 +50,11 @@ struct AppleIntelligencePDFSummaryOverlay: View {
         // chat is on screen, so the text field accepts clicks and typing.
         .background(NotchKeyWindowActivator())
         .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                inputFocused = true
+            Task { @MainActor in
+                for delay in [0.1, 0.3, 0.6] {
+                    try? await Task.sleep(for: .seconds(delay))
+                    inputFocused = true
+                }
             }
         }
     }
@@ -104,8 +101,6 @@ struct AppleIntelligencePDFSummaryOverlay: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.92))
                     .lineSpacing(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .textSelection(.enabled)
             }
             .padding(10)
             .background(
@@ -129,7 +124,7 @@ struct AppleIntelligencePDFSummaryOverlay: View {
                 )
                 .focused($inputFocused)
                 .onSubmit { send() }
-                .disabled(isAsking)
+                .disabled(state.isAsking)
             Button(action: send) {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 18))
@@ -139,64 +134,21 @@ struct AppleIntelligencePDFSummaryOverlay: View {
             .disabled(!canSend)
         }
         .padding(.horizontal, 12)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            inputFocused = true
+        }
     }
 
     private var canSend: Bool {
-        !isAsking && !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !state.isAsking && !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func send() {
         let q = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !q.isEmpty, !isAsking else { return }
+        guard !q.isEmpty, !state.isAsking else { return }
         input = ""
-        let history = state.messages
-        let ctx = state.context
-        state.messages.append(ChatMessage(role: .user, text: q))
-        isAsking = true
-        askGeneration += 1
-        let gen = askGeneration
-
-        // Watchdog: frees the UI even if Apple Intelligence never returns or ignores
-        // cancellation. It is fully decoupled from the model task — it doesn't wait on
-        // it — so a stuck `respond` can't keep the spinner up. Bumping the generation
-        // makes any late answer from the in-flight task a no-op.
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 60_000_000_000) // 60s
-            guard isAsking, gen == askGeneration else { return }
-            askGeneration += 1
-            isAsking = false
-            state.messages.append(ChatMessage(
-                role: .assistant,
-                text: "⚠️ Tiempo de espera agotado — Apple Intelligence no respondió."
-            ))
-        }
-
-        Task { @MainActor in
-            do {
-                let answer = try await AppleIntelligenceManager.shared.ask(question: q, context: ctx, history: history)
-                guard gen == askGeneration else { return } // superseded by timeout or a newer question
-                let clean = answer.trimmingCharacters(in: .whitespacesAndNewlines)
-                state.messages.append(ChatMessage(
-                    role: .assistant,
-                    text: clean.isEmpty ? "No tengo una respuesta para eso en el documento." : clean
-                ))
-                isAsking = false
-            } catch {
-                guard gen == askGeneration else { return }
-                state.messages.append(ChatMessage(role: .assistant, text: "⚠️ \(error.localizedDescription)"))
-                isAsking = false
-            }
-        }
-    }
-
-    private func scrollToBottom(_ proxy: ScrollViewProxy) {
-        withAnimation(.easeOut(duration: 0.2)) {
-            if isAsking {
-                proxy.scrollTo("thinking", anchor: .bottom)
-            } else if let last = state.messages.last {
-                proxy.scrollTo(last.id, anchor: .bottom)
-            }
-        }
+        state.ask(q)
     }
 
     private func close() {
@@ -217,18 +169,17 @@ private struct NotchKeyWindowActivator: NSViewRepresentable {
         // required so keystrokes route to our panel's text field, not the app the
         // user was last in.
         DispatchQueue.main.async {
-            guard let panel = view.window as? (any KeyboardActivatablePanel) else { return }
-            panel.allowsKeyboardActivation = true
-            NSApp.activate(ignoringOtherApps: true)
-            panel.makeKey()
+            Self.activateKeyboard(for: view)
         }
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
-        // Keep the panel key-eligible across SwiftUI updates without re-stealing
-        // focus (don't re-activate here — the user may have clicked elsewhere).
-        (nsView.window as? (any KeyboardActivatablePanel))?.allowsKeyboardActivation = true
+        // SwiftUI can create/update this bridge before the view is attached to its
+        // panel. Retrying here makes the text field reliably typable after redraws.
+        DispatchQueue.main.async {
+            Self.activateKeyboard(for: nsView)
+        }
     }
 
     static func dismantleNSView(_ nsView: NSView, coordinator: ()) {
@@ -238,6 +189,13 @@ private struct NotchKeyWindowActivator: NSViewRepresentable {
         }
         // Hand activation back to whatever app the user was using before.
         NSApp.deactivate()
+    }
+
+    private static func activateKeyboard(for view: NSView) {
+        guard let panel = view.window as? (any KeyboardActivatablePanel) else { return }
+        panel.allowsKeyboardActivation = true
+        NSApp.activate(ignoringOtherApps: true)
+        panel.makeKey()
     }
 }
 
@@ -288,8 +246,6 @@ private struct ChatBubble: View {
                               ? AnyShapeStyle(LinearGradient(colors: [Color.purple.opacity(0.75), Color.pink.opacity(0.65)], startPoint: .topLeading, endPoint: .bottomTrailing))
                               : AnyShapeStyle(Color.white.opacity(0.07)))
                 )
-                .fixedSize(horizontal: false, vertical: true)
-                .textSelection(.enabled)
             if message.role == .assistant { Spacer(minLength: 24) }
         }
     }

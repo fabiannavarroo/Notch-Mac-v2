@@ -28,6 +28,12 @@ final class AppleIntelligencePDFState: ObservableObject {
     @Published var summary: String = ""
     @Published var context: String = ""
     @Published var messages: [ChatMessage] = []
+    @Published var isAsking: Bool = false
+
+    private let askTimeoutNanoseconds: UInt64 = 30_000_000_000
+    private var askGeneration: Int = 0
+    private var askTask: Task<Void, Never>?
+    private var askTimeoutTask: Task<Void, Never>?
 
     var isProcessing: Bool {
         switch phase {
@@ -37,11 +43,96 @@ final class AppleIntelligencePDFState: ObservableObject {
     }
 
     func reset() {
+        cancelAsk()
         phase = .idle
         fileName = ""
         summary = ""
         context = ""
         messages = []
+    }
+
+    func ask(_ rawQuestion: String) {
+        let question = rawQuestion.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !question.isEmpty, !isAsking else { return }
+        guard !context.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            messages.append(ChatMessage(role: .assistant, text: "No hay texto del PDF para responder."))
+            return
+        }
+
+        askTask?.cancel()
+        askTimeoutTask?.cancel()
+
+        let history = messages
+        let documentContext = context
+        messages.append(ChatMessage(role: .user, text: question))
+        isAsking = true
+        askGeneration += 1
+        let generation = askGeneration
+        let timeoutNanoseconds = askTimeoutNanoseconds
+
+        askTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: timeoutNanoseconds)
+            guard !Task.isCancelled else { return }
+            self?.handleAskTimeout(generation: generation)
+        }
+
+        askTask = Task { [weak self] in
+            do {
+                let answer = try await AppleIntelligenceManager.shared.ask(
+                    question: question,
+                    context: documentContext,
+                    history: history
+                )
+                guard !Task.isCancelled else { return }
+                self?.finishAsk(generation: generation, result: .success(answer))
+            } catch is CancellationError {
+                return
+            } catch {
+                guard !Task.isCancelled else { return }
+                self?.finishAsk(generation: generation, result: .failure(error))
+            }
+        }
+    }
+
+    private func handleAskTimeout(generation: Int) {
+        guard isAsking, generation == askGeneration else { return }
+        askGeneration += 1
+        askTask?.cancel()
+        askTask = nil
+        askTimeoutTask = nil
+        isAsking = false
+        messages.append(ChatMessage(
+            role: .assistant,
+            text: "Tiempo de espera agotado. Apple Intelligence no respondió; prueba otra pregunta más concreta."
+        ))
+    }
+
+    private func finishAsk(generation: Int, result: Result<String, Error>) {
+        guard generation == askGeneration else { return }
+        askTimeoutTask?.cancel()
+        askTimeoutTask = nil
+        askTask = nil
+        isAsking = false
+
+        switch result {
+        case .success(let answer):
+            let clean = answer.trimmingCharacters(in: .whitespacesAndNewlines)
+            messages.append(ChatMessage(
+                role: .assistant,
+                text: clean.isEmpty ? "No tengo una respuesta para eso en el documento." : clean
+            ))
+        case .failure(let error):
+            messages.append(ChatMessage(role: .assistant, text: "\(error.localizedDescription)"))
+        }
+    }
+
+    private func cancelAsk() {
+        askGeneration += 1
+        askTask?.cancel()
+        askTimeoutTask?.cancel()
+        askTask = nil
+        askTimeoutTask = nil
+        isAsking = false
     }
 }
 
