@@ -235,83 +235,86 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         let payload = update.payload
         let diff = update.diff ?? false
 
-        var newPlaybackState = PlaybackState(bundleIdentifier: playbackState.bundleIdentifier)
         let resolvedBundleIdentifier = (
             payload.parentApplicationBundleIdentifier ??
             payload.bundleIdentifier ??
             (diff ? self.playbackState.bundleIdentifier : "")
         )
-        let captureBundleFallbackIdentifiers: [String]
+
+        // Diff updates must merge against the cached state of the *same*
+        // bundle, never against whatever is currently displayed. Merging
+        // against the displayed state mixes metadata across sources
+        // (e.g. browser artwork paired with a stale Spotify title).
+        var base = PlaybackState(bundleIdentifier: resolvedBundleIdentifier)
+        var hasBase = false
         if diff {
-            captureBundleFallbackIdentifiers =
-                resolvedBundleIdentifier != self.playbackState.bundleIdentifier
-                ? [resolvedBundleIdentifier]
-                : self.playbackState.effectiveAudioCaptureBundleIdentifiers
-        } else {
-            captureBundleFallbackIdentifiers = [resolvedBundleIdentifier]
+            if let cached = self.sourceStates[resolvedBundleIdentifier] {
+                base = cached
+                hasBase = true
+            } else if resolvedBundleIdentifier == self.playbackState.bundleIdentifier {
+                base = self.playbackState
+                hasBase = true
+            }
         }
-        let captureBundleIdentifiers = Self.audioCaptureBundleIdentifiers(
+
+        var newPlaybackState = PlaybackState(bundleIdentifier: resolvedBundleIdentifier)
+        newPlaybackState.audioCaptureBundleIdentifiers = Self.audioCaptureBundleIdentifiers(
             sourceBundleIdentifier: payload.bundleIdentifier,
-            fallbackBundleIdentifiers: captureBundleFallbackIdentifiers
+            fallbackBundleIdentifiers: hasBase
+                ? base.effectiveAudioCaptureBundleIdentifiers
+                : [resolvedBundleIdentifier]
         )
 
-        newPlaybackState.title = payload.title ?? (diff ? self.playbackState.title : "")
-        newPlaybackState.artist = payload.artist ?? (diff ? self.playbackState.artist : "")
-        newPlaybackState.album = payload.album ?? (diff ? self.playbackState.album : "")
-        newPlaybackState.duration = payload.duration ?? (diff ? self.playbackState.duration : 0)
-        
+        newPlaybackState.title = payload.title ?? (hasBase ? base.title : "")
+        newPlaybackState.artist = payload.artist ?? (hasBase ? base.artist : "")
+        newPlaybackState.album = payload.album ?? (hasBase ? base.album : "")
+        newPlaybackState.duration = payload.duration ?? (hasBase ? base.duration : 0)
+
         if let elapsedTime = payload.elapsedTime {
             newPlaybackState.currentTime = elapsedTime
-        } else if diff {
+        } else if hasBase {
             if payload.playing == false {
-                let timeSinceLastUpdate = Date().timeIntervalSince(self.playbackState.lastUpdated)
-                newPlaybackState.currentTime = self.playbackState.currentTime + (self.playbackState.playbackRate * timeSinceLastUpdate)
+                let timeSinceLastUpdate = Date().timeIntervalSince(base.lastUpdated)
+                newPlaybackState.currentTime = base.currentTime + (base.playbackRate * timeSinceLastUpdate)
             } else {
-                newPlaybackState.currentTime = self.playbackState.currentTime
+                newPlaybackState.currentTime = base.currentTime
             }
         } else {
             newPlaybackState.currentTime = 0
         }
 
-        
         if let shuffleMode = payload.shuffleMode {
             newPlaybackState.isShuffled = shuffleMode != 1
-        } else if !diff {
-            newPlaybackState.isShuffled = false
         } else {
-            newPlaybackState.isShuffled = self.playbackState.isShuffled
+            newPlaybackState.isShuffled = hasBase ? base.isShuffled : false
         }
         if let repeatModeValue = payload.repeatMode {
             newPlaybackState.repeatMode = RepeatMode(rawValue: repeatModeValue) ?? .off
-        } else if !diff {
-            newPlaybackState.repeatMode = .off
         } else {
-            newPlaybackState.repeatMode = self.playbackState.repeatMode
+            newPlaybackState.repeatMode = hasBase ? base.repeatMode : .off
         }
 
         if let artworkDataString = payload.artworkData {
             newPlaybackState.artwork = Data(
                 base64Encoded: artworkDataString.trimmingCharacters(in: .whitespacesAndNewlines)
             )
-        } else if !diff {
-            newPlaybackState.artwork = nil
+        } else if hasBase {
+            // Diffs rarely re-send artwork; keep this source's own artwork
+            // instead of dropping it (or worse, showing another app's).
+            newPlaybackState.artwork = base.artwork
         }
 
         if let dateString = payload.timestamp,
            let date = ISO8601DateFormatter().date(from: dateString) {
             newPlaybackState.lastUpdated = date
-        } else if !diff {
-            newPlaybackState.lastUpdated = Date()
         } else {
-            newPlaybackState.lastUpdated = self.playbackState.lastUpdated
+            newPlaybackState.lastUpdated = hasBase ? base.lastUpdated : Date()
         }
 
-        newPlaybackState.playbackRate = payload.playbackRate ?? (diff ? self.playbackState.playbackRate : 1.0)
-        newPlaybackState.isPlaying = payload.playing ?? (diff ? self.playbackState.isPlaying : false)
-        newPlaybackState.bundleIdentifier = resolvedBundleIdentifier
-        newPlaybackState.audioCaptureBundleIdentifiers = captureBundleIdentifiers
-
-        newPlaybackState.volume = payload.volume ?? (diff ? self.playbackState.volume : 0.5)
+        newPlaybackState.playbackRate = payload.playbackRate ?? (hasBase ? base.playbackRate : 1.0)
+        newPlaybackState.isPlaying = payload.playing ?? (hasBase ? base.isPlaying : false)
+        newPlaybackState.volume = payload.volume ?? (hasBase ? base.volume : 0.5)
+        newPlaybackState.isFavorite = hasBase ? base.isFavorite : false
 
         // Merge incoming update into the per-bundle cache, then let the
         // priority arbiter decide which source the notch should display.
@@ -319,18 +322,21 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         // session would visually replace Spotify/Apple Music even if
         // they are still playing.
         if !resolvedBundleIdentifier.isEmpty {
-            if diff, var existing = self.sourceStates[resolvedBundleIdentifier] {
-                existing = newPlaybackState
-                self.sourceStates[resolvedBundleIdentifier] = existing
-            } else {
-                self.sourceStates[resolvedBundleIdentifier] = newPlaybackState
-            }
+            self.sourceStates[resolvedBundleIdentifier] = newPlaybackState
         }
+
+        // Drop cached sources whose app has quit so they can't win
+        // arbitration with a stale "playing" state.
+        let runningBundles = Set(
+            NSWorkspace.shared.runningApplications.compactMap { $0.bundleIdentifier }
+        )
+        self.sourceStates = self.sourceStates.filter { runningBundles.contains($0.key) }
 
         let resolved = MediaSourcePriority.resolve(
             from: self.sourceStates,
             latestBundleID: resolvedBundleIdentifier,
-            currentDisplayed: self.playbackState
+            currentDisplayed: self.playbackState,
+            runningBundles: runningBundles
         )
 
         self.playbackState = resolved
