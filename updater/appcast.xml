@@ -7,7 +7,15 @@
             <sparkle:version>280</sparkle:version>
             <sparkle:shortVersionString>1.7.21</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[Auto-release 1.7.21 build 280.]]></description>
+            <description><![CDATA[
+                <h2>NotchMac 1.7.21</h2>
+                <h3>🛠 Mejoras</h3>
+                <ul>
+                    <li><b>Now Playing con prioridad</b>: si Spotify o Apple Music están sonando, el notch los muestra siempre, aunque haya un video de YouTube o un directo de Twitch en el navegador. Al pausarlos, pasa a mostrar lo que sí esté sonando.</li>
+                    <li><b>Adiós a las portadas mezcladas</b>: ya no aparece la portada del directo de Twitch con el título de la canción de Spotify. Cada fuente conserva su propia portada y metadata.</li>
+                    <li><b>Lock Screen Music desactivado</b> mientras se termina de pulir: ya no cambia el fondo de pantalla ni muestra el widget al bloquear el Mac.</li>
+                </ul>
+            ]]></description>
             <enclosure url="https://github.com/fabiannavarroo/Notch-Mac-v2/releases/download/v1.7.21/NotchMac-1.7.21.zip" sparkle:edSignature="gASalG8T+856pU/qExmHdtL7sSMhZHqLtkqLL/nQFLxCJqrgIUBGQORh8FbYwuWss9SSEgiPuhtLhvv0wE5nDw==" length="11022293" type="application/octet-stream"/>
         </item>
 
