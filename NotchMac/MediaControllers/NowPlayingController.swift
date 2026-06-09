@@ -63,6 +63,14 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
     // browser sources (YouTube, etc.) when they are also active.
     private var sourceStates: [String: PlaybackState] = [:]
 
+    // Bundle that owns the adapter's current Now Playing session. Diff
+    // updates that omit bundle info belong to THIS bundle — not to whatever
+    // the notch is displaying, which may be a different (higher-priority)
+    // source. Attributing such diffs to the displayed source poisons its
+    // cache with another app's metadata (e.g. Twitch artwork landing on a
+    // Spotify track).
+    private var lastAdapterBundleID: String = ""
+
     // MARK: - Media Remote Functions
     private let mediaRemoteBundle: CFBundle
     private let MRMediaRemoteSendCommandFunction: @convention(c) (Int, AnyObject?) -> Void
@@ -238,8 +246,9 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         let resolvedBundleIdentifier = (
             payload.parentApplicationBundleIdentifier ??
             payload.bundleIdentifier ??
-            (diff ? self.playbackState.bundleIdentifier : "")
+            (diff ? self.lastAdapterBundleID : "")
         )
+        self.lastAdapterBundleID = resolvedBundleIdentifier
 
         // Diff updates must merge against the cached state of the *same*
         // bundle, never against whatever is currently displayed. Merging
